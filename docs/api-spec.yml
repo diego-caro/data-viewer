@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: data-viewer Source API
+  description: >
+    Spec of the external endpoint this app reads from.
+    Update once the source URL and response shape are defined.
+  version: 0.1.0
+
+# Replace with the actual endpoint once known
+paths:
+  /source-endpoint:
+    get:
+      summary: Fetch source data
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceResponse'
+
+components:
+  schemas:
+    SourceItem:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+
+    SourceResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceItem'
+        total:
+          type: integer
+        page:
+          type: integer
