@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-6 — Players List by Category (hardcoded data, full backend + frontend)
+> Last updated: SCRUM-8 — Tournament fixture page with match results, dates, logos by round
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -93,6 +93,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | Ticket | Feature | Status |
 |--------|---------|--------|
 | SCRUM-6 | Players List by Category — display player roster grouped by category with status badges | Done |
+| SCRUM-7 | Bug fix: category dropdown now reflects selected option; no loading spinner on category change | Done |
+| SCRUM-8 | Tournament fixture page — matches grouped by round, scores for completed, dates for pending, team logos, venue | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -101,6 +103,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 |--------|------|-------------|
 | GET | `/api/categories` | List all player categories |
 | GET | `/api/players?categoryId=X` | List players filtered by category (400 if missing, 404 if not found) |
+| GET | `/api/fixture/matches` | Proxy: tournament matches from Hockey Chubut API (normalized) |
+| GET | `/api/fixture/clubs` | Proxy: clubs with base64 logos from Hockey Chubut API |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -109,3 +113,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - All external API calls isolated in `backend/src/lib/services/` to decouple UI from data source
 - Player data hardcoded initially in the service layer — typed interfaces ready for API swap
 - Player/Category types duplicated between backend and frontend (shared package planned for later)
+- CORS headers configured in `backend/next.config.mjs` for dev (allows `http://localhost:4200`)
+- Category change does not trigger a loading spinner — content stays visible during player fetch (SCRUM-7)
+- Fixture page uses `forkJoin` to load matches and clubs in parallel — if either fails, the whole page shows an error (SCRUM-8)
+- External Hockey Chubut API URLs hardcoded in `fixtureService.ts` — matches current tournament/fixture IDs (SCRUM-8)
+- Date-only detection for pending matches uses `T03:00:00Z` heuristic (midnight Argentina time) — revisit if API changes (SCRUM-8)

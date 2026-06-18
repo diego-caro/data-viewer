@@ -8,5 +8,12 @@ export const routes: Routes = [
         (m) => m.PlayersComponent,
       ),
   },
+  {
+    path: 'fixture',
+    loadComponent: () =>
+      import('./pages/fixture/fixture.component').then(
+        (m) => m.FixtureComponent,
+      ),
+  },
   { path: '', redirectTo: 'players', pathMatch: 'full' },
 ];

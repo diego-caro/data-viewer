@@ -40,6 +40,68 @@ interface Category {
 - **Backend type**: `backend/src/lib/types/player.ts`
 - **Frontend type**: `frontend/src/app/models/player.model.ts`
 
+### FixtureMatch
+
+Represents a single match in a tournament fixture.
+
+```typescript
+type MatchStatus = 'completed' | 'pending';
+
+interface TeamInfo {
+  clubId: number;
+  clubName: string;
+}
+
+interface MatchScore {
+  home: number;
+  away: number;
+}
+
+interface FixtureMatch {
+  id: number;
+  status: MatchStatus;
+  date: string;
+  venue: string;
+  round: number;
+  homeTeam: TeamInfo;
+  awayTeam: TeamInfo;
+  score: MatchScore | null;
+}
+```
+
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/partido` — normalized from raw Spanish field names (`estado`, `cancha`, `instancia`, etc.)
+- **Backend type**: `backend/src/lib/types/fixture.ts`
+- **Frontend type**: `frontend/src/app/models/fixture.model.ts`
+
+### FixtureClub
+
+Represents a club with its logo.
+
+```typescript
+interface FixtureClub {
+  id: number;
+  name: string;
+  logo: string | null; // base64-encoded PNG
+}
+```
+
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/club`
+- **Backend type**: `backend/src/lib/types/fixture.ts`
+- **Frontend type**: `frontend/src/app/models/fixture.model.ts`
+
+### FixtureRound
+
+Groups matches by round number (frontend only).
+
+```typescript
+interface FixtureRound {
+  number: number;
+  matches: FixtureMatch[];
+}
+```
+
+- **Frontend type**: `frontend/src/app/models/fixture.model.ts`
+
 ## API Response Wrappers
 
 ```typescript
@@ -53,13 +115,25 @@ interface CategoriesResponse {
 }
 ```
 
-## Source Data (from external API)
+## Source Data (from external API — Hockey Chubut)
 
-> Replace with actual structure once endpoint is known.
+The external API returns raw data in Spanish. The backend service normalizes these into domain types above.
 
 ```typescript
-interface SourceItem {
-  id: string;
-  // fields from the API
+interface RawMatch {
+  id: number;
+  estado: string;       // "CERRADO" | "PENDIENTE"
+  fecha: string;        // ISO 8601
+  resultado: { golLocal: number; golVisitante: number } | null;
+  cancha: { id: number; nombre: string };
+  local: { id: number; nombre: string; club: { id: number; razonSocial: string } };
+  visitante: { id: number; nombre: string; club: { id: number; razonSocial: string } };
+  instancia: { id: number; numero: number };
+}
+
+interface RawClubWithLogo {
+  id: number;
+  razonSocial: string;
+  logo: string | null;  // base64-encoded PNG
 }
 ```

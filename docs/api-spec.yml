@@ -18,6 +18,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/CategoriesResponse'
 
+  /api/fixture/matches:
+    get:
+      summary: List all tournament fixture matches
+      description: >
+        Proxies the Hockey Chubut external API, normalizes match data,
+        and returns matches with status, score, venue, and round number.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixtureMatchesResponse'
+        '500':
+          description: External API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/fixture/clubs:
+    get:
+      summary: List all clubs with logos
+      description: >
+        Proxies the Hockey Chubut external API and returns clubs
+        with base64-encoded logo images.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixtureClubsResponse'
+        '500':
+          description: External API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/players:
     get:
       summary: List players by category
@@ -94,6 +134,78 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Category'
+
+    FixtureMatch:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [completed, pending]
+        date:
+          type: string
+          format: date-time
+        venue:
+          type: string
+        round:
+          type: integer
+        homeTeam:
+          $ref: '#/components/schemas/TeamInfo'
+        awayTeam:
+          $ref: '#/components/schemas/TeamInfo'
+        score:
+          oneOf:
+            - $ref: '#/components/schemas/MatchScore'
+            - type: 'null'
+      required: [id, status, date, venue, round, homeTeam, awayTeam, score]
+
+    TeamInfo:
+      type: object
+      properties:
+        clubId:
+          type: integer
+        clubName:
+          type: string
+      required: [clubId, clubName]
+
+    MatchScore:
+      type: object
+      properties:
+        home:
+          type: integer
+        away:
+          type: integer
+      required: [home, away]
+
+    FixtureClub:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logo:
+          type: string
+          nullable: true
+          description: Base64-encoded PNG image
+      required: [id, name, logo]
+
+    FixtureMatchesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixtureMatch'
+
+    FixtureClubsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixtureClub'
 
     ErrorResponse:
       type: object
