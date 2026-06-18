@@ -2,6 +2,13 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
+  },
+  {
     path: 'players',
     loadComponent: () =>
       import('./pages/players/players.component').then(
@@ -15,5 +22,5 @@ export const routes: Routes = [
         (m) => m.FixtureComponent,
       ),
   },
-  { path: '', redirectTo: 'players', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

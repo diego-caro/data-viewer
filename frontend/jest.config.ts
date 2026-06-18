@@ -7,6 +7,9 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(.pnpm|@angular|rxjs|tslib|chart.js|@kurkle)/)',
+  ],
   coverageThreshold: {
     global: {
       branches: 70,

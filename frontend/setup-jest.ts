@@ -1,3 +1,36 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 setupZoneTestEnv();
+
+HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue({
+  canvas: { width: 0, height: 0 },
+  clearRect: jest.fn(),
+  beginPath: jest.fn(),
+  arc: jest.fn(),
+  fill: jest.fn(),
+  stroke: jest.fn(),
+  moveTo: jest.fn(),
+  lineTo: jest.fn(),
+  setTransform: jest.fn(),
+  resetTransform: jest.fn(),
+  measureText: jest.fn().mockReturnValue({ width: 0 }),
+  fillText: jest.fn(),
+  fillRect: jest.fn(),
+  strokeRect: jest.fn(),
+  createLinearGradient: jest.fn().mockReturnValue({ addColorStop: jest.fn() }),
+  createRadialGradient: jest.fn().mockReturnValue({ addColorStop: jest.fn() }),
+  createPattern: jest.fn(),
+  save: jest.fn(),
+  restore: jest.fn(),
+  translate: jest.fn(),
+  rotate: jest.fn(),
+  scale: jest.fn(),
+  drawImage: jest.fn(),
+  clip: jest.fn(),
+  closePath: jest.fn(),
+  getImageData: jest.fn().mockReturnValue({ data: [] }),
+  putImageData: jest.fn(),
+  setLineDash: jest.fn(),
+  getLineDash: jest.fn().mockReturnValue([]),
+  isPointInPath: jest.fn(),
+}) as unknown as typeof HTMLCanvasElement.prototype.getContext;
