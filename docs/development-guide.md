@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-9 — Dashboard home page with donut charts for player status per category
+> Last updated: SCRUM-10 — Responsive navigation menu with CEC club logo
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -96,6 +96,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-7 | Bug fix: category dropdown now reflects selected option; no loading spinner on category change | Done |
 | SCRUM-8 | Tournament fixture page — matches grouped by round, scores for completed, dates for pending, team logos, venue | Done |
 | SCRUM-9 | Dashboard home page — donut charts showing active vs inactive players per category, default route | Done |
+| SCRUM-10 | Responsive navigation menu — CEC logo, hamburger on mobile, inline links on desktop, active route highlighting | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -122,3 +123,6 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Dashboard uses Chart.js directly (not ng2-charts wrapper) — ng2-charts `BaseChartDirective` caused Angular rendering issues where sibling cards failed to render; manual `AfterViewChecked` initialization avoids this (SCRUM-9)
 - Dashboard `forkJoin` for player data: if any single category's player fetch fails, the entire dashboard shows an error (all-or-nothing) — matches fixture page pattern (SCRUM-9)
 - Default route changed from `/players` to `/dashboard` (SCRUM-9)
+- Navigation menu lives in `AppComponent` (wraps `<router-outlet>`) — not a separate component, since it's the only persistent UI shell (SCRUM-10)
+- CEC logo served from `frontend/public/logo-cec.png` — Angular 18 `public/` directory serves files at root (SCRUM-10)
+- Mobile menu toggle uses Angular `signal()` for local state — no service needed for simple UI toggle (SCRUM-10)

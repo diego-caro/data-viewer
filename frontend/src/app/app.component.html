@@ -1,1 +1,67 @@
-<router-outlet />
+<nav data-testid="nav-bar" class="bg-white shadow-md">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <a routerLink="/dashboard" class="flex-shrink-0">
+        <img
+          data-testid="nav-logo"
+          src="logo-cec.png"
+          alt="CEC Logo"
+          class="h-10 w-auto"
+        />
+      </a>
+
+      <div class="hidden md:flex md:space-x-6">
+        @for (link of navLinks; track link.path) {
+          <a
+            data-testid="nav-link"
+            [routerLink]="link.path"
+            routerLinkActive="text-blue-600 border-b-2 border-blue-600"
+            class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+          >
+            {{ link.label }}
+          </a>
+        }
+      </div>
+
+      <button
+        data-testid="hamburger-button"
+        (click)="toggleMenu()"
+        class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none"
+        [attr.aria-expanded]="menuOpen()"
+        aria-label="Toggle navigation menu"
+      >
+        @if (menuOpen()) {
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        } @else {
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (menuOpen()) {
+    <div data-testid="mobile-menu" class="md:hidden border-t border-gray-200">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        @for (link of navLinks; track link.path) {
+          <a
+            data-testid="mobile-nav-link"
+            [routerLink]="link.path"
+            routerLinkActive="bg-blue-50 text-blue-600"
+            (click)="closeMenu()"
+            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+          >
+            {{ link.label }}
+          </a>
+        }
+      </div>
+    </div>
+  }
+</nav>
+
+<main>
+  <router-outlet />
+</main>
