@@ -38,6 +38,14 @@ Once approved:
 3. Move ticket status to "Ready for Dev"
 4. PM agent assigns priority
 
+### Step 7 — Sprint assignment
+1. Use Jira MCP to get the list of boards for project SCRUM
+2. Get the active sprint for the board:
+   - If an active sprint exists → add the ticket to it
+   - If NO active sprint exists → create one named "Sprint [N]" (increment from last sprint number, or "Sprint 1" if none exist), start it immediately, then add the ticket to it
+3. Confirm: "Ticket SCRUM-[N] added to [Sprint name]."
+
 ## Rules
 - Never skip to implementation during this skill
 - If the idea spans multiple features, split into separate tickets and confirm
+- Always assign to sprint at the end — never leave a ticket only in the backlog
