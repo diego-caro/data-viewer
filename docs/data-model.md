@@ -102,6 +102,22 @@ interface FixtureRound {
 
 - **Frontend type**: `frontend/src/app/models/fixture.model.ts`
 
+### CategoryChartData
+
+View model for the dashboard donut charts — aggregated from Player data client-side.
+
+```typescript
+interface CategoryChartData {
+  categoryName: string;
+  activeCount: number;
+  inactiveCount: number;
+  isEmpty: boolean;
+}
+```
+
+- **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/categories` + `GET /api/players?categoryId=X`
+- **Frontend type**: `frontend/src/app/pages/dashboard/dashboard.component.ts`
+
 ## API Response Wrappers
 
 ```typescript
