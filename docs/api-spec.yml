@@ -1,47 +1,102 @@
 openapi: 3.0.0
 info:
-  title: data-viewer Source API
+  title: data-viewer API
   description: >
-    Spec of the external endpoint this app reads from.
-    Update once the source URL and response shape are defined.
-  version: 0.1.0
+    Internal API served by the Next.js backend.
+    Source API spec will be added once the external endpoint is defined.
+  version: 0.2.0
 
-# Replace with the actual endpoint once known
 paths:
-  /source-endpoint:
+  /api/categories:
     get:
-      summary: Fetch source data
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
+      summary: List all player categories
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SourceResponse'
+                $ref: '#/components/schemas/CategoriesResponse'
+
+  /api/players:
+    get:
+      summary: List players by category
+      parameters:
+        - name: categoryId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID of the category to filter players by
+      responses:
+        '200':
+          description: Players for the given category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayersResponse'
+        '400':
+          description: Missing categoryId query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
-    SourceItem:
+    Player:
       type: object
       properties:
         id:
           type: string
-      required:
-        - id
+        number:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        categoryId:
+          type: string
+      required: [id, number, firstName, lastName, status, categoryId]
 
-    SourceResponse:
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required: [id, name]
+
+    PlayersResponse:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/SourceItem'
-        total:
-          type: integer
-        page:
-          type: integer
+            $ref: '#/components/schemas/Player'
+        category:
+          $ref: '#/components/schemas/Category'
+
+    CategoriesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

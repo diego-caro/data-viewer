@@ -1,0 +1,206 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { PlayersComponent } from './players.component';
+import { PlayerService } from '../../services/player.service';
+import { Category, Player } from '../../models/player.model';
+
+const mockCategories: Category[] = [
+  { id: 'cat-1', name: 'Mixto Sub 14 A' },
+  { id: 'cat-2', name: 'Mixto Sub 14 B' },
+];
+
+const mockPlayers: Player[] = [
+  { id: 'p-01', number: 1, firstName: 'Mateo', lastName: 'Alvarez', status: 'active', categoryId: 'cat-1' },
+  { id: 'p-02', number: 3, firstName: 'Lucas', lastName: 'Castro', status: 'inactive', categoryId: 'cat-1' },
+  { id: 'p-03', number: 2, firstName: 'Valentina', lastName: 'Bravo', status: 'active', categoryId: 'cat-1' },
+];
+
+describe('PlayersComponent', () => {
+  let component: PlayersComponent;
+  let fixture: ComponentFixture<PlayersComponent>;
+  let playerServiceMock: jest.Mocked<PlayerService>;
+
+  beforeEach(async () => {
+    playerServiceMock = {
+      getCategories: jest.fn().mockReturnValue(of(mockCategories)),
+      getPlayersByCategory: jest.fn().mockReturnValue(of({ data: mockPlayers, category: mockCategories[0] })),
+    } as unknown as jest.Mocked<PlayerService>;
+
+    await TestBed.configureTestingModule({
+      imports: [PlayersComponent],
+      providers: [{ provide: PlayerService, useValue: playerServiceMock }],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PlayersComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('should create', () => {
+    fixture.detectChanges();
+    expect(component).toBeTruthy();
+  });
+
+  describe('loading state', () => {
+    it('should show loading indicator initially', () => {
+      expect(component.loading).toBe(true);
+    });
+
+    it('should hide loading after data is fetched', () => {
+      fixture.detectChanges();
+      expect(component.loading).toBe(false);
+    });
+  });
+
+  describe('categories', () => {
+    it('should load categories on init', () => {
+      fixture.detectChanges();
+      expect(playerServiceMock.getCategories).toHaveBeenCalled();
+      expect(component.categories).toEqual(mockCategories);
+    });
+
+    it('should select the first category by default', () => {
+      fixture.detectChanges();
+      expect(component.selectedCategoryId).toBe('cat-1');
+    });
+
+    it('should load players when category changes', () => {
+      fixture.detectChanges();
+      playerServiceMock.getPlayersByCategory.mockClear();
+
+      const newPlayers: Player[] = [
+        { id: 'p-09', number: 1, firstName: 'Tomas', lastName: 'Ibanez', status: 'active', categoryId: 'cat-2' },
+      ];
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        of({ data: newPlayers, category: mockCategories[1] })
+      );
+
+      component.onCategoryChange('cat-2');
+
+      expect(component.selectedCategoryId).toBe('cat-2');
+      expect(component.players).toEqual(newPlayers);
+      expect(component.loading).toBe(false);
+      expect(component.error).toBeNull();
+      expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-2');
+    });
+  });
+
+  describe('players display', () => {
+    it('should display players after loading', () => {
+      fixture.detectChanges();
+      expect(component.players).toEqual(mockPlayers);
+    });
+
+    it('should render player rows in the template', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const playerRows = compiled.querySelectorAll('[data-testid="player-row"]');
+      expect(playerRows.length).toBe(mockPlayers.length);
+    });
+
+    it('should show player last name and first name', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const firstRow = compiled.querySelector('[data-testid="player-row"]');
+      expect(firstRow?.textContent).toContain('Alvarez');
+      expect(firstRow?.textContent).toContain('Mateo');
+    });
+
+    it('should show green badge for active players', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const activeBadges = compiled.querySelectorAll('[data-testid="badge-active"]');
+      expect(activeBadges.length).toBe(2);
+    });
+
+    it('should show red badge for inactive players', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const inactiveBadges = compiled.querySelectorAll('[data-testid="badge-inactive"]');
+      expect(inactiveBadges.length).toBe(1);
+    });
+  });
+
+  describe('empty state', () => {
+    it('should show empty message when no players in category', () => {
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        of({ data: [], category: mockCategories[0] })
+      );
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const emptyMessage = compiled.querySelector('[data-testid="empty-state"]');
+      expect(emptyMessage).toBeTruthy();
+    });
+  });
+
+  describe('empty categories', () => {
+    it('should stop loading when no categories exist', () => {
+      playerServiceMock.getCategories.mockReturnValue(of([]));
+      fixture.detectChanges();
+
+      expect(component.loading).toBe(false);
+      expect(component.categories).toEqual([]);
+      expect(component.players).toEqual([]);
+    });
+  });
+
+  describe('error state', () => {
+    it('should show error message when categories fail to load', () => {
+      playerServiceMock.getCategories.mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+
+      fixture.detectChanges();
+
+      expect(component.error).toBeTruthy();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const errorMessage = compiled.querySelector('[data-testid="error-state"]');
+      expect(errorMessage).toBeTruthy();
+    });
+
+    it('should show error message when players fail to load', () => {
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+
+      fixture.detectChanges();
+
+      expect(component.error).toBeTruthy();
+    });
+
+    it('should show error when onCategoryChange fails', () => {
+      fixture.detectChanges();
+
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        throwError(() => new Error('Category load error'))
+      );
+
+      component.onCategoryChange('cat-2');
+
+      expect(component.error).toBe('Category load error');
+      expect(component.loading).toBe(false);
+    });
+
+    it('should use fallback error message when error has no message on init', () => {
+      playerServiceMock.getCategories.mockReturnValue(
+        throwError(() => ({ message: '' }))
+      );
+
+      fixture.detectChanges();
+
+      expect(component.error).toBe('Failed to load data');
+    });
+
+    it('should use fallback error message when error has no message on category change', () => {
+      fixture.detectChanges();
+
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        throwError(() => ({ message: '' }))
+      );
+
+      component.onCategoryChange('cat-2');
+
+      expect(component.error).toBe('Failed to load players');
+    });
+  });
+});

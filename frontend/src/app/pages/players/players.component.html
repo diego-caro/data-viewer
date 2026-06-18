@@ -1,0 +1,75 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <h1 class="mb-6 text-2xl font-bold text-gray-900">Players</h1>
+
+    <!-- Error State -->
+    <div
+      *ngIf="error"
+      data-testid="error-state"
+      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
+    >
+      <p>Unable to load data. Please try again later.</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading && !error" class="flex items-center justify-center py-12">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+    </div>
+
+    <!-- Content -->
+    <ng-container *ngIf="!loading && !error">
+      <!-- Category Selector -->
+      <div class="mb-6" *ngIf="categories.length > 0">
+        <label for="category-select" class="mb-2 block text-sm font-medium text-gray-700">
+          Category
+        </label>
+        <select
+          id="category-select"
+          data-testid="category-select"
+          class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [value]="selectedCategoryId"
+          (change)="onCategoryChange($any($event.target).value)"
+        >
+          <option *ngFor="let category of categories" [value]="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        *ngIf="players.length === 0"
+        data-testid="empty-state"
+        class="rounded-lg border border-gray-200 bg-white py-12 text-center"
+      >
+        <p class="text-gray-500">No players found in this category.</p>
+      </div>
+
+      <!-- Players List -->
+      <div *ngIf="players.length > 0" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <ul class="divide-y divide-gray-200">
+          <li
+            *ngFor="let player of players"
+            data-testid="player-row"
+            class="flex items-center gap-4 px-4 py-3"
+          >
+            <span
+              [attr.data-testid]="'badge-' + player.status"
+              class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+              [ngClass]="{
+                'bg-green-500': player.status === 'active',
+                'bg-red-500': player.status === 'inactive'
+              }"
+            >
+              {{ player.number }}
+            </span>
+            <div>
+              <span class="font-semibold text-gray-900">{{ player.lastName }}</span>,
+              <span class="text-gray-600">{{ player.firstName }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
+  </div>
+</div>
