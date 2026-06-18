@@ -11,11 +11,6 @@
       <p>Unable to load data. Please try again later.</p>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="loading && !error" class="flex items-center justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-    </div>
-
     <!-- Content -->
     <ng-container *ngIf="!loading && !error">
       <!-- Category Selector -->

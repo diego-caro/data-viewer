@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { PlayersComponent } from './players.component';
 import { PlayerService } from '../../services/player.service';
-import { Category, Player } from '../../models/player.model';
+import { Category, Player, PlayersResponse } from '../../models/player.model';
 
 const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Mixto Sub 14 A' },
@@ -117,6 +117,86 @@ describe('PlayersComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const inactiveBadges = compiled.querySelectorAll('[data-testid="badge-inactive"]');
       expect(inactiveBadges.length).toBe(1);
+    });
+  });
+
+  describe('SCRUM-7: dropdown selection bug', () => {
+    it('should keep dropdown visible while players are loading', () => {
+      fixture.detectChanges();
+
+      const subject = new Subject<PlayersResponse>();
+      playerServiceMock.getPlayersByCategory.mockReturnValue(subject.asObservable());
+
+      component.onCategoryChange('cat-2');
+      fixture.detectChanges();
+
+      const select = fixture.nativeElement.querySelector('[data-testid="category-select"]');
+      expect(select).toBeTruthy();
+
+      subject.next({ data: [], category: mockCategories[1] });
+      subject.complete();
+    });
+
+    it('should not show any loading spinner on category change', () => {
+      fixture.detectChanges();
+
+      const subject = new Subject<PlayersResponse>();
+      playerServiceMock.getPlayersByCategory.mockReturnValue(subject.asObservable());
+
+      component.onCategoryChange('cat-2');
+      fixture.detectChanges();
+
+      const spinner = fixture.nativeElement.querySelector('.animate-spin');
+      expect(spinner).toBeNull();
+
+      subject.next({ data: [], category: mockCategories[1] });
+      subject.complete();
+    });
+
+    it('should reflect selected category in the dropdown DOM after async response', () => {
+      fixture.detectChanges();
+
+      const newPlayers: Player[] = [
+        { id: 'p-09', number: 1, firstName: 'Tomas', lastName: 'Ibanez', status: 'active', categoryId: 'cat-2' },
+      ];
+      const subject = new Subject<PlayersResponse>();
+      playerServiceMock.getPlayersByCategory.mockReturnValue(subject.asObservable());
+
+      component.onCategoryChange('cat-2');
+      subject.next({ data: newPlayers, category: mockCategories[1] });
+      subject.complete();
+      fixture.detectChanges();
+
+      const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="category-select"]');
+      expect(select.value).toBe('cat-2');
+    });
+
+    it('should reflect the correct value after multiple category switches', () => {
+      fixture.detectChanges();
+
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        of({ data: [{ id: 'p-09', number: 1, firstName: 'Tomas', lastName: 'Ibanez', status: 'active' as const, categoryId: 'cat-2' }], category: mockCategories[1] })
+      );
+      component.onCategoryChange('cat-2');
+      fixture.detectChanges();
+
+      playerServiceMock.getPlayersByCategory.mockReturnValue(
+        of({ data: mockPlayers, category: mockCategories[0] })
+      );
+      component.onCategoryChange('cat-1');
+      fixture.detectChanges();
+
+      const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="category-select"]');
+      expect(select.value).toBe('cat-1');
+      expect(component.selectedCategoryId).toBe('cat-1');
+    });
+
+    it('should show first category selected in the dropdown DOM on initial load', () => {
+      fixture.detectChanges();
+
+      const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="category-select"]');
+      expect(select).toBeTruthy();
+      expect(select.value).toBe('cat-1');
     });
   });
 

@@ -53,7 +53,6 @@ export class PlayersComponent implements OnInit {
 
   onCategoryChange(categoryId: string): void {
     this.selectedCategoryId = categoryId;
-    this.loading = true;
     this.error = null;
 
     this.playerService
@@ -62,11 +61,9 @@ export class PlayersComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.players = response.data;
-          this.loading = false;
         },
         error: (err: Error) => {
           this.error = err.message || 'Failed to load players';
-          this.loading = false;
         },
       });
   }
