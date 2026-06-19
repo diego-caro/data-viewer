@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "predev": "npm run db:up && npm run env:init",
-    "dev": "concurrently -n backend,frontend -c green,yellow \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
+    "dev": "concurrently -n backend,frontend -c green,yellow \"npm run dev --prefix backend -- -H 0.0.0.0\" \"npm start --prefix frontend -- --host 0.0.0.0\"",
     "setup": "npm install --prefix backend && npm install --prefix frontend",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",

@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:3000/api',
+  apiBaseUrl: `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:3000/api`,
 };
