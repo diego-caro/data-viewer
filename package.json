@@ -2,9 +2,14 @@
   "name": "data-viewer",
   "version": "1.0.0",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "setup": "npm run install:all"
+    "predev": "npm run db:up && npm run env:init",
+    "dev": "concurrently -n backend,frontend -c green,yellow \"npm run dev --prefix backend -- -H 0.0.0.0\" \"npm start --prefix frontend -- --host 0.0.0.0\"",
+    "setup": "npm install --prefix backend && npm install --prefix frontend",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "env:init": "test -f backend/.env.local || cp backend/.env.example backend/.env.local",
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "test:coverage": "npx jest --coverage --prefix backend && npx jest --coverage --prefix frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
