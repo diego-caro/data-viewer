@@ -1,4 +1,4 @@
-import { extractAuth, requireAuth, requireRole } from '@/lib/middleware/auth';
+import { extractAuth, requireAuth, requireRole, requireAnyRole } from '@/lib/middleware/auth';
 import { userService } from '@/lib/services/userService';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -85,6 +85,34 @@ describe('auth middleware', () => {
 
     it('should return 401 when not authenticated', async () => {
       const result = requireRole(createRequest(), 'admin');
+
+      expect(result).toBeInstanceOf(NextResponse);
+      const res = result as NextResponse;
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('requireAnyRole', () => {
+    it('should return payload when role is in allowed list', () => {
+      mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'captain' });
+
+      const result = requireAnyRole(createRequest('Bearer valid'), ['admin', 'captain']);
+
+      expect(result).toEqual({ userId: 'u1', role: 'captain' });
+    });
+
+    it('should return 403 when role is not in allowed list', async () => {
+      mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'player' });
+
+      const result = requireAnyRole(createRequest('Bearer valid'), ['admin', 'captain']);
+
+      expect(result).toBeInstanceOf(NextResponse);
+      const body = await (result as NextResponse).json();
+      expect(body.error).toBe('Forbidden');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const result = requireAnyRole(createRequest(), ['admin']);
 
       expect(result).toBeInstanceOf(NextResponse);
       const res = result as NextResponse;

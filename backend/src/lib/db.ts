@@ -31,11 +31,46 @@ export async function initDatabase(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
-      role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'player')),
+      role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'player', 'captain')),
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
       category_id VARCHAR(50),
       created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS category_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      category_id VARCHAR(50) NOT NULL,
+      total_amount NUMERIC(10,2) NOT NULL,
+      available_players INTEGER NOT NULL,
+      per_player_amount NUMERIC(10,2) NOT NULL,
+      week_start_date DATE NOT NULL,
+      created_by UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(category_id, week_start_date)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS player_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      category_fee_id UUID NOT NULL REFERENCES category_fees(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(category_fee_id, user_id)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS captain_mp_config (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      category_id VARCHAR(50) UNIQUE NOT NULL,
+      access_token VARCHAR(500) NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 }

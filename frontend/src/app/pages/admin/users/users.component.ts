@@ -95,7 +95,7 @@ export class AdminUsersComponent implements OnInit {
     this.formLoading.set(true);
 
     const request = { ...this.formData };
-    if (request.role === 'player' && !request.categoryId && this.categories.length > 0) {
+    if ((request.role === 'player' || request.role === 'captain') && !request.categoryId && this.categories.length > 0) {
       request.categoryId = this.categories[0].id;
     }
 

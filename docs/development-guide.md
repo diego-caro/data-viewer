@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-14 — Update categories to match real club divisions
+> Last updated: SCRUM-15 — Fee data model, captain role, admin fees page
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -71,8 +71,9 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/                  → API route handlers
   src/app/api/auth/             → Auth routes (login, me)
   src/app/api/users/            → User management routes (list, create) — admin only
-  src/lib/db.ts                 → PostgreSQL connection pool + schema init
-  src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole)
+  src/app/api/fees/             → Fee management routes (list, create, mark-paid)
+  src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, category_fees, player_fees, captain_mp_config)
+  src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole, requireAnyRole)
   src/lib/services/             → Data layer (hardcoded now, external API later)
   src/lib/types/                → Shared TypeScript interfaces
   __tests__/api/                → Unit tests for API routes
@@ -84,6 +85,7 @@ frontend/                       → Angular 18 (UI client)
   src/app/pages/                → Routed page components
   src/app/pages/login/          → Login page (standalone, no auth guard)
   src/app/pages/admin/users/    → Admin users management page
+  src/app/pages/admin/fees/     → Admin fees configuration page
   src/app/interceptors/         → HTTP interceptors (auth token)
   src/app/guards/               → Route guards (auth, admin)
   src/app/components/           → Reusable UI components
@@ -114,6 +116,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-12 | Admin user management + role-based views — admin users page with create form, role-based route guards, dashboard/players filtered by player role | Done |
 | SCRUM-13 | Single-command dev startup — `npm run dev` starts Docker, backend, and frontend; `npm run setup` for deps; `.env.example` auto-copied | Done |
 | SCRUM-14 | Update categories to match real club divisions — 6 categories: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros | Done |
+| SCRUM-15 | Fee data model + captain role + admin fees page — category fees with auto-calculated per-player amounts, captain user role, mark paid, weekly reset logic | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -127,7 +130,10 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | POST | `/api/auth/login` | Authenticate user — returns JWT token + user profile (401 on invalid credentials) |
 | GET | `/api/auth/me` | Get current user profile from JWT (requires `Authorization: Bearer <token>`) |
 | GET | `/api/users` | List all users — admin only (401/403 for non-admin) |
-| POST | `/api/users` | Create a user — admin only (validates role, categoryId for player, duplicate email → 409) |
+| POST | `/api/users` | Create a user — admin only (validates role, categoryId for player/captain, duplicate email → 409) |
+| GET | `/api/fees` | Get current week's fees — admin sees all, captain/player sees own category only |
+| POST | `/api/fees` | Create/update fee config for a category — admin only (UPSERT by category + week) |
+| POST | `/api/fees/mark-paid` | Mark a player's fee as paid — admin or captain only |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -166,3 +172,11 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - `npm run dev` uses npm `predev` hook to auto-start Docker and create `.env.local` before launching `concurrently` with backend + frontend (SCRUM-13)
 - `docker-compose.yml` includes `healthcheck` with `pg_isready` — `docker compose up -d --wait` blocks until PostgreSQL is accepting connections (SCRUM-13)
 - Categories updated from 3 placeholders (Mixto Sub 14 A/B, Mixto Sub 16) to 6 real club divisions: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros — hardcoded in `playerService.ts`, IDs unchanged (cat-1 through cat-6) (SCRUM-14)
+- `UserRole` extended from `'admin' | 'player'` to `'admin' | 'player' | 'captain'` — captain is a player who can also see payment status and mark players as paid for their category (SCRUM-15)
+- Fee model uses weekly periods keyed by Monday date — `category_fees` table has UNIQUE(category_id, week_start_date) for UPSERT support (SCRUM-15)
+- Per-player amount auto-calculated server-side: `Math.round((totalAmount / availablePlayers) * 100) / 100` — frontend shows a preview but backend is the source of truth (SCRUM-15)
+- `resetWeeklyFees()` function in `feeService.ts` copies last week's fee configs and creates new `player_fees` rows with 'pending' status — scheduling mechanism (cron/external trigger) to be wired separately (SCRUM-15)
+- Auth middleware extended with `requireAnyRole(request, roles[])` — used by `mark-paid` endpoint to allow both admin and captain access (SCRUM-15)
+- `captain_mp_config` table created in schema for future Mercado Pago token storage (one per category) — not populated until SCRUM-16 (SCRUM-15)
+- Admin nav now shows two links ("Users" and "Fees") instead of one — both gated by `role === 'admin'` in template and `adminGuard` on routes (SCRUM-15)
+- Cypress `loginAsCaptain()` custom command added for captain role E2E tests (SCRUM-15)

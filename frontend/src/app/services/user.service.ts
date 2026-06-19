@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 export interface CreateUserRequest {
   email: string;
   password: string;
-  role: 'admin' | 'player';
+  role: 'admin' | 'player' | 'captain';
   firstName: string;
   lastName: string;
   categoryId: string | null;

@@ -3,6 +3,7 @@ declare global {
     interface Chainable {
       loginAsAdmin(): Chainable<void>;
       loginAsPlayer(categoryId?: string): Chainable<void>;
+      loginAsCaptain(categoryId?: string): Chainable<void>;
     }
   }
 }
@@ -31,6 +32,24 @@ Cypress.Commands.add('loginAsPlayer', (categoryId = 'cat-1') => {
     email: 'player@cec.com',
     role: 'player',
     firstName: 'Player',
+    lastName: 'One',
+    categoryId,
+  };
+
+  localStorage.setItem('auth_token', 'mock-jwt-token');
+
+  cy.intercept('GET', '**/api/auth/me', {
+    statusCode: 200,
+    body: { user: mockUser },
+  });
+});
+
+Cypress.Commands.add('loginAsCaptain', (categoryId = 'cat-1') => {
+  const mockUser = {
+    id: 'user-3',
+    email: 'captain@cec.com',
+    role: 'captain',
+    firstName: 'Captain',
     lastName: 'One',
     categoryId,
   };

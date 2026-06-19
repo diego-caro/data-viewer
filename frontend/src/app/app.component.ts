@@ -26,7 +26,8 @@ export class AppComponent {
   ];
 
   adminLinks: NavLink[] = [
-    { label: 'Admin', path: '/admin/users' },
+    { label: 'Users', path: '/admin/users' },
+    { label: 'Fees', path: '/admin/fees' },
   ];
 
   isLoginPage(): boolean {

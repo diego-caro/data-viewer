@@ -11,7 +11,7 @@ interface UserRow {
   id: string;
   email: string;
   password_hash: string;
-  role: 'admin' | 'player';
+  role: 'admin' | 'player' | 'captain';
   first_name: string;
   last_name: string;
   category_id: string | null;
@@ -89,7 +89,7 @@ async function getProfile(userId: string): Promise<UserProfile | null> {
 async function createUser(
   email: string,
   password: string,
-  role: 'admin' | 'player',
+  role: 'admin' | 'player' | 'captain',
   firstName: string,
   lastName: string,
   categoryId: string | null = null

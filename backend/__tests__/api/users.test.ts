@@ -131,7 +131,7 @@ describe('POST /api/users', () => {
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.error).toContain('Role must be');
+    expect(body.error).toContain('Role must be "admin", "player", or "captain"');
   });
 
   it('should return 400 when player role has no categoryId', async () => {
@@ -141,6 +141,43 @@ describe('POST /api/users', () => {
       role: 'player',
       firstName: 'Player',
       lastName: 'Two',
+    }, 'Bearer admin-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('categoryId is required');
+  });
+
+  it('should create a captain with categoryId', async () => {
+    const captainProfile = {
+      id: 'u3', email: 'captain@cec.com', role: 'captain' as const,
+      firstName: 'Captain', lastName: 'Cat1', categoryId: 'cat-1',
+    };
+    mockedUserService.findByEmail.mockResolvedValue(null);
+    mockedUserService.createUser.mockResolvedValue(captainProfile);
+
+    const response = await POST(createPostRequest({
+      email: 'captain@cec.com',
+      password: 'pass123',
+      role: 'captain',
+      firstName: 'Captain',
+      lastName: 'Cat1',
+      categoryId: 'cat-1',
+    }, 'Bearer admin-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.user.role).toBe('captain');
+    expect(body.user.categoryId).toBe('cat-1');
+  });
+
+  it('should return 400 when captain role has no categoryId', async () => {
+    const response = await POST(createPostRequest({
+      email: 'captain@cec.com',
+      password: 'pass123',
+      role: 'captain',
+      firstName: 'Captain',
+      lastName: 'NoCat',
     }, 'Bearer admin-token'));
     const body = await response.json();
 

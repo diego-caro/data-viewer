@@ -106,10 +106,11 @@
                 class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="player">Player</option>
+                <option value="captain">Captain</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            @if (formData.role === 'player') {
+            @if (formData.role === 'player' || formData.role === 'captain') {
               <div>
                 <label for="category" class="mb-1 block text-sm font-medium text-gray-700">Category</label>
                 <select
@@ -180,7 +181,8 @@
                 class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
                 [ngClass]="{
                   'bg-purple-100 text-purple-700': user.role === 'admin',
-                  'bg-blue-100 text-blue-700': user.role === 'player'
+                  'bg-blue-100 text-blue-700': user.role === 'player',
+                  'bg-amber-100 text-amber-700': user.role === 'captain'
                 }"
               >
                 {{ user.role }}

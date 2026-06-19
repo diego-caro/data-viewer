@@ -28,7 +28,9 @@ describe('SCRUM-12 Admin User Management + Role-based Views', () => {
       cy.intercept('GET', '**/api/players?categoryId=*', { statusCode: 200, body: { data: [], category: mockCategories[0] } });
       cy.visit('/dashboard');
       cy.viewport(1024, 768);
-      cy.get('[data-testid="admin-nav-link"]').should('be.visible').and('contain.text', 'Admin');
+      cy.get('[data-testid="admin-nav-link"]').should('have.length', 2);
+      cy.get('[data-testid="admin-nav-link"]').first().should('contain.text', 'Users');
+      cy.get('[data-testid="admin-nav-link"]').last().should('contain.text', 'Fees');
     });
   });
 

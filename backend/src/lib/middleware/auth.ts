@@ -24,3 +24,12 @@ export function requireRole(request: NextRequest, role: UserRole): AuthPayload |
   }
   return result;
 }
+
+export function requireAnyRole(request: NextRequest, roles: UserRole[]): AuthPayload | NextResponse<{ error: string }> {
+  const result = requireAuth(request);
+  if (result instanceof NextResponse) return result;
+  if (!roles.includes(result.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  return result;
+}
