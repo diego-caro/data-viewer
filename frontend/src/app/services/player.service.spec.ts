@@ -27,8 +27,8 @@ describe('PlayerService', () => {
   describe('getCategories', () => {
     it('should fetch all categories', () => {
       const mockCategories: Category[] = [
-        { id: 'cat-1', name: 'Mixto Sub 14 A' },
-        { id: 'cat-2', name: 'Mixto Sub 14 B' },
+        { id: 'cat-1', name: 'Sub 14' },
+        { id: 'cat-2', name: 'Sub 16' },
       ];
 
       service.getCategories().subscribe((categories) => {
@@ -54,7 +54,7 @@ describe('PlayerService', () => {
 
   describe('getPlayersByCategory', () => {
     it('should fetch players for a given category', () => {
-      const mockCategory: Category = { id: 'cat-1', name: 'Mixto Sub 14 A' };
+      const mockCategory: Category = { id: 'cat-1', name: 'Sub 14' };
       const mockPlayers: Player[] = [
         { id: 'p-01', number: 1, firstName: 'Mateo', lastName: 'Alvarez', status: 'active', categoryId: 'cat-1' },
         { id: 'p-02', number: 2, firstName: 'Valentina', lastName: 'Bravo', status: 'active', categoryId: 'cat-1' },

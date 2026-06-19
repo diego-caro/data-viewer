@@ -6,8 +6,8 @@ import { AuthService } from '../../services/auth.service';
 import { Category, Player, PlayersResponse } from '../../models/player.model';
 
 const mockCategories: Category[] = [
-  { id: 'cat-1', name: 'Mixto Sub 14 A' },
-  { id: 'cat-2', name: 'Mixto Sub 14 B' },
+  { id: 'cat-1', name: 'Sub 14' },
+  { id: 'cat-2', name: 'Sub 16' },
 ];
 
 const mockPlayers: Player[] = [

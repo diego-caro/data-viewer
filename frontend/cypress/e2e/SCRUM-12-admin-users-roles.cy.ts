@@ -1,7 +1,7 @@
 describe('SCRUM-12 Admin User Management + Role-based Views', () => {
   const mockCategories = [
-    { id: 'cat-1', name: 'Mixto Sub 14 A' },
-    { id: 'cat-2', name: 'Mixto Sub 14 B' },
+    { id: 'cat-1', name: 'Sub 14' },
+    { id: 'cat-2', name: 'Sub 16' },
   ];
 
   const mockUsers = [
@@ -55,7 +55,7 @@ describe('SCRUM-12 Admin User Management + Role-based Views', () => {
         cy.contains('One');
         cy.contains('player@cec.com');
         cy.get('[data-testid="role-badge"]').should('contain.text', 'player');
-        cy.contains('Mixto Sub 14 A');
+        cy.contains('Sub 14');
       });
     });
 
@@ -111,7 +111,7 @@ describe('SCRUM-12 Admin User Management + Role-based Views', () => {
       cy.get('[data-testid="email-input"]').type('new@cec.com');
       cy.get('[data-testid="password-input"]').type('pass123');
       cy.get('[data-testid="role-select"]').select('player');
-      cy.get('[data-testid="category-select"]').select('Mixto Sub 14 A');
+      cy.get('[data-testid="category-select"]').select('Sub 14');
       cy.get('[data-testid="submit-button"]').click();
 
       cy.wait('@createUser');
@@ -183,7 +183,7 @@ describe('SCRUM-12 Admin User Management + Role-based Views', () => {
     it('should only show one chart card for the player category', () => {
       cy.visit('/dashboard');
       cy.get('[data-testid="chart-card"]').should('have.length', 1);
-      cy.get('[data-testid="chart-title"]').should('contain.text', 'Mixto Sub 14 A');
+      cy.get('[data-testid="chart-title"]').should('contain.text', 'Sub 14');
     });
   });
 

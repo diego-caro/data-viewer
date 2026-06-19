@@ -6,9 +6,12 @@ import { AuthService } from '../../services/auth.service';
 import { Category, Player } from '../../models/player.model';
 
 const mockCategories: Category[] = [
-  { id: 'cat-1', name: 'Mixto Sub 14 A' },
-  { id: 'cat-2', name: 'Mixto Sub 14 B' },
-  { id: 'cat-3', name: 'Mixto Sub 16' },
+  { id: 'cat-1', name: 'Sub 14' },
+  { id: 'cat-2', name: 'Sub 16' },
+  { id: 'cat-3', name: 'Sub 19' },
+  { id: 'cat-4', name: 'Primera' },
+  { id: 'cat-5', name: 'Intermedia' },
+  { id: 'cat-6', name: 'Caballeros' },
 ];
 
 const mockPlayersCat1: Player[] = [
@@ -23,6 +26,11 @@ const mockPlayersCat2: Player[] = [
 ];
 
 const mockPlayersCat3: Player[] = [];
+const mockPlayersCat4: Player[] = [
+  { id: 'p-11', number: 1, firstName: 'Joaquin', lastName: 'Klein', status: 'active', categoryId: 'cat-4' },
+];
+const mockPlayersCat5: Player[] = [];
+const mockPlayersCat6: Player[] = [];
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
@@ -37,6 +45,9 @@ describe('DashboardComponent', () => {
           'cat-1': mockPlayersCat1,
           'cat-2': mockPlayersCat2,
           'cat-3': mockPlayersCat3,
+          'cat-4': mockPlayersCat4,
+          'cat-5': mockPlayersCat5,
+          'cat-6': mockPlayersCat6,
         };
         return of({
           data: playersMap[categoryId] ?? [],
@@ -111,16 +122,19 @@ describe('DashboardComponent', () => {
       expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-1');
       expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-2');
       expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-3');
+      expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-4');
+      expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-5');
+      expect(playerServiceMock.getPlayersByCategory).toHaveBeenCalledWith('cat-6');
     });
 
     it('should create chart data for each category', () => {
       fixture.detectChanges();
-      expect(component.categoryCharts.length).toBe(3);
+      expect(component.categoryCharts.length).toBe(6);
     });
 
     it('should compute correct active/inactive counts for cat-1', () => {
       fixture.detectChanges();
-      const chart = component.categoryCharts.find((c) => c.categoryName === 'Mixto Sub 14 A');
+      const chart = component.categoryCharts.find((c) => c.categoryName === 'Sub 14');
       expect(chart).toBeTruthy();
       expect(chart!.activeCount).toBe(2);
       expect(chart!.inactiveCount).toBe(1);
@@ -128,7 +142,7 @@ describe('DashboardComponent', () => {
 
     it('should compute correct active/inactive counts for cat-2', () => {
       fixture.detectChanges();
-      const chart = component.categoryCharts.find((c) => c.categoryName === 'Mixto Sub 14 B');
+      const chart = component.categoryCharts.find((c) => c.categoryName === 'Sub 16');
       expect(chart).toBeTruthy();
       expect(chart!.activeCount).toBe(1);
       expect(chart!.inactiveCount).toBe(1);
@@ -136,7 +150,7 @@ describe('DashboardComponent', () => {
 
     it('should mark category with no players as empty', () => {
       fixture.detectChanges();
-      const chart = component.categoryCharts.find((c) => c.categoryName === 'Mixto Sub 16');
+      const chart = component.categoryCharts.find((c) => c.categoryName === 'Sub 19');
       expect(chart).toBeTruthy();
       expect(chart!.isEmpty).toBe(true);
       expect(chart!.activeCount).toBe(0);
@@ -147,31 +161,34 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const cards = compiled.querySelectorAll('[data-testid="chart-card"]');
-      expect(cards.length).toBe(3);
+      expect(cards.length).toBe(6);
     });
 
     it('should display category name as chart title', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const titles = compiled.querySelectorAll('[data-testid="chart-title"]');
-      expect(titles.length).toBe(3);
-      expect(titles[0].textContent?.trim()).toBe('Mixto Sub 14 A');
-      expect(titles[1].textContent?.trim()).toBe('Mixto Sub 14 B');
-      expect(titles[2].textContent?.trim()).toBe('Mixto Sub 16');
+      expect(titles.length).toBe(6);
+      expect(titles[0].textContent?.trim()).toBe('Sub 14');
+      expect(titles[1].textContent?.trim()).toBe('Sub 16');
+      expect(titles[2].textContent?.trim()).toBe('Sub 19');
+      expect(titles[3].textContent?.trim()).toBe('Primera');
+      expect(titles[4].textContent?.trim()).toBe('Intermedia');
+      expect(titles[5].textContent?.trim()).toBe('Caballeros');
     });
 
     it('should show a canvas for categories with players', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const canvases = compiled.querySelectorAll('canvas');
-      expect(canvases.length).toBe(2);
+      expect(canvases.length).toBe(3);
     });
 
     it('should show empty state text for category with no players', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const emptyStates = compiled.querySelectorAll('[data-testid="chart-empty"]');
-      expect(emptyStates.length).toBe(1);
+      expect(emptyStates.length).toBe(3);
       expect(emptyStates[0].textContent?.trim()).toBe('No players');
     });
 
@@ -179,7 +196,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const legends = compiled.querySelectorAll('[data-testid="chart-legend"]');
-      expect(legends.length).toBe(2);
+      expect(legends.length).toBe(3);
 
       const firstLegend = legends[0];
       expect(firstLegend.textContent).toContain('Active: 2');

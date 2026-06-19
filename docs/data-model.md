@@ -27,7 +27,7 @@ interface Player {
 
 ### Category
 
-Groups players by team division (e.g., "Mixto Sub 14 A").
+Groups players by team division (e.g., "Sub 14", "Primera", "Caballeros").
 
 ```typescript
 interface Category {

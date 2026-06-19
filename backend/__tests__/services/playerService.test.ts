@@ -18,6 +18,14 @@ describe('PlayerService', () => {
         expect(category).toHaveProperty('name');
       });
     });
+
+    it('should return exactly 6 categories with correct names', () => {
+      const categories = playerService.getCategories();
+      const expectedNames = ['Sub 14', 'Sub 16', 'Sub 19', 'Primera', 'Intermedia', 'Caballeros'];
+
+      expect(categories).toHaveLength(6);
+      expect(categories.map((c: Category) => c.name)).toEqual(expectedNames);
+    });
   });
 
   describe('getPlayersByCategory', () => {

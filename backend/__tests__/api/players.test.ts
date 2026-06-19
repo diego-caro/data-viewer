@@ -22,7 +22,7 @@ describe('GET /api/players', () => {
   });
 
   it('should return players for a valid categoryId', async () => {
-    const mockCategory = { id: 'cat-1', name: 'Mixto Sub 14 A' };
+    const mockCategory = { id: 'cat-1', name: 'Sub 14' };
     const mockPlayers = [
       { id: 'p-01', number: 1, firstName: 'Mateo', lastName: 'Alvarez', status: 'active' as const, categoryId: 'cat-1' },
       { id: 'p-02', number: 2, firstName: 'Valentina', lastName: 'Bravo', status: 'active' as const, categoryId: 'cat-1' },

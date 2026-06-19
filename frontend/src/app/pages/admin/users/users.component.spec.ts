@@ -18,8 +18,8 @@ describe('AdminUsersComponent', () => {
   ];
 
   const mockCategories = [
-    { id: 'cat-1', name: 'Mixto Sub 14 A' },
-    { id: 'cat-2', name: 'Mixto Sub 14 B' },
+    { id: 'cat-1', name: 'Sub 14' },
+    { id: 'cat-2', name: 'Sub 16' },
   ];
 
   beforeEach(async () => {
@@ -196,7 +196,7 @@ describe('AdminUsersComponent', () => {
 
   describe('getCategoryName', () => {
     it('should return category name for valid id', () => {
-      expect(component.getCategoryName('cat-1')).toBe('Mixto Sub 14 A');
+      expect(component.getCategoryName('cat-1')).toBe('Sub 14');
     });
 
     it('should return dash for null categoryId', () => {
