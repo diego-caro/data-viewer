@@ -23,8 +23,8 @@ describe('GET /api/categories', () => {
 
   it('should return all categories', async () => {
     const mockCategories = [
-      { id: 'cat-1', name: 'Mixto Sub 14 A' },
-      { id: 'cat-2', name: 'Mixto Sub 14 B' },
+      { id: 'cat-1', name: 'Sub 14' },
+      { id: 'cat-2', name: 'Sub 16' },
     ];
 
     mockedPlayerService.getCategories.mockReturnValue(mockCategories);

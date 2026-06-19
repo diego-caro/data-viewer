@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-12 — Admin user management + role-based views
+> Last updated: SCRUM-14 — Update categories to match real club divisions
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -113,6 +113,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-11 | Auth infrastructure + Login page — PostgreSQL, JWT auth, login form, auth guard, HTTP interceptor, user name in nav, logout | Done |
 | SCRUM-12 | Admin user management + role-based views — admin users page with create form, role-based route guards, dashboard/players filtered by player role | Done |
 | SCRUM-13 | Single-command dev startup — `npm run dev` starts Docker, backend, and frontend; `npm run setup` for deps; `.env.example` auto-copied | Done |
+| SCRUM-14 | Update categories to match real club divisions — 6 categories: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -164,3 +165,4 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Docker PostgreSQL mapped to host port 5433 (not 5432) via `POSTGRES_PORT` env var to avoid conflicts with local PostgreSQL installations (SCRUM-13)
 - `npm run dev` uses npm `predev` hook to auto-start Docker and create `.env.local` before launching `concurrently` with backend + frontend (SCRUM-13)
 - `docker-compose.yml` includes `healthcheck` with `pg_isready` — `docker compose up -d --wait` blocks until PostgreSQL is accepting connections (SCRUM-13)
+- Categories updated from 3 placeholders (Mixto Sub 14 A/B, Mixto Sub 16) to 6 real club divisions: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros — hardcoded in `playerService.ts`, IDs unchanged (cat-1 through cat-6) (SCRUM-14)
