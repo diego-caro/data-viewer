@@ -1,15 +1,34 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AppComponent } from './app.component';
+import { AuthService } from './services/auth.service';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
   let compiled: HTMLElement;
 
+  const authServiceMock = {
+    login: jest.fn(),
+    logout: jest.fn(),
+    isAuthenticated: jest.fn().mockReturnValue(false),
+    userName: jest.fn().mockReturnValue(''),
+    getToken: jest.fn().mockReturnValue(null),
+    user: jest.fn().mockReturnValue(null),
+    loadCurrentUser: jest.fn(),
+    clearAuth: jest.fn(),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);

@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-10 — Responsive navigation menu with CEC club logo
+> Last updated: SCRUM-11 — Auth infrastructure + Login page with PostgreSQL and JWT
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -15,6 +15,7 @@ App that reads data from an external REST API and visualizes it in a different w
 ### Prerequisites
 - Node.js 20.19.0+
 - npm 10+
+- PostgreSQL 14+ (running locally or via Docker)
 
 ### Install
 ```bash
@@ -33,6 +34,8 @@ cd ../frontend && npm install
 # backend/.env.local
 SOURCE_API_URL=         # Base URL of the external API (TBD)
 SOURCE_API_KEY=         # API key if required (leave empty if public)
+DATABASE_URL=postgresql://user:password@localhost:5432/data_viewer  # PostgreSQL connection string
+JWT_SECRET=your-secret-key-here  # Secret for signing JWT tokens (defaults to dev secret if unset)
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
@@ -64,6 +67,8 @@ cd frontend && npx cypress run
 ```
 backend/                        → Next.js 14 App Router (API server)
   src/app/api/                  → API route handlers
+  src/app/api/auth/             → Auth routes (login, me)
+  src/lib/db.ts                 → PostgreSQL connection pool + schema init
   src/lib/services/             → Data layer (hardcoded now, external API later)
   src/lib/types/                → Shared TypeScript interfaces
   __tests__/api/                → Unit tests for API routes
@@ -71,8 +76,11 @@ backend/                        → Next.js 14 App Router (API server)
 
 frontend/                       → Angular 18 (UI client)
   src/app/models/               → TypeScript interfaces
-  src/app/services/             → Angular services (HttpClient)
+  src/app/services/             → Angular services (HttpClient, AuthService)
   src/app/pages/                → Routed page components
+  src/app/pages/login/          → Login page (standalone, no auth guard)
+  src/app/interceptors/         → HTTP interceptors (auth token)
+  src/app/guards/               → Route guards (auth)
   src/app/components/           → Reusable UI components
   cypress/e2e/                  → Cypress E2E tests
 
@@ -97,6 +105,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-8 | Tournament fixture page — matches grouped by round, scores for completed, dates for pending, team logos, venue | Done |
 | SCRUM-9 | Dashboard home page — donut charts showing active vs inactive players per category, default route | Done |
 | SCRUM-10 | Responsive navigation menu — CEC logo, hamburger on mobile, inline links on desktop, active route highlighting | Done |
+| SCRUM-11 | Auth infrastructure + Login page — PostgreSQL, JWT auth, login form, auth guard, HTTP interceptor, user name in nav, logout | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -107,6 +116,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | GET | `/api/players?categoryId=X` | List players filtered by category (400 if missing, 404 if not found) |
 | GET | `/api/fixture/matches` | Proxy: tournament matches from Hockey Chubut API (normalized) |
 | GET | `/api/fixture/clubs` | Proxy: clubs with base64 logos from Hockey Chubut API |
+| POST | `/api/auth/login` | Authenticate user — returns JWT token + user profile (401 on invalid credentials) |
+| GET | `/api/auth/me` | Get current user profile from JWT (requires `Authorization: Bearer <token>`) |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -126,3 +137,13 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Navigation menu lives in `AppComponent` (wraps `<router-outlet>`) — not a separate component, since it's the only persistent UI shell (SCRUM-10)
 - CEC logo served from `frontend/public/logo-cec.png` — Angular 18 `public/` directory serves files at root (SCRUM-10)
 - Mobile menu toggle uses Angular `signal()` for local state — no service needed for simple UI toggle (SCRUM-10)
+- PostgreSQL chosen over SQLite for auth database — user preference for production-ready storage (SCRUM-11)
+- JWT tokens signed with `jsonwebtoken`, 8h expiry, payload contains `{ userId, role }` — no refresh tokens (SCRUM-11)
+- Passwords hashed with `bcrypt` (10 salt rounds) — never stored or transmitted in plaintext (SCRUM-11)
+- Database connection via `pg` Pool singleton in `backend/src/lib/db.ts` — schema auto-created via `initDatabase()` (SCRUM-11)
+- Default admin seeded on first run (`admin@cec.com` / `admin123`) when users table is empty (SCRUM-11)
+- Auth guard (`CanActivateFn`) protects all routes except `/login` — checks token in localStorage, validates via `GET /api/auth/me` (SCRUM-11)
+- HTTP interceptor attaches `Authorization: Bearer <token>` to all API requests; on 401 (except login), clears token and redirects to `/login` (SCRUM-11)
+- Nav bar hidden on `/login` page via `isLoginPage()` check in `AppComponent` — login has its own centered layout (SCRUM-11)
+- CORS config updated to allow `POST, PUT, DELETE` methods and `Authorization` header for auth requests (SCRUM-11)
+- Cypress `loginAsAdmin()` custom command added to `cypress/support/e2e.ts` — sets mock token + intercepts `/auth/me` for all existing E2E tests (SCRUM-11)

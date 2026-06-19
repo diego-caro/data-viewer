@@ -1,5 +1,6 @@
 describe('SCRUM-7 Dropdown Selection Bug', () => {
   beforeEach(() => {
+    cy.loginAsAdmin();
     cy.visit('/players');
   });
 

@@ -1,5 +1,6 @@
 describe('SCRUM-6 Players List by Category', () => {
   beforeEach(() => {
+    cy.loginAsAdmin();
     cy.visit('/players');
   });
 

@@ -1,5 +1,6 @@
 describe('SCRUM-10 Responsive Navigation Menu', () => {
   beforeEach(() => {
+    cy.loginAsAdmin();
     cy.visit('/dashboard');
   });
 
