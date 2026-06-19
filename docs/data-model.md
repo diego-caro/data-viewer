@@ -172,6 +172,24 @@ interface AuthPayload {
 
 - **Backend type**: `backend/src/lib/types/user.ts`
 
+### CreateUserRequest
+
+Request body for admin user creation endpoint.
+
+```typescript
+interface CreateUserRequest {
+  email: string;
+  password: string;
+  role: 'admin' | 'player';
+  firstName: string;
+  lastName: string;
+  categoryId: string | null; // required when role is 'player'
+}
+```
+
+- **Backend validation**: `backend/src/app/api/users/route.ts` (manual field checks)
+- **Frontend type**: `frontend/src/app/services/user.service.ts`
+
 ## API Response Wrappers
 
 ```typescript

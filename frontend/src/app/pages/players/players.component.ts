@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { PlayerService } from '../../services/player.service';
+import { AuthService } from '../../services/auth.service';
 import { Player, Category } from '../../models/player.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { Player, Category } from '../../models/player.model';
 })
 export class PlayersComponent implements OnInit {
   private readonly playerService = inject(PlayerService);
+  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   categories: Category[] = [];
@@ -21,6 +23,7 @@ export class PlayersComponent implements OnInit {
   selectedCategoryId = '';
   loading = true;
   error: string | null = null;
+  isPlayer = false;
 
   ngOnInit(): void {
     this.playerService
@@ -28,10 +31,16 @@ export class PlayersComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((categories) => {
-          this.categories = categories;
-          if (categories.length > 0) {
-            this.selectedCategoryId = categories[0].id;
-            return this.playerService.getPlayersByCategory(categories[0].id);
+          const user = this.authService.user();
+          this.isPlayer = user?.role === 'player';
+          if (this.isPlayer && user?.categoryId) {
+            this.categories = categories.filter((c) => c.id === user.categoryId);
+          } else {
+            this.categories = categories;
+          }
+          if (this.categories.length > 0) {
+            this.selectedCategoryId = this.categories[0].id;
+            return this.playerService.getPlayersByCategory(this.categories[0].id);
           }
           this.loading = false;
           return of(null);

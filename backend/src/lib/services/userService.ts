@@ -109,6 +109,13 @@ async function getUserCount(): Promise<number> {
   return parseInt(rows[0].count, 10);
 }
 
+async function listUsers(): Promise<UserProfile[]> {
+  const rows = await query<UserRow>(
+    'SELECT id, email, password_hash, role, first_name, last_name, category_id FROM users ORDER BY last_name, first_name'
+  );
+  return rows.map((row) => userToProfile(rowToUser(row)));
+}
+
 async function seedDefaultAdmin(): Promise<void> {
   const count = await getUserCount();
   if (count === 0) {
@@ -123,6 +130,7 @@ export const userService = {
   verifyToken,
   getProfile,
   createUser,
+  listUsers,
   getUserCount,
   seedDefaultAdmin,
 };

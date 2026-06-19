@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
 import { PlayersComponent } from './players.component';
 import { PlayerService } from '../../services/player.service';
+import { AuthService } from '../../services/auth.service';
 import { Category, Player, PlayersResponse } from '../../models/player.model';
 
 const mockCategories: Category[] = [
@@ -26,9 +27,19 @@ describe('PlayersComponent', () => {
       getPlayersByCategory: jest.fn().mockReturnValue(of({ data: mockPlayers, category: mockCategories[0] })),
     } as unknown as jest.Mocked<PlayerService>;
 
+    const authServiceMock = {
+      user: jest.fn().mockReturnValue({ role: 'admin', categoryId: null }),
+      isAuthenticated: jest.fn().mockReturnValue(true),
+      userName: jest.fn().mockReturnValue('Admin CEC'),
+      getToken: jest.fn().mockReturnValue('token'),
+    };
+
     await TestBed.configureTestingModule({
       imports: [PlayersComponent],
-      providers: [{ provide: PlayerService, useValue: playerServiceMock }],
+      providers: [
+        { provide: PlayerService, useValue: playerServiceMock },
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PlayersComponent);

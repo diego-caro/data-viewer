@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { playerService } from '@/lib/services/playerService';
+import { requireAuth } from '@/lib/middleware/auth';
 import { PlayersResponse } from '@/lib/types/player';
 
 export async function GET(request: NextRequest): Promise<NextResponse<PlayersResponse | { error: string }>> {
+  const auth = requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
   const categoryId = request.nextUrl.searchParams.get('categoryId');
 
   if (!categoryId) {

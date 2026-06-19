@@ -1,0 +1,195 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Users</h1>
+      <button
+        data-testid="new-user-button"
+        (click)="openForm()"
+        class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        New User
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div
+      *ngIf="loading"
+      data-testid="loading-state"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+    </div>
+
+    <!-- Error State -->
+    <div
+      *ngIf="error"
+      data-testid="error-state"
+      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
+    >
+      <p>{{ error }}</p>
+    </div>
+
+    <!-- Create User Form -->
+    @if (showForm()) {
+      <div
+        data-testid="user-form"
+        class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+      >
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">New User</h2>
+
+        <div
+          *ngIf="formError()"
+          data-testid="form-error"
+          class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
+          {{ formError() }}
+        </div>
+
+        <form (ngSubmit)="onSubmit()" data-testid="create-user-form">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label for="firstName" class="mb-1 block text-sm font-medium text-gray-700">First Name</label>
+              <input
+                id="firstName"
+                type="text"
+                data-testid="first-name-input"
+                [(ngModel)]="formData.firstName"
+                name="firstName"
+                required
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="lastName" class="mb-1 block text-sm font-medium text-gray-700">Last Name</label>
+              <input
+                id="lastName"
+                type="text"
+                data-testid="last-name-input"
+                [(ngModel)]="formData.lastName"
+                name="lastName"
+                required
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+              <input
+                id="email"
+                type="email"
+                data-testid="email-input"
+                [(ngModel)]="formData.email"
+                name="email"
+                required
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+              <input
+                id="password"
+                type="password"
+                data-testid="password-input"
+                [(ngModel)]="formData.password"
+                name="password"
+                required
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="role" class="mb-1 block text-sm font-medium text-gray-700">Role</label>
+              <select
+                id="role"
+                data-testid="role-select"
+                [(ngModel)]="formData.role"
+                name="role"
+                (ngModelChange)="onRoleChange()"
+                class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="player">Player</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            @if (formData.role === 'player') {
+              <div>
+                <label for="category" class="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                <select
+                  id="category"
+                  data-testid="category-select"
+                  [(ngModel)]="formData.categoryId"
+                  name="categoryId"
+                  required
+                  class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+                </select>
+              </div>
+            }
+          </div>
+
+          <div class="mt-4 flex gap-3">
+            <button
+              type="submit"
+              data-testid="submit-button"
+              [disabled]="formLoading() || !formData.email || !formData.password || !formData.firstName || !formData.lastName"
+              class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              @if (formLoading()) {
+                Creating...
+              } @else {
+                Create User
+              }
+            </button>
+            <button
+              type="button"
+              data-testid="cancel-button"
+              (click)="closeForm()"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Users Table -->
+    <div
+      *ngIf="!loading && !error"
+      class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+    >
+      <div *ngIf="users.length === 0" data-testid="empty-state" class="py-12 text-center text-gray-500">
+        No users found.
+      </div>
+
+      <table *ngIf="users.length > 0" data-testid="users-table" class="w-full">
+        <thead class="border-b border-gray-200 bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Name</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Role</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Category</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let user of users" data-testid="user-row">
+            <td class="px-4 py-3 text-sm text-gray-900">{{ user.lastName }}, {{ user.firstName }}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">{{ user.email }}</td>
+            <td class="px-4 py-3">
+              <span
+                data-testid="role-badge"
+                class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                [ngClass]="{
+                  'bg-purple-100 text-purple-700': user.role === 'admin',
+                  'bg-blue-100 text-blue-700': user.role === 'player'
+                }"
+              >
+                {{ user.role }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">{{ getCategoryName(user.categoryId) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

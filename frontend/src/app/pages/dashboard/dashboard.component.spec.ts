@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { PlayerService } from '../../services/player.service';
+import { AuthService } from '../../services/auth.service';
 import { Category, Player } from '../../models/player.model';
 
 const mockCategories: Category[] = [
@@ -44,9 +45,19 @@ describe('DashboardComponent', () => {
       }),
     } as unknown as jest.Mocked<PlayerService>;
 
+    const authServiceMock = {
+      user: jest.fn().mockReturnValue({ role: 'admin', categoryId: null }),
+      isAuthenticated: jest.fn().mockReturnValue(true),
+      userName: jest.fn().mockReturnValue('Admin CEC'),
+      getToken: jest.fn().mockReturnValue('token'),
+    };
+
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
-      providers: [{ provide: PlayerService, useValue: playerServiceMock }],
+      providers: [
+        { provide: PlayerService, useValue: playerServiceMock },
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DashboardComponent);
