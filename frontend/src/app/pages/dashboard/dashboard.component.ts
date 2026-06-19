@@ -8,6 +8,7 @@ import { forkJoin, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { PlayerService } from '../../services/player.service';
+import { AuthService } from '../../services/auth.service';
 import { Category } from '../../models/player.model';
 
 Chart.register(DoughnutController, ArcElement, Tooltip);
@@ -27,6 +28,7 @@ export interface CategoryChartData {
 })
 export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   private readonly playerService = inject(PlayerService);
+  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly el = inject(ElementRef);
   private readonly zone = inject(NgZone);
@@ -43,11 +45,15 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((categories: Category[]) => {
-          if (categories.length === 0) {
+          const user = this.authService.user();
+          const filtered = user?.role === 'player' && user.categoryId
+            ? categories.filter((c) => c.id === user.categoryId)
+            : categories;
+          if (filtered.length === 0) {
             return of([]);
           }
           return forkJoin(
-            categories.map((cat) =>
+            filtered.map((cat) =>
               this.playerService.getPlayersByCategory(cat.id)
             )
           );

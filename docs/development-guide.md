@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-11 — Auth infrastructure + Login page with PostgreSQL and JWT
+> Last updated: SCRUM-12 — Admin user management + role-based views
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -68,7 +68,9 @@ cd frontend && npx cypress run
 backend/                        → Next.js 14 App Router (API server)
   src/app/api/                  → API route handlers
   src/app/api/auth/             → Auth routes (login, me)
+  src/app/api/users/            → User management routes (list, create) — admin only
   src/lib/db.ts                 → PostgreSQL connection pool + schema init
+  src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole)
   src/lib/services/             → Data layer (hardcoded now, external API later)
   src/lib/types/                → Shared TypeScript interfaces
   __tests__/api/                → Unit tests for API routes
@@ -79,8 +81,9 @@ frontend/                       → Angular 18 (UI client)
   src/app/services/             → Angular services (HttpClient, AuthService)
   src/app/pages/                → Routed page components
   src/app/pages/login/          → Login page (standalone, no auth guard)
+  src/app/pages/admin/users/    → Admin users management page
   src/app/interceptors/         → HTTP interceptors (auth token)
-  src/app/guards/               → Route guards (auth)
+  src/app/guards/               → Route guards (auth, admin)
   src/app/components/           → Reusable UI components
   cypress/e2e/                  → Cypress E2E tests
 
@@ -106,6 +109,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-9 | Dashboard home page — donut charts showing active vs inactive players per category, default route | Done |
 | SCRUM-10 | Responsive navigation menu — CEC logo, hamburger on mobile, inline links on desktop, active route highlighting | Done |
 | SCRUM-11 | Auth infrastructure + Login page — PostgreSQL, JWT auth, login form, auth guard, HTTP interceptor, user name in nav, logout | Done |
+| SCRUM-12 | Admin user management + role-based views — admin users page with create form, role-based route guards, dashboard/players filtered by player role | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -118,6 +122,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | GET | `/api/fixture/clubs` | Proxy: clubs with base64 logos from Hockey Chubut API |
 | POST | `/api/auth/login` | Authenticate user — returns JWT token + user profile (401 on invalid credentials) |
 | GET | `/api/auth/me` | Get current user profile from JWT (requires `Authorization: Bearer <token>`) |
+| GET | `/api/users` | List all users — admin only (401/403 for non-admin) |
+| POST | `/api/users` | Create a user — admin only (validates role, categoryId for player, duplicate email → 409) |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -147,3 +153,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Nav bar hidden on `/login` page via `isLoginPage()` check in `AppComponent` — login has its own centered layout (SCRUM-11)
 - CORS config updated to allow `POST, PUT, DELETE` methods and `Authorization` header for auth requests (SCRUM-11)
 - Cypress `loginAsAdmin()` custom command added to `cypress/support/e2e.ts` — sets mock token + intercepts `/auth/me` for all existing E2E tests (SCRUM-11)
+- Auth middleware in `backend/src/lib/middleware/auth.ts` provides `extractAuth` → `requireAuth` → `requireRole` — layered pattern returns either `AuthPayload` or `NextResponse` (instanceof check in route handlers) (SCRUM-12)
+- Admin guard (`adminGuard`) is self-contained: checks token, loads user if needed, verifies `role === 'admin'`, redirects non-admins to `/dashboard` (SCRUM-12)
+- Dashboard and Players pages filter categories by `user.categoryId` for player role — admin sees all, player sees only their assigned category (SCRUM-12)
+- Admin nav link conditionally rendered via `authService.user()?.role === 'admin'` in `app.component.html` for both desktop and mobile (SCRUM-12)
+- Cypress `loginAsPlayer()` custom command added for role-based E2E tests — sets mock player token with configurable categoryId (SCRUM-12)

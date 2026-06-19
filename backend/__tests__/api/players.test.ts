@@ -1,18 +1,24 @@
 import { GET } from '@/app/api/players/route';
 import { playerService } from '@/lib/services/playerService';
+import { userService } from '@/lib/services/userService';
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/services/playerService');
+jest.mock('@/lib/services/userService');
 
 const mockedPlayerService = playerService as jest.Mocked<typeof playerService>;
+const mockedUserService = userService as jest.Mocked<typeof userService>;
 
-function createRequest(url: string): NextRequest {
-  return new NextRequest(new URL(url, 'http://localhost:3000'));
+function createRequest(url: string, authHeader?: string): NextRequest {
+  const headers: Record<string, string> = {};
+  if (authHeader) headers['authorization'] = authHeader;
+  return new NextRequest(new URL(url, 'http://localhost:3000'), { headers });
 }
 
 describe('GET /api/players', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'admin' });
   });
 
   it('should return players for a valid categoryId', async () => {
@@ -25,7 +31,7 @@ describe('GET /api/players', () => {
     mockedPlayerService.getCategoryById.mockReturnValue(mockCategory);
     mockedPlayerService.getPlayersByCategory.mockReturnValue(mockPlayers);
 
-    const response = await GET(createRequest('/api/players?categoryId=cat-1'));
+    const response = await GET(createRequest('/api/players?categoryId=cat-1', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -35,7 +41,7 @@ describe('GET /api/players', () => {
   });
 
   it('should return 400 when categoryId is missing', async () => {
-    const response = await GET(createRequest('/api/players'));
+    const response = await GET(createRequest('/api/players', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -45,7 +51,7 @@ describe('GET /api/players', () => {
   it('should return 404 when category does not exist', async () => {
     mockedPlayerService.getCategoryById.mockReturnValue(null);
 
-    const response = await GET(createRequest('/api/players?categoryId=non-existent'));
+    const response = await GET(createRequest('/api/players?categoryId=non-existent', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(404);
@@ -57,11 +63,16 @@ describe('GET /api/players', () => {
     mockedPlayerService.getCategoryById.mockReturnValue(mockCategory);
     mockedPlayerService.getPlayersByCategory.mockReturnValue([]);
 
-    const response = await GET(createRequest('/api/players?categoryId=cat-empty'));
+    const response = await GET(createRequest('/api/players?categoryId=cat-empty', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.data).toEqual([]);
     expect(body.category).toEqual(mockCategory);
+  });
+
+  it('should return 401 without auth', async () => {
+    const response = await GET(createRequest('/api/players?categoryId=cat-1'));
+    expect(response.status).toBe(401);
   });
 });

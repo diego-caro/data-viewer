@@ -13,8 +13,8 @@
 
     <!-- Content -->
     <ng-container *ngIf="!loading && !error">
-      <!-- Category Selector -->
-      <div class="mb-6" *ngIf="categories.length > 0">
+      <!-- Category Selector (hidden for player role) -->
+      <div class="mb-6" *ngIf="categories.length > 0 && !isPlayer">
         <label for="category-select" class="mb-2 block text-sm font-medium text-gray-700">
           Category
         </label>

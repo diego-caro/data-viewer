@@ -25,6 +25,10 @@ export class AppComponent {
     { label: 'Fixture', path: '/fixture' },
   ];
 
+  adminLinks: NavLink[] = [
+    { label: 'Admin', path: '/admin/users' },
+  ];
+
   isLoginPage(): boolean {
     return this.router.url === '/login';
   }
