@@ -1,4 +1,8 @@
 describe('SCRUM-9 Dashboard with Donut Charts', () => {
+  beforeEach(() => {
+    cy.loginAsAdmin();
+  });
+
   it('should redirect "/" to "/dashboard"', () => {
     cy.visit('/');
     cy.url().should('include', '/dashboard');

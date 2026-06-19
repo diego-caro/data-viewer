@@ -4,9 +4,73 @@ info:
   description: >
     Internal API served by the Next.js backend.
     Source API spec will be added once the external endpoint is defined.
-  version: 0.2.0
+  version: 0.3.0
 
 paths:
+  /api/auth/login:
+    post:
+      summary: Authenticate user with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        '200':
+          description: Login successful — returns JWT token and user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Missing email or password, or invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/me:
+    get:
+      summary: Get current authenticated user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Missing, invalid, or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User no longer exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/categories:
     get:
       summary: List all player categories
@@ -207,8 +271,45 @@ components:
           items:
             $ref: '#/components/schemas/FixtureClub'
 
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, player]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        categoryId:
+          type: string
+          nullable: true
+      required: [id, email, role, firstName, lastName, categoryId]
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token (8h expiry)
+        user:
+          $ref: '#/components/schemas/UserProfile'
+      required: [token, user]
+
     ErrorResponse:
       type: object
       properties:
         error:
           type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

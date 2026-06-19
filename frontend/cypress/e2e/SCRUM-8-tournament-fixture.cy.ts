@@ -1,5 +1,6 @@
 describe('SCRUM-8 Tournament Fixture Page', () => {
   beforeEach(() => {
+    cy.loginAsAdmin();
     cy.visit('/fixture');
   });
 

@@ -118,9 +118,68 @@ interface CategoryChartData {
 - **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/categories` + `GET /api/players?categoryId=X`
 - **Frontend type**: `frontend/src/app/pages/dashboard/dashboard.component.ts`
 
+### User
+
+Represents an authenticated user in the system. Stored in PostgreSQL `users` table.
+
+```typescript
+type UserRole = 'admin' | 'player';
+
+interface User {
+  id: string;         // UUID, auto-generated
+  email: string;      // unique
+  passwordHash: string;
+  role: UserRole;
+  firstName: string;
+  lastName: string;
+  categoryId: string | null; // links players to their category
+}
+```
+
+- **Source**: PostgreSQL `users` table
+- **Backend type**: `backend/src/lib/types/user.ts`
+- **Frontend type**: `frontend/src/app/models/user.model.ts` (UserProfile only — no passwordHash)
+
+### UserProfile
+
+Safe projection of User — excludes `passwordHash`. Used in API responses and frontend state.
+
+```typescript
+interface UserProfile {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string;
+  lastName: string;
+  categoryId: string | null;
+}
+```
+
+- **Source**: Derived from `User` in `userService.ts` via `userToProfile()`
+- **Backend type**: `backend/src/lib/types/user.ts`
+- **Frontend type**: `frontend/src/app/models/user.model.ts`
+
+### AuthPayload
+
+JWT token payload shape — embedded in signed tokens.
+
+```typescript
+interface AuthPayload {
+  userId: string;
+  role: UserRole;
+}
+```
+
+- **Backend type**: `backend/src/lib/types/user.ts`
+
 ## API Response Wrappers
 
 ```typescript
+interface LoginResponse {
+  token: string;
+  user: UserProfile;
+}
+
 interface PlayersResponse {
   data: Player[];
   category: Category | null;
