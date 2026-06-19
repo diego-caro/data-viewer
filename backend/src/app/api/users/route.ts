@@ -38,12 +38,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ user: U
     );
   }
 
-  if (role !== 'admin' && role !== 'player') {
-    return NextResponse.json({ error: 'Role must be "admin" or "player"' }, { status: 400 });
+  if (role !== 'admin' && role !== 'player' && role !== 'captain') {
+    return NextResponse.json({ error: 'Role must be "admin", "player", or "captain"' }, { status: 400 });
   }
 
-  if (role === 'player' && !categoryId) {
-    return NextResponse.json({ error: 'categoryId is required for player role' }, { status: 400 });
+  if ((role === 'player' || role === 'captain') && !categoryId) {
+    return NextResponse.json({ error: 'categoryId is required for player/captain role' }, { status: 400 });
   }
 
   const existing = await userService.findByEmail(email);

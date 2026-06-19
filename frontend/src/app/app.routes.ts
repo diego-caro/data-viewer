@@ -42,5 +42,13 @@ export const routes: Routes = [
         (m) => m.AdminUsersComponent,
       ),
   },
+  {
+    path: 'admin/fees',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./pages/admin/fees/fees.component').then(
+        (m) => m.AdminFeesComponent,
+      ),
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

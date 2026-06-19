@@ -123,7 +123,7 @@ interface CategoryChartData {
 Represents an authenticated user in the system. Stored in PostgreSQL `users` table.
 
 ```typescript
-type UserRole = 'admin' | 'player';
+type UserRole = 'admin' | 'player' | 'captain';
 
 interface User {
   id: string;         // UUID, auto-generated
@@ -132,7 +132,7 @@ interface User {
   role: UserRole;
   firstName: string;
   lastName: string;
-  categoryId: string | null; // links players to their category
+  categoryId: string | null; // links players/captains to their category
 }
 ```
 
@@ -180,15 +180,73 @@ Request body for admin user creation endpoint.
 interface CreateUserRequest {
   email: string;
   password: string;
-  role: 'admin' | 'player';
+  role: 'admin' | 'player' | 'captain';
   firstName: string;
   lastName: string;
-  categoryId: string | null; // required when role is 'player'
+  categoryId: string | null; // required when role is 'player' or 'captain'
 }
 ```
 
 - **Backend validation**: `backend/src/app/api/users/route.ts` (manual field checks)
 - **Frontend type**: `frontend/src/app/services/user.service.ts`
+
+### CategoryFee
+
+Represents the fee configuration for a category in a given week. Per-player amount is auto-calculated from `totalAmount / availablePlayers`.
+
+```typescript
+type FeeStatus = 'pending' | 'paid';
+
+interface CategoryFee {
+  id: string;            // UUID
+  categoryId: string;
+  categoryName: string;  // resolved from playerService
+  totalAmount: number;
+  availablePlayers: number;
+  perPlayerAmount: number; // auto-calculated
+  weekStartDate: string;  // Monday of the week (YYYY-MM-DD)
+  createdBy: string;      // admin user UUID
+  createdAt: string;
+}
+```
+
+- **Source**: PostgreSQL `category_fees` table (UNIQUE on `category_id` + `week_start_date`)
+- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Frontend type**: `frontend/src/app/models/fee.model.ts`
+
+### PlayerFee
+
+Tracks individual player payment status for a given category fee period.
+
+```typescript
+interface PlayerFee {
+  id: string;            // UUID
+  categoryFeeId: string; // links to CategoryFee
+  userId: string;        // links to User
+  playerName: string;    // "LastName, FirstName" — joined from users table
+  status: FeeStatus;     // 'pending' | 'paid'
+  paidAt: string | null;
+}
+```
+
+- **Source**: PostgreSQL `player_fees` table (UNIQUE on `category_fee_id` + `user_id`)
+- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Frontend type**: `frontend/src/app/models/fee.model.ts`
+
+### CategoryFeeWithPlayers
+
+Extended fee view with player fee details and aggregate counts. Used in API responses.
+
+```typescript
+interface CategoryFeeWithPlayers extends CategoryFee {
+  playerFees: PlayerFee[];
+  paidCount: number;
+  unpaidCount: number;
+}
+```
+
+- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Frontend type**: `frontend/src/app/models/fee.model.ts` (as `CategoryFee` — includes player fees)
 
 ## API Response Wrappers
 

@@ -1,0 +1,212 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Fees</h1>
+    </div>
+
+    <!-- Loading State -->
+    <div
+      *ngIf="loading"
+      data-testid="loading-state"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+    </div>
+
+    <!-- Error State -->
+    <div
+      *ngIf="error"
+      data-testid="error-state"
+      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
+    >
+      <p>{{ error }}</p>
+    </div>
+
+    <!-- Fee Config Form -->
+    @if (showForm()) {
+      <div
+        data-testid="fee-form"
+        class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+      >
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">
+          Configure Fee — {{ getCategoryName(formData.categoryId) }}
+        </h2>
+
+        <div
+          *ngIf="formError()"
+          data-testid="form-error"
+          class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
+          {{ formError() }}
+        </div>
+
+        <form (ngSubmit)="onSubmit()" data-testid="fee-config-form">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label for="totalAmount" class="mb-1 block text-sm font-medium text-gray-700">Total Amount ($)</label>
+              <input
+                id="totalAmount"
+                type="number"
+                data-testid="total-amount-input"
+                [(ngModel)]="formData.totalAmount"
+                name="totalAmount"
+                required
+                min="1"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="availablePlayers" class="mb-1 block text-sm font-medium text-gray-700">Available Players</label>
+              <input
+                id="availablePlayers"
+                type="number"
+                data-testid="available-players-input"
+                [(ngModel)]="formData.availablePlayers"
+                name="availablePlayers"
+                required
+                min="1"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700">Per Player</label>
+              <div data-testid="per-player-preview" class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                {{ formData.availablePlayers > 0 ? (formData.totalAmount / formData.availablePlayers | number:'1.2-2') : '0.00' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex gap-3">
+            <button
+              type="submit"
+              data-testid="submit-fee-button"
+              [disabled]="formLoading() || formData.totalAmount <= 0 || formData.availablePlayers <= 0"
+              class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              @if (formLoading()) {
+                Saving...
+              } @else {
+                Save
+              }
+            </button>
+            <button
+              type="button"
+              data-testid="cancel-fee-button"
+              (click)="closeForm()"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Configured Fees -->
+    <div *ngIf="!loading && !error" class="space-y-4">
+      @for (fee of fees; track fee.id) {
+        <div
+          data-testid="fee-card"
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="mb-4 flex items-center justify-between">
+            <h2 data-testid="fee-category-name" class="text-lg font-semibold text-gray-900">{{ fee.categoryName }}</h2>
+            <button
+              data-testid="edit-fee-button"
+              (click)="openConfigForm(fee.categoryId)"
+              class="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Edit
+            </button>
+          </div>
+
+          <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <p class="text-xs text-gray-500">Total</p>
+              <p class="text-lg font-semibold text-gray-900">${{ fee.totalAmount | number:'1.0-0' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Players</p>
+              <p class="text-lg font-semibold text-gray-900">{{ fee.availablePlayers }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Per Player</p>
+              <p class="text-lg font-semibold text-gray-900">${{ fee.perPlayerAmount | number:'1.2-2' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Status</p>
+              <p class="text-lg font-semibold">
+                <span class="text-green-600">{{ fee.paidCount }}</span>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900">{{ fee.paidCount + fee.unpaidCount }}</span>
+              </p>
+            </div>
+          </div>
+
+          @if (fee.playerFees.length > 0) {
+            <div class="overflow-hidden rounded-md border border-gray-200">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Player</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  @for (pf of fee.playerFees; track pf.id) {
+                    <tr data-testid="player-fee-row">
+                      <td class="px-3 py-2 text-sm text-gray-900">{{ pf.playerName }}</td>
+                      <td class="px-3 py-2">
+                        <span
+                          class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                          [ngClass]="{
+                            'bg-green-100 text-green-700': pf.status === 'paid',
+                            'bg-yellow-100 text-yellow-700': pf.status === 'pending'
+                          }"
+                        >
+                          {{ pf.status }}
+                        </span>
+                      </td>
+                      <td class="px-3 py-2">
+                        @if (pf.status === 'pending') {
+                          <button
+                            data-testid="mark-paid-button"
+                            (click)="onMarkPaid(pf.id)"
+                            class="rounded bg-green-500 px-2 py-1 text-xs font-medium text-white hover:bg-green-600"
+                          >
+                            Mark Paid
+                          </button>
+                        } @else {
+                          <span class="text-xs text-gray-400">Paid</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Unconfigured Categories -->
+      @if (unconfiguredCategories.length > 0) {
+        <div class="rounded-lg border border-dashed border-gray-300 bg-white p-6">
+          <h3 class="mb-3 text-sm font-medium text-gray-500">Unconfigured Categories</h3>
+          <div class="flex flex-wrap gap-2">
+            @for (cat of unconfiguredCategories; track cat.id) {
+              <button
+                data-testid="configure-category-button"
+                (click)="openConfigForm(cat.id)"
+                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                {{ cat.name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

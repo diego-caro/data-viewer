@@ -183,6 +183,13 @@ describe('AdminUsersComponent', () => {
       expect(fixture.nativeElement.querySelector('[data-testid="category-select"]')).toBeNull();
     });
 
+    it('should show category dropdown for captain role', () => {
+      component.openForm();
+      component.formData.role = 'captain';
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="category-select"]')).toBeTruthy();
+    });
+
     it('should clear categoryId when switching to admin role', () => {
       component.openForm();
       component.formData.role = 'player';
