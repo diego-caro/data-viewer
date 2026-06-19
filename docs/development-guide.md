@@ -15,49 +15,51 @@ App that reads data from an external REST API and visualizes it in a different w
 ### Prerequisites
 - Node.js 20.19.0+
 - npm 10+
-- PostgreSQL 14+ (running locally or via Docker)
+- Docker (for PostgreSQL)
 
-### Install
+### Quick Start
 ```bash
 git clone [repo-url]
 cd data-viewer
-
-# Backend (Next.js)
-cd backend && npm install
-
-# Frontend (Angular)
-cd ../frontend && npm install
+npm run setup       # Install backend + frontend dependencies
+npm run dev         # Start Docker, backend (3000), and frontend (4200)
 ```
+
+That's it. `npm run dev` handles everything:
+1. Starts PostgreSQL via Docker (port 5433, with healthcheck)
+2. Creates `backend/.env.local` from `.env.example` if missing
+3. Starts backend (Next.js, port 3000) and frontend (Angular, port 4200) concurrently
+
+### Available Scripts (root)
+
+| Command | Description |
+|---------|-------------|
+| `npm run setup` | Install dependencies for backend and frontend |
+| `npm run dev` | Start Docker + backend + frontend (single command) |
+| `npm run db:down` | Stop the Docker PostgreSQL container |
+| `npm test` | Run all backend and frontend tests |
 
 ### Environment Variables
 ```env
-# backend/.env.local
-SOURCE_API_URL=         # Base URL of the external API (TBD)
-SOURCE_API_KEY=         # API key if required (leave empty if public)
-DATABASE_URL=postgresql://user:password@localhost:5432/data_viewer  # PostgreSQL connection string
-JWT_SECRET=your-secret-key-here  # Secret for signing JWT tokens (defaults to dev secret if unset)
+# backend/.env.local (auto-created from .env.example on first npm run dev)
+DATABASE_URL=postgresql://cec:cec123@localhost:5433/data_viewer
+JWT_SECRET=dev-secret-change-in-production
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
 
-### Run Development Servers
-```bash
-# Backend (port 3000)
-cd backend && npm run dev
-
-# Frontend (port 4200) — separate terminal
-cd frontend && npx ng serve
-```
-
 ### Run Tests
 ```bash
-# Backend — all tests with coverage
+# All tests
+npm test
+
+# Backend only — with coverage
 cd backend && npx jest --coverage
 
-# Frontend — all tests with coverage
+# Frontend only — with coverage
 cd frontend && npx jest --coverage
 
-# E2E (requires both servers running)
+# E2E (requires npm run dev running)
 cd frontend && npx cypress run
 ```
 
@@ -110,6 +112,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-10 | Responsive navigation menu — CEC logo, hamburger on mobile, inline links on desktop, active route highlighting | Done |
 | SCRUM-11 | Auth infrastructure + Login page — PostgreSQL, JWT auth, login form, auth guard, HTTP interceptor, user name in nav, logout | Done |
 | SCRUM-12 | Admin user management + role-based views — admin users page with create form, role-based route guards, dashboard/players filtered by player role | Done |
+| SCRUM-13 | Single-command dev startup — `npm run dev` starts Docker, backend, and frontend; `npm run setup` for deps; `.env.example` auto-copied | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -158,3 +161,6 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Dashboard and Players pages filter categories by `user.categoryId` for player role — admin sees all, player sees only their assigned category (SCRUM-12)
 - Admin nav link conditionally rendered via `authService.user()?.role === 'admin'` in `app.component.html` for both desktop and mobile (SCRUM-12)
 - Cypress `loginAsPlayer()` custom command added for role-based E2E tests — sets mock player token with configurable categoryId (SCRUM-12)
+- Docker PostgreSQL mapped to host port 5433 (not 5432) via `POSTGRES_PORT` env var to avoid conflicts with local PostgreSQL installations (SCRUM-13)
+- `npm run dev` uses npm `predev` hook to auto-start Docker and create `.env.local` before launching `concurrently` with backend + frontend (SCRUM-13)
+- `docker-compose.yml` includes `healthcheck` with `pg_isready` — `docker compose up -d --wait` blocks until PostgreSQL is accepting connections (SCRUM-13)
