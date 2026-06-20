@@ -63,5 +63,51 @@
         </ng-container>
       </div>
     </div>
+
+    <!-- Fee Collection Charts (admin only) -->
+    <div *ngIf="!loading && !error && feeCharts.length > 0">
+      <h2
+        data-testid="fee-charts-title"
+        class="mb-6 mt-10 text-xl font-bold text-gray-900"
+      >Fee Collection</h2>
+
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          *ngFor="let chart of feeCharts; let i = index"
+          data-testid="fee-chart-card"
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <h3
+            data-testid="fee-chart-title"
+            class="mb-4 text-center text-lg font-semibold text-gray-900"
+          >{{ chart.categoryName }}</h3>
+
+          <div
+            *ngIf="chart.isEmpty"
+            data-testid="fee-chart-empty"
+            class="flex h-48 items-center justify-center text-gray-400"
+          >No fees</div>
+
+          <ng-container *ngIf="!chart.isEmpty">
+            <div class="relative mx-auto h-48 w-48">
+              <canvas [attr.data-fee-chart-index]="i"></canvas>
+            </div>
+            <div
+              data-testid="fee-chart-legend"
+              class="mt-4 flex justify-center gap-4 text-sm"
+            >
+              <span class="flex items-center gap-1">
+                <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
+                Paid: {{ chart.paidCount }}
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
+                Unpaid: {{ chart.unpaidCount }}
+              </span>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

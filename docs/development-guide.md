@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-16 — Mercado Pago integration + player payment flow
+> Last updated: SCRUM-17 — Captain dashboard, player warning banner, admin fee chart
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -121,6 +121,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-14 | Update categories to match real club divisions — 6 categories: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros | Done |
 | SCRUM-15 | Fee data model + captain role + admin fees page — category fees with auto-calculated per-player amounts, captain user role, mark paid, weekly reset logic | Done |
 | SCRUM-16 | Mercado Pago integration + player payment flow — MP Checkout Pro via captain's account, webhook-based automatic payment tracking, player fees page with Pay/Paid states | Done |
+| SCRUM-17 | Captain dashboard + player warning banner + admin fee chart — captain sees player list with paid/unpaid badges, player warning when match ≤4 days and fee unpaid, admin dashboard paid/unpaid donut charts | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -193,3 +194,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Webhook signature validation is optional (active when `MP_WEBHOOK_SECRET` env var is set) — allows local development without MP webhook signing, production must set the secret (SCRUM-16)
 - `binary_mode: true` on MP preferences — forces approved/rejected only (no in_process or pending states), simplifying webhook handling (SCRUM-16)
 - Player fees page (`/fees`) lazy-loaded via Angular route — shows Pay button (pending) or Paid badge (paid) based on player's fee status (SCRUM-16)
+- Fees page renders role-based views: captain sees full player list with red/green badges and paid/unpaid counts; player sees own fee with Pay/Paid state (SCRUM-17)
+- Player warning banner uses fixture match dates with 4-day threshold — `forkJoin` with `catchError` on fixture API so fees page degrades gracefully if fixture service is down (SCRUM-17)
+- Admin dashboard loads fee data (`GET /api/fees`) and renders paid/unpaid donut charts per category using the same Chart.js pattern as active/inactive player charts — only loaded for admin role (SCRUM-17)
+- Captain payment status visibility is on-refresh (no WebSocket/polling) — captain sees updated statuses each time they load the fees page (SCRUM-17)

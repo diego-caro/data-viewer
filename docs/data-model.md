@@ -118,6 +118,22 @@ interface CategoryChartData {
 - **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/categories` + `GET /api/players?categoryId=X`
 - **Frontend type**: `frontend/src/app/pages/dashboard/dashboard.component.ts`
 
+### FeeChartData
+
+View model for the admin dashboard fee collection donut charts — aggregated from `GET /api/fees` response.
+
+```typescript
+interface FeeChartData {
+  categoryName: string;
+  paidCount: number;
+  unpaidCount: number;
+  isEmpty: boolean;
+}
+```
+
+- **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/fees` (admin only)
+- **Frontend type**: `frontend/src/app/pages/dashboard/dashboard.component.ts`
+
 ### User
 
 Represents an authenticated user in the system. Stored in PostgreSQL `users` table.
