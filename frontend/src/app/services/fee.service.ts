@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { CategoryFee, CreateFeeRequest, PlayerFee } from '../models/fee.model';
+import { CategoryFee, CreateFeeRequest, PaymentPreferenceResult, PlayerFee } from '../models/fee.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +27,12 @@ export class FeeService {
   markPlayerPaid(playerFeeId: string): Observable<PlayerFee> {
     return this.http.post<{ playerFee: PlayerFee }>(`${this.apiUrl}/fees/mark-paid`, { playerFeeId }).pipe(
       map((response) => response.playerFee),
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  payFee(): Observable<PaymentPreferenceResult> {
+    return this.http.post<PaymentPreferenceResult>(`${this.apiUrl}/fees/pay`, {}).pipe(
       catchError((error: HttpErrorResponse) => throwError(() => error)),
     );
   }

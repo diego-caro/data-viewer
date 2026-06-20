@@ -1,0 +1,278 @@
+import { POST } from '@/app/api/fees/webhook/route';
+import { feeService } from '@/lib/services/feeService';
+import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
+import { NextRequest } from 'next/server';
+
+jest.mock('@/lib/services/feeService');
+jest.mock('@/lib/services/mercadoPagoService');
+jest.mock('mercadopago', () => ({
+  WebhookSignatureValidator: {
+    validate: jest.fn(),
+  },
+  InvalidWebhookSignatureError: class InvalidWebhookSignatureError extends Error {
+    readonly reason: string;
+    constructor(reason: string) {
+      super(reason);
+      this.reason = reason;
+    }
+  },
+}));
+
+const mockedFeeService = feeService as jest.Mocked<typeof feeService>;
+const mockedMpService = mercadoPagoService as jest.Mocked<typeof mercadoPagoService>;
+
+function createWebhookRequest(body: unknown, query?: string): NextRequest {
+  const url = query
+    ? `http://localhost:3000/api/fees/webhook?${query}`
+    : 'http://localhost:3000/api/fees/webhook';
+  return new NextRequest(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+describe('POST /api/fees/webhook', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should mark player as paid on approved payment notification', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'pending', paidAt: null,
+      },
+      categoryId: 'cat-1',
+      perPlayerAmount: 300,
+    });
+    mockedMpService.getCaptainMpConfig.mockResolvedValue({
+      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
+    });
+    mockedMpService.getPaymentStatus.mockResolvedValue({
+      paymentId: '12345',
+      status: 'approved',
+      externalReference: 'pf-1',
+      transactionAmount: 300,
+    });
+    mockedFeeService.markPlayerPaid.mockResolvedValue({
+      id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+      playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+    });
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-1'
+    ));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('paid');
+    expect(mockedFeeService.getPlayerFeeWithCategory).toHaveBeenCalledWith('pf-1');
+    expect(mockedMpService.getPaymentStatus).toHaveBeenCalledWith('TEST-token', '12345');
+    expect(mockedFeeService.markPlayerPaid).toHaveBeenCalledWith('pf-1');
+  });
+
+  it('should return 200 and skip non-payment notifications', async () => {
+    const response = await POST(createWebhookRequest(
+      { type: 'plan', data: { id: '999' } },
+      'playerFeeId=pf-1'
+    ));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('ignored');
+    expect(mockedMpService.getPaymentStatus).not.toHaveBeenCalled();
+  });
+
+  it('should return 200 and skip non-approved payments', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'pending', paidAt: null,
+      },
+      categoryId: 'cat-1',
+      perPlayerAmount: 300,
+    });
+    mockedMpService.getCaptainMpConfig.mockResolvedValue({
+      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
+    });
+    mockedMpService.getPaymentStatus.mockResolvedValue({
+      paymentId: '12345',
+      status: 'rejected',
+      externalReference: 'pf-1',
+      transactionAmount: 300,
+    });
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-1'
+    ));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('not_approved');
+    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+  });
+
+  it('should return 400 when data.id is missing', async () => {
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: {} },
+      'playerFeeId=pf-1'
+    ));
+
+    expect(response.status).toBe(400);
+  });
+
+  it('should return 400 when playerFeeId query param is missing', async () => {
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } }
+    ));
+
+    expect(response.status).toBe(400);
+  });
+
+  it('should return 404 when player fee not found', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue(null);
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-unknown'
+    ));
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should return 200 with already_paid when fee is already paid', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'paid', paidAt: '2026-06-18T10:00:00Z',
+      },
+      categoryId: 'cat-1',
+      perPlayerAmount: 300,
+    });
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-1'
+    ));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('already_paid');
+    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+  });
+
+  it('should return 400 when payment external_reference does not match playerFeeId', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'pending', paidAt: null,
+      },
+      categoryId: 'cat-1',
+      perPlayerAmount: 300,
+    });
+    mockedMpService.getCaptainMpConfig.mockResolvedValue({
+      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
+    });
+    mockedMpService.getPaymentStatus.mockResolvedValue({
+      paymentId: '12345',
+      status: 'approved',
+      externalReference: 'pf-OTHER',
+      transactionAmount: 300,
+    });
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-1'
+    ));
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain('mismatch');
+    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+  });
+
+  it('should return 500 when captain has no MP config', async () => {
+    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'pending', paidAt: null,
+      },
+      categoryId: 'cat-1',
+      perPlayerAmount: 300,
+    });
+    mockedMpService.getCaptainMpConfig.mockResolvedValue(null);
+
+    const response = await POST(createWebhookRequest(
+      { type: 'payment', data: { id: '12345' } },
+      'playerFeeId=pf-1'
+    ));
+
+    expect(response.status).toBe(500);
+  });
+
+  describe('webhook signature validation', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = { ...originalEnv, MP_WEBHOOK_SECRET: 'test-secret' };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it('should return 401 when signature is invalid', async () => {
+      const mp = jest.requireMock('mercadopago');
+      mp.WebhookSignatureValidator.validate.mockImplementation(() => {
+        throw new mp.InvalidWebhookSignatureError('SignatureMismatch');
+      });
+
+      const response = await POST(createWebhookRequest(
+        { type: 'payment', data: { id: '12345' } },
+        'playerFeeId=pf-1'
+      ));
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body.error).toContain('signature');
+    });
+
+    it('should proceed when signature is valid', async () => {
+      const mp = jest.requireMock('mercadopago');
+      mp.WebhookSignatureValidator.validate.mockImplementation(() => {});
+
+      mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+        playerFee: {
+          id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+          playerName: 'One, Player', status: 'pending', paidAt: null,
+        },
+        categoryId: 'cat-1',
+        perPlayerAmount: 300,
+      });
+      mockedMpService.getCaptainMpConfig.mockResolvedValue({
+        id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
+      });
+      mockedMpService.getPaymentStatus.mockResolvedValue({
+        paymentId: '12345',
+        status: 'approved',
+        externalReference: 'pf-1',
+        transactionAmount: 300,
+      });
+      mockedFeeService.markPlayerPaid.mockResolvedValue({
+        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+      });
+
+      const response = await POST(createWebhookRequest(
+        { type: 'payment', data: { id: '12345' } },
+        'playerFeeId=pf-1'
+      ));
+
+      expect(response.status).toBe(200);
+      expect(mp.WebhookSignatureValidator.validate).toHaveBeenCalled();
+    });
+  });
+});

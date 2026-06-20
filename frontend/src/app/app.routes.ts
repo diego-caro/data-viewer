@@ -35,6 +35,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'fees',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/fees/fees.component').then(
+        (m) => m.PlayerFeesComponent,
+      ),
+  },
+  {
     path: 'admin/users',
     canActivate: [adminGuard],
     loadComponent: () =>

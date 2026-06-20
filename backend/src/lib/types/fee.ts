@@ -32,3 +32,16 @@ export interface CreateCategoryFeeRequest {
   totalAmount: number;
   availablePlayers: number;
 }
+
+export interface CaptainMpConfig {
+  id: string;
+  categoryId: string;
+  accessToken: string;
+  updatedAt: string;
+}
+
+export interface PaymentPreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+  sandboxInitPoint: string;
+}

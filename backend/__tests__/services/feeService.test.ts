@@ -124,6 +124,67 @@ describe('feeService', () => {
     });
   });
 
+  describe('getPlayerFeeWithCategory', () => {
+    it('should return player fee with category info', async () => {
+      const row = {
+        id: 'pf-1',
+        category_fee_id: 'fee-1',
+        user_id: 'u1',
+        status: 'pending',
+        paid_at: null,
+        first_name: 'Player',
+        last_name: 'One',
+        category_id: 'cat-1',
+        per_player_amount: '300',
+      };
+      mockedQueryOne.mockResolvedValue(row);
+
+      const result = await feeService.getPlayerFeeWithCategory('pf-1');
+
+      expect(result).not.toBeNull();
+      expect(result!.playerFee.id).toBe('pf-1');
+      expect(result!.categoryId).toBe('cat-1');
+      expect(result!.perPlayerAmount).toBe(300);
+    });
+
+    it('should return null when player fee not found', async () => {
+      mockedQueryOne.mockResolvedValue(null);
+
+      const result = await feeService.getPlayerFeeWithCategory('pf-999');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getPlayerFeeForUser', () => {
+    it('should return the current week player fee for a user and category', async () => {
+      const row = {
+        id: 'pf-1',
+        category_fee_id: 'fee-1',
+        user_id: 'u1',
+        status: 'pending',
+        paid_at: null,
+        first_name: 'Player',
+        last_name: 'One',
+      };
+      mockedQueryOne.mockResolvedValue(row);
+
+      const result = await feeService.getPlayerFeeForUser('u1', 'cat-1');
+
+      expect(result).not.toBeNull();
+      expect(result!.userId).toBe('u1');
+      expect(result!.status).toBe('pending');
+    });
+
+    it('should return null when no fee exists for user', async () => {
+      mockedQueryOne.mockResolvedValue(null);
+
+      const result = await feeService.getPlayerFeeForUser('u99', 'cat-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('resetWeeklyFees', () => {
     it('should copy last week fees and create new pending player_fees', async () => {
       const lastWeekFees = [
