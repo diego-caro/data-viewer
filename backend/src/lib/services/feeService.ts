@@ -43,8 +43,8 @@ function rowToPlayerFee(row: PlayerFeeRow): PlayerFee {
   };
 }
 
-function rowToCategoryFee(row: CategoryFeeRow, playerFees: PlayerFee[]): CategoryFeeWithPlayers {
-  const category = playerService.getCategoryById(row.category_id);
+async function rowToCategoryFee(row: CategoryFeeRow, playerFees: PlayerFee[]): Promise<CategoryFeeWithPlayers> {
+  const category = await playerService.getCategoryById(row.category_id);
   return {
     id: row.id,
     categoryId: row.category_id,
@@ -79,7 +79,7 @@ async function createCategoryFee(
     [categoryId, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy]
   );
 
-  return rowToCategoryFee(row!, []);
+  return await rowToCategoryFee(row!, []);
 }
 
 async function getPlayerFees(categoryFeeId: string): Promise<PlayerFee[]> {
@@ -107,7 +107,7 @@ async function getCurrentFees(): Promise<CategoryFeeWithPlayers[]> {
   const results: CategoryFeeWithPlayers[] = [];
   for (const row of feeRows) {
     const playerFees = await getPlayerFees(row.id);
-    results.push(rowToCategoryFee(row, playerFees));
+    results.push(await rowToCategoryFee(row, playerFees));
   }
   return results;
 }
@@ -122,7 +122,7 @@ async function getCurrentFeesByCategory(categoryId: string): Promise<CategoryFee
   if (!row) return null;
 
   const playerFees = await getPlayerFees(row.id);
-  return rowToCategoryFee(row, playerFees);
+  return await rowToCategoryFee(row, playerFees);
 }
 
 async function markPlayerPaid(playerFeeId: string): Promise<PlayerFee | null> {

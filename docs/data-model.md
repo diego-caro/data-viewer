@@ -6,22 +6,23 @@
 
 ### Player
 
-Represents a team member in a specific category.
+Represents a team member in a specific category. Players are users with role `player` or `captain`.
 
 ```typescript
 type PlayerStatus = 'active' | 'inactive';
 
 interface Player {
   id: string;
-  number: number;
+  number: number | null;  // jersey number, optional
   firstName: string;
   lastName: string;
-  status: PlayerStatus;
+  status: PlayerStatus;   // hardcoded 'active' until monthly fee service is available
   categoryId: string;
+  role: 'player' | 'captain';
 }
 ```
 
-- **Source**: Hardcoded in `backend/src/lib/services/playerService.ts` (will be replaced by external API)
+- **Source**: PostgreSQL `users` table — queried with `WHERE role IN ('player', 'captain') AND category_id = $1`
 - **Backend type**: `backend/src/lib/types/player.ts`
 - **Frontend type**: `frontend/src/app/models/player.model.ts`
 
@@ -36,7 +37,7 @@ interface Category {
 }
 ```
 
-- **Source**: Hardcoded in `backend/src/lib/services/playerService.ts`
+- **Source**: PostgreSQL `categories` table — seeded with 6 categories on `initDatabase()`
 - **Backend type**: `backend/src/lib/types/player.ts`
 - **Frontend type**: `frontend/src/app/models/player.model.ts`
 
@@ -148,7 +149,8 @@ interface User {
   role: UserRole;
   firstName: string;
   lastName: string;
-  categoryId: string | null; // links players/captains to their category
+  categoryId: string | null;    // links players/captains to their category
+  playerNumber: number | null;  // jersey number, optional
 }
 ```
 
@@ -168,6 +170,7 @@ interface UserProfile {
   firstName: string;
   lastName: string;
   categoryId: string | null;
+  playerNumber: number | null;
 }
 ```
 
@@ -199,7 +202,8 @@ interface CreateUserRequest {
   role: 'admin' | 'player' | 'captain';
   firstName: string;
   lastName: string;
-  categoryId: string | null; // required when role is 'player' or 'captain'
+  categoryId: string | null;    // required when role is 'player' or 'captain'
+  playerNumber?: number | null; // optional jersey number for player/captain
 }
 ```
 

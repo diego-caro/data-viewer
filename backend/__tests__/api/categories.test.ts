@@ -27,7 +27,7 @@ describe('GET /api/categories', () => {
       { id: 'cat-2', name: 'Sub 16' },
     ];
 
-    mockedPlayerService.getCategories.mockReturnValue(mockCategories);
+    mockedPlayerService.getCategories.mockResolvedValue(mockCategories);
 
     const response = await GET(createRequest('/api/categories', 'Bearer valid-token'));
     const body = await response.json();
@@ -37,7 +37,7 @@ describe('GET /api/categories', () => {
   });
 
   it('should return an empty array when no categories exist', async () => {
-    mockedPlayerService.getCategories.mockReturnValue([]);
+    mockedPlayerService.getCategories.mockResolvedValue([]);
 
     const response = await GET(createRequest('/api/categories', 'Bearer valid-token'));
     const body = await response.json();

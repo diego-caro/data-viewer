@@ -35,6 +35,7 @@ export class AdminUsersComponent implements OnInit {
     firstName: '',
     lastName: '',
     categoryId: null,
+    playerNumber: null,
   };
 
   ngOnInit(): void {
@@ -74,6 +75,7 @@ export class AdminUsersComponent implements OnInit {
       firstName: '',
       lastName: '',
       categoryId: null,
+      playerNumber: null,
     };
     this.formError.set(null);
     this.showForm.set(true);

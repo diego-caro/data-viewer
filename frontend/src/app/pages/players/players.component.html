@@ -56,12 +56,73 @@
                 'bg-red-500': player.status === 'inactive'
               }"
             >
-              {{ player.number }}
+              {{ player.number ?? '-' }}
             </span>
-            <div>
+            <div class="flex flex-1 items-center gap-2">
               <span class="font-semibold text-gray-900">{{ player.lastName }}</span>,
               <span class="text-gray-600">{{ player.firstName }}</span>
+              <span
+                *ngIf="player.role === 'captain'"
+                data-testid="captain-badge"
+                class="ml-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+                title="Captain"
+              >
+                C
+              </span>
             </div>
+
+            <!-- Admin: edit jersey number -->
+            @if (isAdmin) {
+              @if (editingPlayerId() === player.id) {
+                <div class="flex items-center gap-1" data-testid="edit-number-form">
+                  <input
+                    type="number"
+                    data-testid="number-input"
+                    [ngModel]="editingNumber()"
+                    (ngModelChange)="editingNumber.set($event)"
+                    class="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+                    min="1"
+                  />
+                  <button
+                    data-testid="save-number-button"
+                    (click)="saveNumber(player)"
+                    [disabled]="savingNumber()"
+                    class="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    data-testid="cancel-number-button"
+                    (click)="cancelEditNumber()"
+                    class="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              } @else {
+                <button
+                  data-testid="edit-number-button"
+                  (click)="startEditNumber(player)"
+                  class="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                  title="Edit jersey number"
+                >
+                  #
+                </button>
+              }
+
+              <!-- Change captain button -->
+              @if (player.role !== 'captain') {
+                <button
+                  data-testid="make-captain-button"
+                  (click)="onChangeCaptain(player)"
+                  [disabled]="changingCaptain()"
+                  class="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                  title="Make captain"
+                >
+                  Make Captain
+                </button>
+              }
+            }
           </li>
         </ul>
       </div>

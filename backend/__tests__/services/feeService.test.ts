@@ -1,14 +1,18 @@
 import { feeService } from '@/lib/services/feeService';
 import * as db from '@/lib/db';
+import { playerService } from '@/lib/services/playerService';
 
 jest.mock('@/lib/db');
+jest.mock('@/lib/services/playerService');
 
 const mockedQuery = db.query as jest.MockedFunction<typeof db.query>;
 const mockedQueryOne = db.queryOne as jest.MockedFunction<typeof db.queryOne>;
+const mockedPlayerService = playerService as jest.Mocked<typeof playerService>;
 
 describe('feeService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedPlayerService.getCategoryById.mockResolvedValue({ id: 'cat-1', name: 'Sub 14' });
   });
 
   describe('createCategoryFee', () => {

@@ -2,11 +2,12 @@ export type PlayerStatus = 'active' | 'inactive';
 
 export interface Player {
   id: string;
-  number: number;
+  number: number | null;
   firstName: string;
   lastName: string;
   status: PlayerStatus;
   categoryId: string;
+  role: 'player' | 'captain';
 }
 
 export interface Category {

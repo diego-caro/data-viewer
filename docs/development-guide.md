@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-17 — Captain dashboard, player warning banner, admin fee chart
+> Last updated: SCRUM-21 — Replace mock player data with DB, categories table, jersey numbers, captain badge, change captain
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -73,10 +73,12 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/                  → API route handlers
   src/app/api/auth/             → Auth routes (login, me)
   src/app/api/users/            → User management routes (list, create) — admin only
+  src/app/api/users/[id]/number/ → PATCH: update jersey number — admin only
+  src/app/api/categories/[id]/captain/ → PUT: change captain for a category — admin only
   src/app/api/fees/             → Fee management routes (list, create, mark-paid, pay, webhook)
-  src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, category_fees, player_fees, captain_mp_config)
+  src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, categories, category_fees, player_fees, captain_mp_config)
   src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole, requireAnyRole)
-  src/lib/services/             → Data layer (hardcoded now, external API later)
+  src/lib/services/             → Data layer (DB-backed queries)
   src/lib/types/                → Shared TypeScript interfaces
   __tests__/api/                → Unit tests for API routes
   __tests__/services/           → Unit tests for services
@@ -122,6 +124,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-15 | Fee data model + captain role + admin fees page — category fees with auto-calculated per-player amounts, captain user role, mark paid, weekly reset logic | Done |
 | SCRUM-16 | Mercado Pago integration + player payment flow — MP Checkout Pro via captain's account, webhook-based automatic payment tracking, player fees page with Pay/Paid states | Done |
 | SCRUM-17 | Captain dashboard + player warning banner + admin fee chart — captain sees player list with paid/unpaid badges, player warning when match ≤4 days and fee unpaid, admin dashboard paid/unpaid donut charts | Done |
+| SCRUM-21 | Replace mock player data with DB — categories table, jersey numbers, captain badge, change captain, admin jersey number editing | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -141,6 +144,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | POST | `/api/fees/mark-paid` | Mark a player's fee as paid — admin or captain only |
 | POST | `/api/fees/pay` | Generate MP payment preference — player or captain only (returns checkout URL) |
 | POST | `/api/fees/webhook` | Mercado Pago webhook — marks player fee as paid (public, no JWT, signature-validated) |
+| PATCH | `/api/users/:id/number` | Update a player's jersey number — admin only |
+| PUT | `/api/categories/:id/captain` | Change captain for a category — swaps roles, admin only |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -198,3 +203,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Player warning banner uses fixture match dates with 4-day threshold — `forkJoin` with `catchError` on fixture API so fees page degrades gracefully if fixture service is down (SCRUM-17)
 - Admin dashboard loads fee data (`GET /api/fees`) and renders paid/unpaid donut charts per category using the same Chart.js pattern as active/inactive player charts — only loaded for admin role (SCRUM-17)
 - Captain payment status visibility is on-refresh (no WebSocket/polling) — captain sees updated statuses each time they load the fees page (SCRUM-17)
+- Player data now DB-backed — `playerService` queries PostgreSQL `users` and `categories` tables instead of hardcoded arrays; all functions are async (SCRUM-21)
+- `categories` table seeded on `initDatabase()` with 6 rows (Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros) using `ON CONFLICT DO NOTHING` for idempotency (SCRUM-21)
+- `player_number` column added to `users` table via idempotent `DO $ ... IF NOT EXISTS ... END $` migration block — nullable integer for jersey number (SCRUM-21)
+- Captain swap uses PostgreSQL transaction (`BEGIN/COMMIT/ROLLBACK` via `getClient()`) — demotes old captain and promotes new captain atomically to prevent inconsistent state on failure (SCRUM-21)
+- Player `status` hardcoded to `'active'` — monthly fee-based status calculation is TBD (SCRUM-21)

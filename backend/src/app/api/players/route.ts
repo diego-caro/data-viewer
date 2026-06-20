@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayersRes
     );
   }
 
-  const category = playerService.getCategoryById(categoryId);
+  const category = await playerService.getCategoryById(categoryId);
 
   if (!category) {
     return NextResponse.json(
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayersRes
     );
   }
 
-  const players = playerService.getPlayersByCategory(categoryId);
+  const players = await playerService.getPlayersByCategory(categoryId);
 
   return NextResponse.json({ data: players, category });
 }

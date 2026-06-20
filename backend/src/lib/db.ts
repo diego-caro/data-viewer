@@ -27,6 +27,24 @@ export async function getClient(): Promise<PoolClient> {
 
 export async function initDatabase(): Promise<void> {
   await query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id VARCHAR(50) PRIMARY KEY,
+      name VARCHAR(100) NOT NULL
+    )
+  `);
+
+  await query(`
+    INSERT INTO categories (id, name) VALUES
+      ('cat-1', 'Sub 14'),
+      ('cat-2', 'Sub 16'),
+      ('cat-3', 'Sub 19'),
+      ('cat-4', 'Primera'),
+      ('cat-5', 'Intermedia'),
+      ('cat-6', 'Caballeros')
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email VARCHAR(255) UNIQUE NOT NULL,
@@ -35,8 +53,21 @@ export async function initDatabase(): Promise<void> {
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
       category_id VARCHAR(50),
+      player_number INTEGER,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+
+  await query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'player_number'
+      ) THEN
+        ALTER TABLE users ADD COLUMN player_number INTEGER;
+      END IF;
+    END $$
   `);
 
   await query(`

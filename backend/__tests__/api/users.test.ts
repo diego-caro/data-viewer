@@ -229,4 +229,52 @@ describe('POST /api/users', () => {
     expect(response.status).toBe(400);
     expect(body.error).toBe('Invalid request body');
   });
+
+  it('should pass playerNumber to createUser when provided', async () => {
+    mockedUserService.findByEmail.mockResolvedValue(null);
+    mockedUserService.createUser.mockResolvedValue({
+      id: 'u4', email: 'num@cec.com', role: 'player', firstName: 'Num', lastName: 'Player',
+      categoryId: 'cat-1', playerNumber: 7,
+    });
+
+    const response = await POST(createPostRequest({
+      email: 'num@cec.com',
+      password: 'pass123',
+      role: 'player',
+      firstName: 'Num',
+      lastName: 'Player',
+      categoryId: 'cat-1',
+      playerNumber: 7,
+    }, 'Bearer admin-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mockedUserService.createUser).toHaveBeenCalledWith(
+      'num@cec.com', 'pass123', 'player', 'Num', 'Player', 'cat-1', 7
+    );
+    expect(body.user.playerNumber).toBe(7);
+  });
+
+  it('should create user without playerNumber (defaults to null)', async () => {
+    mockedUserService.findByEmail.mockResolvedValue(null);
+    mockedUserService.createUser.mockResolvedValue({
+      id: 'u5', email: 'nonum@cec.com', role: 'player', firstName: 'No', lastName: 'Num',
+      categoryId: 'cat-1', playerNumber: null,
+    });
+
+    const response = await POST(createPostRequest({
+      email: 'nonum@cec.com',
+      password: 'pass123',
+      role: 'player',
+      firstName: 'No',
+      lastName: 'Num',
+      categoryId: 'cat-1',
+    }, 'Bearer admin-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mockedUserService.createUser).toHaveBeenCalledWith(
+      'nonum@cec.com', 'pass123', 'player', 'No', 'Num', 'cat-1', null
+    );
+  });
 });

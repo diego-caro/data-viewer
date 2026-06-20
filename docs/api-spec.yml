@@ -4,7 +4,7 @@ info:
   description: >
     Internal API served by the Next.js backend.
     Source API spec will be added once the external endpoint is defined.
-  version: 0.5.0
+  version: 0.6.0
 
 paths:
   /api/auth/login:
@@ -388,6 +388,125 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/users/{id}/number:
+    patch:
+      summary: Update a player's jersey number (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                playerNumber:
+                  type: integer
+                  nullable: true
+              required: [playerNumber]
+      responses:
+        '200':
+          description: Jersey number updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Missing or invalid playerNumber
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Non-admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/categories/{id}/captain:
+    put:
+      summary: Change captain for a category (admin only)
+      description: >
+        Swaps the captain role within a category. Demotes the current captain
+        to player and promotes the specified user to captain, all within a
+        database transaction for atomicity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Category ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                  description: ID of the user to promote to captain
+              required: [userId]
+      responses:
+        '200':
+          description: Captain changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newCaptain:
+                    $ref: '#/components/schemas/UserProfile'
+                  oldCaptain:
+                    $ref: '#/components/schemas/UserProfile'
+                    nullable: true
+        '400':
+          description: Missing userId, user not in category, already captain, or not a player
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Non-admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/fees/webhook:
     post:
       summary: Mercado Pago webhook — marks player fee as paid (public, no JWT)
@@ -467,6 +586,8 @@ components:
           type: string
         number:
           type: integer
+          nullable: true
+          description: Jersey number (null if not assigned)
         firstName:
           type: string
         lastName:
@@ -476,7 +597,10 @@ components:
           enum: [active, inactive]
         categoryId:
           type: string
-      required: [id, number, firstName, lastName, status, categoryId]
+        role:
+          type: string
+          enum: [player, captain]
+      required: [id, number, firstName, lastName, status, categoryId, role]
 
     Category:
       type: object
@@ -596,7 +720,11 @@ components:
         categoryId:
           type: string
           nullable: true
-      required: [id, email, role, firstName, lastName, categoryId]
+        playerNumber:
+          type: integer
+          nullable: true
+          description: Jersey number (null if not assigned)
+      required: [id, email, role, firstName, lastName, categoryId, playerNumber]
 
     CreateUserRequest:
       type: object
@@ -617,6 +745,10 @@ components:
           type: string
           nullable: true
           description: Required when role is 'player' or 'captain'
+        playerNumber:
+          type: integer
+          nullable: true
+          description: Optional jersey number for player/captain
       required: [email, password, role, firstName, lastName]
 
     LoginResponse:
