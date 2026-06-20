@@ -15,6 +15,7 @@ interface UserRow {
   first_name: string;
   last_name: string;
   category_id: string | null;
+  player_number: number | null;
 }
 
 function rowToUser(row: UserRow): User {
@@ -26,6 +27,7 @@ function rowToUser(row: UserRow): User {
     firstName: row.first_name,
     lastName: row.last_name,
     categoryId: row.category_id,
+    playerNumber: row.player_number,
   };
 }
 
@@ -37,12 +39,13 @@ function userToProfile(user: User): UserProfile {
     firstName: user.firstName,
     lastName: user.lastName,
     categoryId: user.categoryId,
+    playerNumber: user.playerNumber,
   };
 }
 
 async function findByEmail(email: string): Promise<User | null> {
   const row = await queryOne<UserRow>(
-    'SELECT id, email, password_hash, role, first_name, last_name, category_id FROM users WHERE email = $1',
+    'SELECT id, email, password_hash, role, first_name, last_name, category_id, player_number FROM users WHERE email = $1',
     [email]
   );
   return row ? rowToUser(row) : null;
@@ -50,7 +53,7 @@ async function findByEmail(email: string): Promise<User | null> {
 
 async function findById(id: string): Promise<User | null> {
   const row = await queryOne<UserRow>(
-    'SELECT id, email, password_hash, role, first_name, last_name, category_id FROM users WHERE id = $1',
+    'SELECT id, email, password_hash, role, first_name, last_name, category_id, player_number FROM users WHERE id = $1',
     [id]
   );
   return row ? rowToUser(row) : null;
@@ -92,14 +95,15 @@ async function createUser(
   role: 'admin' | 'player' | 'captain',
   firstName: string,
   lastName: string,
-  categoryId: string | null = null
+  categoryId: string | null = null,
+  playerNumber: number | null = null
 ): Promise<UserProfile> {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const rows = await query<UserRow>(
-    `INSERT INTO users (email, password_hash, role, first_name, last_name, category_id)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, email, password_hash, role, first_name, last_name, category_id`,
-    [email, passwordHash, role, firstName, lastName, categoryId]
+    `INSERT INTO users (email, password_hash, role, first_name, last_name, category_id, player_number)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, email, password_hash, role, first_name, last_name, category_id, player_number`,
+    [email, passwordHash, role, firstName, lastName, categoryId, playerNumber]
   );
   return userToProfile(rowToUser(rows[0]));
 }
@@ -111,9 +115,19 @@ async function getUserCount(): Promise<number> {
 
 async function listUsers(): Promise<UserProfile[]> {
   const rows = await query<UserRow>(
-    'SELECT id, email, password_hash, role, first_name, last_name, category_id FROM users ORDER BY last_name, first_name'
+    'SELECT id, email, password_hash, role, first_name, last_name, category_id, player_number FROM users ORDER BY last_name, first_name'
   );
   return rows.map((row) => userToProfile(rowToUser(row)));
+}
+
+async function updatePlayerNumber(userId: string, playerNumber: number | null): Promise<UserProfile | null> {
+  const rows = await query<UserRow>(
+    `UPDATE users SET player_number = $1 WHERE id = $2
+     RETURNING id, email, password_hash, role, first_name, last_name, category_id, player_number`,
+    [playerNumber, userId]
+  );
+  if (rows.length === 0) return null;
+  return userToProfile(rowToUser(rows[0]));
 }
 
 async function seedDefaultAdmin(): Promise<void> {
@@ -133,4 +147,5 @@ export const userService = {
   listUsers,
   getUserCount,
   seedDefaultAdmin,
+  updatePlayerNumber,
 };

@@ -12,6 +12,7 @@ export interface CreateUserRequest {
   firstName: string;
   lastName: string;
   categoryId: string | null;
+  playerNumber?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +28,20 @@ export class UserService {
 
   createUser(request: CreateUserRequest): Observable<{ user: UserProfile }> {
     return this.http.post<{ user: UserProfile }>(`${this.apiUrl}/users`, request).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  updatePlayerNumber(userId: string, playerNumber: number | null): Observable<{ user: UserProfile }> {
+    return this.http.patch<{ user: UserProfile }>(`${this.apiUrl}/users/${userId}/number`, { playerNumber }).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  changeCaptain(categoryId: string, userId: string): Observable<{ newCaptain: UserProfile; oldCaptain: UserProfile | null }> {
+    return this.http.put<{ newCaptain: UserProfile; oldCaptain: UserProfile | null }>(
+      `${this.apiUrl}/categories/${categoryId}/captain`, { userId }
+    ).pipe(
       catchError((error: HttpErrorResponse) => throwError(() => error)),
     );
   }

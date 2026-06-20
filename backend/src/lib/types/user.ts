@@ -8,6 +8,7 @@ export interface User {
   firstName: string;
   lastName: string;
   categoryId: string | null;
+  playerNumber: number | null;
 }
 
 export interface UserProfile {
@@ -17,6 +18,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   categoryId: string | null;
+  playerNumber: number | null;
 }
 
 export interface LoginResponse {

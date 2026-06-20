@@ -28,8 +28,8 @@ describe('GET /api/players', () => {
       { id: 'p-02', number: 2, firstName: 'Valentina', lastName: 'Bravo', status: 'active' as const, categoryId: 'cat-1' },
     ];
 
-    mockedPlayerService.getCategoryById.mockReturnValue(mockCategory);
-    mockedPlayerService.getPlayersByCategory.mockReturnValue(mockPlayers);
+    mockedPlayerService.getCategoryById.mockResolvedValue(mockCategory);
+    mockedPlayerService.getPlayersByCategory.mockResolvedValue(mockPlayers);
 
     const response = await GET(createRequest('/api/players?categoryId=cat-1', 'Bearer valid-token'));
     const body = await response.json();
@@ -49,7 +49,7 @@ describe('GET /api/players', () => {
   });
 
   it('should return 404 when category does not exist', async () => {
-    mockedPlayerService.getCategoryById.mockReturnValue(null);
+    mockedPlayerService.getCategoryById.mockResolvedValue(null);
 
     const response = await GET(createRequest('/api/players?categoryId=non-existent', 'Bearer valid-token'));
     const body = await response.json();
@@ -60,8 +60,8 @@ describe('GET /api/players', () => {
 
   it('should return empty data array when category exists but has no players', async () => {
     const mockCategory = { id: 'cat-empty', name: 'Empty Category' };
-    mockedPlayerService.getCategoryById.mockReturnValue(mockCategory);
-    mockedPlayerService.getPlayersByCategory.mockReturnValue([]);
+    mockedPlayerService.getCategoryById.mockResolvedValue(mockCategory);
+    mockedPlayerService.getPlayersByCategory.mockResolvedValue([]);
 
     const response = await GET(createRequest('/api/players?categoryId=cat-empty', 'Bearer valid-token'));
     const body = await response.json();

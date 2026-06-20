@@ -13,8 +13,8 @@ describe('AdminUsersComponent', () => {
   let playerService: jest.Mocked<PlayerService>;
 
   const mockUsers = [
-    { id: 'u1', email: 'admin@cec.com', role: 'admin' as const, firstName: 'Admin', lastName: 'CEC', categoryId: null },
-    { id: 'u2', email: 'player@cec.com', role: 'player' as const, firstName: 'Player', lastName: 'One', categoryId: 'cat-1' },
+    { id: 'u1', email: 'admin@cec.com', role: 'admin' as const, firstName: 'Admin', lastName: 'CEC', categoryId: null, playerNumber: null },
+    { id: 'u2', email: 'player@cec.com', role: 'player' as const, firstName: 'Player', lastName: 'One', categoryId: 'cat-1', playerNumber: 7 },
   ];
 
   const mockCategories = [
@@ -126,7 +126,7 @@ describe('AdminUsersComponent', () => {
     });
 
     it('should create user and add to list on submit', fakeAsync(() => {
-      const newUser = { id: 'u3', email: 'new@cec.com', role: 'player' as const, firstName: 'New', lastName: 'User', categoryId: 'cat-1' };
+      const newUser = { id: 'u3', email: 'new@cec.com', role: 'player' as const, firstName: 'New', lastName: 'User', categoryId: 'cat-1', playerNumber: null };
       userService.createUser.mockReturnValue(of({ user: newUser }));
 
       component.openForm();
@@ -198,6 +198,28 @@ describe('AdminUsersComponent', () => {
       component.onRoleChange();
 
       expect(component.formData.categoryId).toBeNull();
+    });
+
+    it('should show jersey number field for player role', () => {
+      component.openForm();
+      component.formData.role = 'player';
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="player-number-input"]')).toBeTruthy();
+    });
+
+    it('should show jersey number field for captain role', () => {
+      component.openForm();
+      component.formData.role = 'captain';
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="player-number-input"]')).toBeTruthy();
+    });
+
+    it('should not show jersey number field for admin role', () => {
+      component.openForm();
+      component.formData.role = 'admin';
+      component.onRoleChange();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="player-number-input"]')).toBeNull();
     });
   });
 

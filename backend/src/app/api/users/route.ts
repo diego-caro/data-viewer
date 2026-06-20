@@ -22,6 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ user: U
     firstName?: string;
     lastName?: string;
     categoryId?: string | null;
+    playerNumber?: number | null;
   };
   try {
     body = await request.json();
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ user: U
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { email, password, role, firstName, lastName, categoryId } = body;
+  const { email, password, role, firstName, lastName, categoryId, playerNumber } = body;
 
   if (!email || !password || !role || !firstName || !lastName) {
     return NextResponse.json(
@@ -57,7 +58,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ user: U
     role,
     firstName,
     lastName,
-    categoryId ?? null
+    categoryId ?? null,
+    playerNumber ?? null
   );
 
   return NextResponse.json({ user }, { status: 201 });

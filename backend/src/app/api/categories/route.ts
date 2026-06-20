@@ -7,7 +7,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Categories
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  const categories = playerService.getCategories();
+  const categories = await playerService.getCategories();
 
   return NextResponse.json({ data: categories });
 }

@@ -19,6 +19,7 @@ const mockUserRow = {
   first_name: 'Admin',
   last_name: 'CEC',
   category_id: null,
+  player_number: null,
 };
 
 describe('userService', () => {
@@ -40,6 +41,7 @@ describe('userService', () => {
         firstName: 'Admin',
         lastName: 'CEC',
         categoryId: null,
+        playerNumber: null,
       });
       expect(mockedDb.queryOne).toHaveBeenCalledWith(
         expect.stringContaining('WHERE email = $1'),
@@ -96,6 +98,7 @@ describe('userService', () => {
         firstName: 'Admin',
         lastName: 'CEC',
         categoryId: null,
+        playerNumber: null,
       });
       expect(result!.user).not.toHaveProperty('passwordHash');
     });
@@ -153,6 +156,7 @@ describe('userService', () => {
         firstName: 'Admin',
         lastName: 'CEC',
         categoryId: null,
+        playerNumber: null,
       });
       expect(profile).not.toHaveProperty('passwordHash');
     });
@@ -182,7 +186,7 @@ describe('userService', () => {
       expect(mockedBcrypt.hash).toHaveBeenCalledWith('password123', 10);
       expect(mockedDb.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO users'),
-        ['new@cec.com', '$2b$10$newhash', 'player', 'New', 'User', 'cat-1']
+        ['new@cec.com', '$2b$10$newhash', 'player', 'New', 'User', 'cat-1', null]
       );
       expect(profile).not.toHaveProperty('passwordHash');
       expect(profile.email).toBe('admin@cec.com');
@@ -210,6 +214,48 @@ describe('userService', () => {
       await userService.seedDefaultAdmin();
 
       expect(mockedDb.query).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updatePlayerNumber', () => {
+    it('should update player number and return profile', async () => {
+      mockedDb.query.mockResolvedValue([{
+        ...mockUserRow,
+        role: 'player',
+        category_id: 'cat-1',
+        player_number: 10,
+      }]);
+
+      const result = await userService.updatePlayerNumber('user-1', 10);
+
+      expect(result).not.toBeNull();
+      expect(result!.playerNumber).toBe(10);
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users SET player_number'),
+        [10, 'user-1']
+      );
+    });
+
+    it('should return null when user not found', async () => {
+      mockedDb.query.mockResolvedValue([]);
+
+      const result = await userService.updatePlayerNumber('nonexistent', 10);
+
+      expect(result).toBeNull();
+    });
+
+    it('should set player number to null', async () => {
+      mockedDb.query.mockResolvedValue([{
+        ...mockUserRow,
+        role: 'player',
+        category_id: 'cat-1',
+        player_number: null,
+      }]);
+
+      const result = await userService.updatePlayerNumber('user-1', null);
+
+      expect(result).not.toBeNull();
+      expect(result!.playerNumber).toBeNull();
     });
   });
 });
