@@ -248,6 +248,37 @@ interface CategoryFeeWithPlayers extends CategoryFee {
 - **Backend type**: `backend/src/lib/types/fee.ts`
 - **Frontend type**: `frontend/src/app/models/fee.model.ts` (as `CategoryFee` — includes player fees)
 
+### CaptainMpConfig
+
+Stores a captain's Mercado Pago access token for their category. One config per category — payments from players in that category route to this MP account.
+
+```typescript
+interface CaptainMpConfig {
+  id: string;          // UUID
+  categoryId: string;  // links to category
+  accessToken: string; // captain's MP access token
+  updatedAt: string;   // last time the token was updated
+}
+```
+
+- **Source**: PostgreSQL `captain_mp_config` table (UNIQUE on `category_id`)
+- **Backend type**: `backend/src/lib/types/fee.ts`
+
+### PaymentPreferenceResult
+
+Returned by `POST /api/fees/pay` — contains Mercado Pago Checkout Pro URLs for the player to complete payment.
+
+```typescript
+interface PaymentPreferenceResult {
+  preferenceId: string;    // MP preference ID
+  initPoint: string;       // production checkout URL
+  sandboxInitPoint: string; // sandbox checkout URL
+}
+```
+
+- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Frontend type**: `frontend/src/app/models/fee.model.ts`
+
 ## API Response Wrappers
 
 ```typescript

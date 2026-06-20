@@ -341,6 +341,123 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/fees/pay:
+    post:
+      summary: Generate a Mercado Pago payment preference (player or captain)
+      description: >
+        Creates a Checkout Pro payment preference linked to the captain's MP
+        account for the authenticated player's current week fee. Returns an
+        init_point URL to redirect the player to MP checkout.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payment preference created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPreferenceResult'
+        '400':
+          description: Player not in a category, or fee already paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin role (only player/captain allowed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No fee found for current week, or fee config not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Captain's MP payment configuration not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/fees/webhook:
+    post:
+      summary: Mercado Pago webhook — marks player fee as paid (public, no JWT)
+      description: >
+        Receives IPN/webhook notifications from Mercado Pago. Validates the
+        signature (when MP_WEBHOOK_SECRET is configured), verifies the payment
+        status via the MP API, checks that external_reference matches the
+        playerFeeId, and marks the player fee as paid if approved.
+      parameters:
+        - name: playerFeeId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the player_fees record to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: Notification type (only "payment" is processed)
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Mercado Pago payment ID
+      responses:
+        '200':
+          description: Notification processed (paid, not_approved, already_paid, or ignored)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [paid, not_approved, already_paid, ignored]
+                  playerFee:
+                    $ref: '#/components/schemas/PlayerFee'
+        '400':
+          description: Missing data.id, missing playerFeeId, or external_reference mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Player fee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: No MP config for the player's category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     Player:
@@ -582,6 +699,35 @@ components:
           type: integer
           minimum: 1
       required: [categoryId, totalAmount, availablePlayers]
+
+    PaymentPreferenceResult:
+      type: object
+      properties:
+        preferenceId:
+          type: string
+        initPoint:
+          type: string
+          description: Mercado Pago Checkout Pro URL (production)
+        sandboxInitPoint:
+          type: string
+          description: Mercado Pago Checkout Pro URL (sandbox)
+      required: [preferenceId, initPoint, sandboxInitPoint]
+
+    CaptainMpConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+        accessToken:
+          type: string
+          description: Captain's Mercado Pago access token
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, categoryId, accessToken, updatedAt]
 
     ErrorResponse:
       type: object

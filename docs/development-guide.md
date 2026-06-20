@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-15 — Fee data model, captain role, admin fees page
+> Last updated: SCRUM-16 — Mercado Pago integration + player payment flow
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -44,6 +44,8 @@ That's it. `npm run dev` handles everything:
 # backend/.env.local (auto-created from .env.example on first npm run dev)
 DATABASE_URL=postgresql://cec:cec123@localhost:5433/data_viewer
 JWT_SECRET=dev-secret-change-in-production
+WEBHOOK_BASE_URL=https://your-domain.com    # Base URL for MP webhook notifications (omit in dev to skip)
+MP_WEBHOOK_SECRET=your-mp-webhook-secret    # Mercado Pago webhook signing secret (omit to skip signature validation)
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
@@ -71,7 +73,7 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/                  → API route handlers
   src/app/api/auth/             → Auth routes (login, me)
   src/app/api/users/            → User management routes (list, create) — admin only
-  src/app/api/fees/             → Fee management routes (list, create, mark-paid)
+  src/app/api/fees/             → Fee management routes (list, create, mark-paid, pay, webhook)
   src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, category_fees, player_fees, captain_mp_config)
   src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole, requireAnyRole)
   src/lib/services/             → Data layer (hardcoded now, external API later)
@@ -86,6 +88,7 @@ frontend/                       → Angular 18 (UI client)
   src/app/pages/login/          → Login page (standalone, no auth guard)
   src/app/pages/admin/users/    → Admin users management page
   src/app/pages/admin/fees/     → Admin fees configuration page
+  src/app/pages/fees/           → Player fees page (pay via MP / view paid status)
   src/app/interceptors/         → HTTP interceptors (auth token)
   src/app/guards/               → Route guards (auth, admin)
   src/app/components/           → Reusable UI components
@@ -117,6 +120,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-13 | Single-command dev startup — `npm run dev` starts Docker, backend, and frontend; `npm run setup` for deps; `.env.example` auto-copied | Done |
 | SCRUM-14 | Update categories to match real club divisions — 6 categories: Sub 14, Sub 16, Sub 19, Primera, Intermedia, Caballeros | Done |
 | SCRUM-15 | Fee data model + captain role + admin fees page — category fees with auto-calculated per-player amounts, captain user role, mark paid, weekly reset logic | Done |
+| SCRUM-16 | Mercado Pago integration + player payment flow — MP Checkout Pro via captain's account, webhook-based automatic payment tracking, player fees page with Pay/Paid states | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -134,6 +138,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | GET | `/api/fees` | Get current week's fees — admin sees all, captain/player sees own category only |
 | POST | `/api/fees` | Create/update fee config for a category — admin only (UPSERT by category + week) |
 | POST | `/api/fees/mark-paid` | Mark a player's fee as paid — admin or captain only |
+| POST | `/api/fees/pay` | Generate MP payment preference — player or captain only (returns checkout URL) |
+| POST | `/api/fees/webhook` | Mercado Pago webhook — marks player fee as paid (public, no JWT, signature-validated) |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -180,3 +186,10 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - `captain_mp_config` table created in schema for future Mercado Pago token storage (one per category) — not populated until SCRUM-16 (SCRUM-15)
 - Admin nav now shows two links ("Users" and "Fees") instead of one — both gated by `role === 'admin'` in template and `adminGuard` on routes (SCRUM-15)
 - Cypress `loginAsCaptain()` custom command added for captain role E2E tests (SCRUM-15)
+- Mercado Pago integration uses `mercadopago` npm SDK v3 — `MercadoPagoConfig`, `Preference`, `Payment`, `WebhookSignatureValidator` classes (SCRUM-16)
+- Payment preferences route through captain's MP access token (from `captain_mp_config` table) — each category's payments go to that category's captain's MP account (SCRUM-16)
+- `playerFeeId` is embedded as a query parameter in the MP `notification_url` — webhook extracts it to identify which player fee to mark as paid (SCRUM-16)
+- Webhook validates `payment.external_reference === playerFeeId` after fetching payment status from MP API — prevents cross-payment fraud where an attacker replays a valid payment notification against a different fee (SCRUM-16)
+- Webhook signature validation is optional (active when `MP_WEBHOOK_SECRET` env var is set) — allows local development without MP webhook signing, production must set the secret (SCRUM-16)
+- `binary_mode: true` on MP preferences — forces approved/rejected only (no in_process or pending states), simplifying webhook handling (SCRUM-16)
+- Player fees page (`/fees`) lazy-loaded via Angular route — shows Pay button (pending) or Paid badge (paid) based on player's fee status (SCRUM-16)

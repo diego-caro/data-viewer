@@ -137,6 +137,53 @@ async function markPlayerPaid(playerFeeId: string): Promise<PlayerFee | null> {
   return row ? rowToPlayerFee(row) : null;
 }
 
+interface PlayerFeeWithCategoryRow extends PlayerFeeRow {
+  category_id: string;
+  per_player_amount: string;
+}
+
+interface PlayerFeeWithCategory {
+  playerFee: PlayerFee;
+  categoryId: string;
+  perPlayerAmount: number;
+}
+
+async function getPlayerFeeWithCategory(playerFeeId: string): Promise<PlayerFeeWithCategory | null> {
+  const row = await queryOne<PlayerFeeWithCategoryRow>(
+    `SELECT pf.id, pf.category_fee_id, pf.user_id, pf.status, pf.paid_at,
+            u.first_name, u.last_name,
+            cf.category_id, cf.per_player_amount
+     FROM player_fees pf
+     JOIN users u ON u.id = pf.user_id
+     JOIN category_fees cf ON cf.id = pf.category_fee_id
+     WHERE pf.id = $1`,
+    [playerFeeId]
+  );
+
+  if (!row) return null;
+
+  return {
+    playerFee: rowToPlayerFee(row),
+    categoryId: row.category_id,
+    perPlayerAmount: parseFloat(row.per_player_amount),
+  };
+}
+
+async function getPlayerFeeForUser(userId: string, categoryId: string): Promise<PlayerFee | null> {
+  const weekStart = getWeekStartDate();
+  const row = await queryOne<PlayerFeeRow>(
+    `SELECT pf.id, pf.category_fee_id, pf.user_id, pf.status, pf.paid_at,
+            u.first_name, u.last_name
+     FROM player_fees pf
+     JOIN users u ON u.id = pf.user_id
+     JOIN category_fees cf ON cf.id = pf.category_fee_id
+     WHERE pf.user_id = $1 AND cf.category_id = $2 AND cf.week_start_date = $3`,
+    [userId, categoryId, weekStart]
+  );
+
+  return row ? rowToPlayerFee(row) : null;
+}
+
 async function resetWeeklyFees(): Promise<number> {
   const lastWeekFees = await query<CategoryFeeRow>(
     `SELECT * FROM category_fees
@@ -183,6 +230,8 @@ export const feeService = {
   getCurrentFees,
   getCurrentFeesByCategory,
   markPlayerPaid,
+  getPlayerFeeWithCategory,
+  getPlayerFeeForUser,
   resetWeeklyFees,
   getWeekStartDate,
 };

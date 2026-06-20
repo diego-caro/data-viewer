@@ -29,3 +29,9 @@ export interface CreateFeeRequest {
   totalAmount: number;
   availablePlayers: number;
 }
+
+export interface PaymentPreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+  sandboxInitPoint: string;
+}

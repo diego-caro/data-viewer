@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { FeeService } from './fee.service';
-import { CategoryFee, PlayerFee } from '../models/fee.model';
+import { CategoryFee, PaymentPreferenceResult, PlayerFee } from '../models/fee.model';
 import { environment } from '../../environments/environment';
 
 describe('FeeService', () => {
@@ -93,6 +93,35 @@ describe('FeeService', () => {
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ playerFeeId: 'pf-1' });
       req.flush({ playerFee: mockPlayerFee });
+    });
+  });
+
+  describe('payFee', () => {
+    it('should create a payment preference', () => {
+      const mockResult: PaymentPreferenceResult = {
+        preferenceId: 'pref-123',
+        initPoint: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref-123',
+        sandboxInitPoint: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=pref-123',
+      };
+
+      service.payFee().subscribe((result) => {
+        expect(result).toEqual(mockResult);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees/pay`);
+      expect(req.request.method).toBe('POST');
+      req.flush(mockResult);
+    });
+
+    it('should handle error when payment creation fails', () => {
+      service.payFee().subscribe({
+        error: (error) => {
+          expect(error).toBeTruthy();
+        },
+      });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees/pay`);
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
 });

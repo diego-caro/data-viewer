@@ -23,6 +23,7 @@ export class AppComponent {
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Players', path: '/players' },
     { label: 'Fixture', path: '/fixture' },
+    { label: 'My Fees', path: '/fees' },
   ];
 
   adminLinks: NavLink[] = [
