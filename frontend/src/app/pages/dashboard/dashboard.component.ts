@@ -9,6 +9,7 @@ import { switchMap } from 'rxjs/operators';
 import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
+import { FeeService } from '../../services/fee.service';
 import { Category } from '../../models/player.model';
 
 Chart.register(DoughnutController, ArcElement, Tooltip);
@@ -17,6 +18,13 @@ export interface CategoryChartData {
   categoryName: string;
   activeCount: number;
   inactiveCount: number;
+  isEmpty: boolean;
+}
+
+export interface FeeChartData {
+  categoryName: string;
+  paidCount: number;
+  unpaidCount: number;
   isEmpty: boolean;
 }
 
@@ -29,6 +37,7 @@ export interface CategoryChartData {
 export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   private readonly playerService = inject(PlayerService);
   private readonly authService = inject(AuthService);
+  private readonly feeService = inject(FeeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly el = inject(ElementRef);
   private readonly zone = inject(NgZone);
@@ -36,16 +45,18 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   private chartsRendered = false;
 
   categoryCharts: CategoryChartData[] = [];
+  feeCharts: FeeChartData[] = [];
   loading = true;
   error: string | null = null;
 
   ngOnInit(): void {
+    const user = this.authService.user();
+
     this.playerService
       .getCategories()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((categories: Category[]) => {
-          const user = this.authService.user();
           const filtered = user?.role === 'player' && user.categoryId
             ? categories.filter((c) => c.id === user.categoryId)
             : categories;
@@ -78,19 +89,37 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
           this.loading = false;
         },
       });
+
+    if (user?.role === 'admin') {
+      this.feeService
+        .getCurrentFees()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (fees) => {
+            this.feeCharts = fees.map((fee) => ({
+              categoryName: fee.categoryName,
+              paidCount: fee.paidCount,
+              unpaidCount: fee.unpaidCount,
+              isEmpty: fee.paidCount === 0 && fee.unpaidCount === 0,
+            }));
+            this.chartsRendered = false;
+          },
+        });
+    }
   }
 
   ngAfterViewChecked(): void {
     if (this.chartsRendered || this.loading || this.error) {
       return;
     }
-    const canvases = this.el.nativeElement.querySelectorAll('canvas[data-chart-index]') as NodeListOf<HTMLCanvasElement>;
-    if (canvases.length === 0) {
+    const playerCanvases = this.el.nativeElement.querySelectorAll('canvas[data-chart-index]') as NodeListOf<HTMLCanvasElement>;
+    const feeCanvases = this.el.nativeElement.querySelectorAll('canvas[data-fee-chart-index]') as NodeListOf<HTMLCanvasElement>;
+    if (playerCanvases.length === 0 && feeCanvases.length === 0) {
       return;
     }
     this.chartsRendered = true;
     this.zone.runOutsideAngular(() => {
-      canvases.forEach((canvas) => {
+      playerCanvases.forEach((canvas) => {
         const index = Number(canvas.dataset['chartIndex']);
         const chartData = this.categoryCharts[index];
         if (!chartData || chartData.isEmpty) return;
@@ -100,6 +129,28 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
             labels: ['Active', 'Inactive'],
             datasets: [{
               data: [chartData.activeCount, chartData.inactiveCount],
+              backgroundColor: ['#22c55e', '#ef4444'],
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false } },
+          },
+        });
+        this.charts.push(chart);
+      });
+
+      feeCanvases.forEach((canvas) => {
+        const index = Number(canvas.dataset['feeChartIndex']);
+        const chartData = this.feeCharts[index];
+        if (!chartData || chartData.isEmpty) return;
+        const chart = new Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels: ['Paid', 'Unpaid'],
+            datasets: [{
+              data: [chartData.paidCount, chartData.unpaidCount],
               backgroundColor: ['#22c55e', '#ef4444'],
             }],
           },

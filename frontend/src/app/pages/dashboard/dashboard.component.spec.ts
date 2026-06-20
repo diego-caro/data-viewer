@@ -3,7 +3,9 @@ import { of, throwError, Subject } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
+import { FeeService } from '../../services/fee.service';
 import { Category, Player } from '../../models/player.model';
+import { CategoryFee } from '../../models/fee.model';
 
 const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Sub 14' },
@@ -32,12 +34,28 @@ const mockPlayersCat4: Player[] = [
 const mockPlayersCat5: Player[] = [];
 const mockPlayersCat6: Player[] = [];
 
+const mockFees: CategoryFee[] = [
+  {
+    id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+    totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
+    weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+    playerFees: [], paidCount: 7, unpaidCount: 3,
+  },
+  {
+    id: 'fee-2', categoryId: 'cat-2', categoryName: 'Sub 16',
+    totalAmount: 4000, availablePlayers: 8, perPlayerAmount: 500,
+    weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+    playerFees: [], paidCount: 5, unpaidCount: 3,
+  },
+];
+
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
   let playerServiceMock: jest.Mocked<PlayerService>;
+  let feeServiceMock: jest.Mocked<Partial<FeeService>>;
 
-  beforeEach(async () => {
+  function createTestBed(userRole = 'admin') {
     playerServiceMock = {
       getCategories: jest.fn().mockReturnValue(of(mockCategories)),
       getPlayersByCategory: jest.fn().mockImplementation((categoryId: string) => {
@@ -56,20 +74,29 @@ describe('DashboardComponent', () => {
       }),
     } as unknown as jest.Mocked<PlayerService>;
 
+    feeServiceMock = {
+      getCurrentFees: jest.fn().mockReturnValue(of(mockFees)),
+    };
+
     const authServiceMock = {
-      user: jest.fn().mockReturnValue({ role: 'admin', categoryId: null }),
+      user: jest.fn().mockReturnValue({ role: userRole, categoryId: userRole === 'admin' ? null : 'cat-1' }),
       isAuthenticated: jest.fn().mockReturnValue(true),
       userName: jest.fn().mockReturnValue('Admin CEC'),
       getToken: jest.fn().mockReturnValue('token'),
     };
 
-    await TestBed.configureTestingModule({
+    return TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
         { provide: PlayerService, useValue: playerServiceMock },
         { provide: AuthService, useValue: authServiceMock },
+        { provide: FeeService, useValue: feeServiceMock },
       ],
     }).compileComponents();
+  }
+
+  beforeEach(async () => {
+    await createTestBed('admin');
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
@@ -180,7 +207,7 @@ describe('DashboardComponent', () => {
     it('should show a canvas for categories with players', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
-      const canvases = compiled.querySelectorAll('canvas');
+      const canvases = compiled.querySelectorAll('canvas[data-chart-index]');
       expect(canvases.length).toBe(3);
     });
 
@@ -269,6 +296,79 @@ describe('DashboardComponent', () => {
 
       expect(component.loading).toBe(false);
       expect(component.categoryCharts.length).toBe(0);
+    });
+  });
+
+  describe('admin fee charts', () => {
+    it('should load fee data for admin', () => {
+      fixture.detectChanges();
+      expect(feeServiceMock.getCurrentFees).toHaveBeenCalled();
+    });
+
+    it('should create fee chart data for each category with fees', () => {
+      fixture.detectChanges();
+      expect(component.feeCharts.length).toBe(2);
+    });
+
+    it('should compute correct paid/unpaid counts', () => {
+      fixture.detectChanges();
+      const chart = component.feeCharts.find((c) => c.categoryName === 'Sub 14');
+      expect(chart).toBeTruthy();
+      expect(chart!.paidCount).toBe(7);
+      expect(chart!.unpaidCount).toBe(3);
+    });
+
+    it('should render fee chart cards in template', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
+      expect(feeCards.length).toBe(2);
+    });
+
+    it('should display paid/unpaid legend', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const legends = compiled.querySelectorAll('[data-testid="fee-chart-legend"]');
+      expect(legends.length).toBe(2);
+      expect(legends[0].textContent).toContain('Paid: 7');
+      expect(legends[0].textContent).toContain('Unpaid: 3');
+    });
+
+    it('should show section title for fee charts', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const title = compiled.querySelector('[data-testid="fee-charts-title"]');
+      expect(title).toBeTruthy();
+      expect(title?.textContent).toContain('Fee Collection');
+    });
+
+    it('should handle empty fees gracefully', () => {
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([]));
+      fixture.detectChanges();
+      expect(component.feeCharts.length).toBe(0);
+    });
+  });
+
+  describe('non-admin fee charts', () => {
+    it('should not load fee data for player role', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(feeServiceMock.getCurrentFees).not.toHaveBeenCalled();
+    });
+
+    it('should not show fee chart cards for player role', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelectorAll('[data-testid="fee-chart-card"]').length).toBe(0);
     });
   });
 });
