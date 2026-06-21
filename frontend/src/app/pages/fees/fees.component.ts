@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -21,6 +22,7 @@ export class PlayerFeesComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly fixtureService = inject(FixtureService);
   private readonly mpService = inject(MpService);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   categoryFee: CategoryFee | null = null;
@@ -35,6 +37,7 @@ export class PlayerFeesComponent implements OnInit {
   mpConnected = signal(false);
   mpUpdatedAt = signal<string | null>(null);
   mpConnecting = signal(false);
+  mpFlash = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
   get showWarningBanner(): boolean {
     return !this.isCaptain
@@ -44,6 +47,14 @@ export class PlayerFeesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const mpParam = this.route.snapshot.queryParamMap.get('mp');
+    if (mpParam === 'success') {
+      this.mpFlash.set({ type: 'success', message: 'Mercado Pago connected successfully' });
+    } else if (mpParam === 'error') {
+      const msg = this.route.snapshot.queryParamMap.get('message') || 'Failed to connect Mercado Pago';
+      this.mpFlash.set({ type: 'error', message: msg });
+    }
+
     const user = this.authService.user();
     this.isCaptain = user?.role === 'captain';
 

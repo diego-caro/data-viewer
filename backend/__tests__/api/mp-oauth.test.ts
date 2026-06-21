@@ -75,8 +75,7 @@ describe('MP OAuth API routes', () => {
   });
 
   describe('GET /api/mp/callback', () => {
-    it('should exchange code and save config', async () => {
-      mockedUserService.verifyToken.mockReturnValue({ userId: 'captain-1', role: 'captain' });
+    it('should exchange code, save config, and redirect to frontend with success', async () => {
       mockedUserService.getProfile.mockResolvedValue({
         id: 'captain-1',
         email: 'captain@cec.com',
@@ -100,45 +99,32 @@ describe('MP OAuth API routes', () => {
         updatedAt: '2026-06-21T00:00:00Z',
       });
 
-      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=captain-1', 'valid-token');
+      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=captain-1');
       const res = await getCallback(req);
-      const body = await res.json();
 
-      expect(res.status).toBe(200);
-      expect(body.success).toBe(true);
-      expect(body.message).toContain('connected');
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('/fees?mp=success');
       expect(mockedMpService.exchangeOAuthCode).toHaveBeenCalledWith('TG-auth-code');
       expect(mockedMpService.saveCaptainMpConfig).toHaveBeenCalledWith('cat-1', 'APP_USR-new-token');
     });
 
-    it('should return 400 when code is missing', async () => {
-      const req = createRequest('/api/mp/callback?state=captain-1', 'valid-token');
-      const res = await getCallback(req);
-      const body = await res.json();
-
-      expect(res.status).toBe(400);
-      expect(body.error).toContain('code');
-    });
-
-    it('should return 401 without auth', async () => {
-      mockedUserService.verifyToken.mockReturnValue(null);
-
-      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=captain-1');
+    it('should redirect with error when code is missing', async () => {
+      const req = createRequest('/api/mp/callback?state=captain-1');
       const res = await getCallback(req);
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('mp=error');
     });
 
-    it('should return 403 for non-captain roles', async () => {
-      mockedUserService.verifyToken.mockReturnValue({ userId: 'admin-1', role: 'admin' });
-
-      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=admin-1', 'valid-token');
+    it('should redirect with error when state is missing', async () => {
+      const req = createRequest('/api/mp/callback?code=TG-auth-code');
       const res = await getCallback(req);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('mp=error');
     });
 
-    it('should return 400 when captain has no category', async () => {
+    it('should redirect with error when captain has no category', async () => {
       mockedUserService.getProfile.mockResolvedValue({
         id: 'captain-1',
         email: 'captain@cec.com',
@@ -149,15 +135,14 @@ describe('MP OAuth API routes', () => {
         playerNumber: null,
       });
 
-      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=captain-1', 'valid-token');
+      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=captain-1');
       const res = await getCallback(req);
-      const body = await res.json();
 
-      expect(res.status).toBe(400);
-      expect(body.error).toContain('category');
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('mp=error');
     });
 
-    it('should return 500 when OAuth exchange fails', async () => {
+    it('should redirect with error when OAuth exchange fails', async () => {
       mockedUserService.getProfile.mockResolvedValue({
         id: 'captain-1',
         email: 'captain@cec.com',
@@ -171,12 +156,21 @@ describe('MP OAuth API routes', () => {
         new Error('Failed to exchange OAuth code')
       );
 
-      const req = createRequest('/api/mp/callback?code=invalid-code&state=captain-1', 'valid-token');
+      const req = createRequest('/api/mp/callback?code=invalid-code&state=captain-1');
       const res = await getCallback(req);
-      const body = await res.json();
 
-      expect(res.status).toBe(500);
-      expect(body.error).toContain('Failed');
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('mp=error');
+    });
+
+    it('should redirect with error when captain profile not found', async () => {
+      mockedUserService.getProfile.mockResolvedValue(null);
+
+      const req = createRequest('/api/mp/callback?code=TG-auth-code&state=nonexistent');
+      const res = await getCallback(req);
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('mp=error');
     });
   });
 

@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/middleware/auth';
 import { userService } from '@/lib/services/userService';
 import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
 
-export async function GET(
-  request: NextRequest
-): Promise<NextResponse<{ success: boolean; message: string } | { error: string }>> {
-  const auth = requireRole(request, 'captain');
-  if (auth instanceof NextResponse) return auth;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
 
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = request.nextUrl.searchParams.get('code');
-  if (!code) {
-    return NextResponse.json(
-      { error: 'Missing authorization code' },
-      { status: 400 }
+  const state = request.nextUrl.searchParams.get('state');
+
+  if (!code || !state) {
+    return NextResponse.redirect(
+      `${FRONTEND_URL}/fees?mp=error&message=${encodeURIComponent('Authorization was cancelled or failed')}`
     );
   }
 
-  const profile = await userService.getProfile(auth.userId);
+  const profile = await userService.getProfile(state);
   if (!profile?.categoryId) {
-    return NextResponse.json(
-      { error: 'Captain is not assigned to a category' },
-      { status: 400 }
+    return NextResponse.redirect(
+      `${FRONTEND_URL}/fees?mp=error&message=${encodeURIComponent('Captain not found or not assigned to a category')}`
     );
   }
 
@@ -29,12 +25,10 @@ export async function GET(
     const tokenData = await mercadoPagoService.exchangeOAuthCode(code);
     await mercadoPagoService.saveCaptainMpConfig(profile.categoryId, tokenData.accessToken);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Mercado Pago connected successfully',
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to connect Mercado Pago';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.redirect(`${FRONTEND_URL}/fees?mp=success`);
+  } catch {
+    return NextResponse.redirect(
+      `${FRONTEND_URL}/fees?mp=error&message=${encodeURIComponent('Failed to connect Mercado Pago. Please try again.')}`
+    );
   }
 }

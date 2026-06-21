@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { PlayerFeesComponent } from './fees.component';
 import { FeeService } from '../../services/fee.service';
@@ -69,7 +70,13 @@ describe('PlayerFeesComponent', () => {
     };
   }
 
-  async function createComponent() {
+  let activatedRouteMock: { snapshot: { queryParamMap: ReturnType<typeof convertToParamMap> } };
+
+  async function createComponent(queryParams: Record<string, string> = {}) {
+    activatedRouteMock = {
+      snapshot: { queryParamMap: convertToParamMap(queryParams) },
+    };
+
     await TestBed.configureTestingModule({
       imports: [PlayerFeesComponent],
       providers: [
@@ -77,6 +84,7 @@ describe('PlayerFeesComponent', () => {
         { provide: AuthService, useValue: authServiceMock },
         { provide: FixtureService, useValue: fixtureServiceMock },
         { provide: MpService, useValue: mpServiceMock },
+        { provide: ActivatedRoute, useValue: activatedRouteMock },
       ],
     }).compileComponents();
 
@@ -552,6 +560,59 @@ describe('PlayerFeesComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const connectBtn = el.querySelector('[data-testid="mp-connect-button"]');
       expect(connectBtn).toBeTruthy();
+    });
+  });
+
+  describe('MP OAuth flash messages', () => {
+    it('should show success flash message when mp=success query param is present', async () => {
+      setupMocks({
+        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
+      });
+      await createComponent({ mp: 'success' });
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="mp-flash-success"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('Mercado Pago connected successfully');
+    });
+
+    it('should show error flash message when mp=error query param is present', async () => {
+      setupMocks({
+        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
+      });
+      await createComponent({ mp: 'error', message: 'Authorization was cancelled or failed' });
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="mp-flash-error"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('Authorization was cancelled or failed');
+    });
+
+    it('should show default error message when mp=error but no message param', async () => {
+      setupMocks({
+        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
+      });
+      await createComponent({ mp: 'error' });
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="mp-flash-error"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('Failed to connect Mercado Pago');
+    });
+
+    it('should not show flash message when no mp query param', async () => {
+      setupMocks({
+        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
+      });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="mp-flash-success"]')).toBeNull();
+      expect(el.querySelector('[data-testid="mp-flash-error"]')).toBeNull();
     });
   });
 });

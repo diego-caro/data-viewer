@@ -727,12 +727,15 @@ paths:
 
   /api/mp/callback:
     get:
-      summary: MP OAuth callback — exchanges code for access token (captain only)
+      summary: MP OAuth callback — exchanges code for access token (no auth required)
       description: >
-        Called after captain authorizes the app on MP. Exchanges the
-        authorization code for an access token and stores it in captain_mp_config.
-      security:
-        - bearerAuth: []
+        Called by Mercado Pago after captain authorizes the app. Uses the `state`
+        query parameter (captain userId) to identify the user instead of JWT auth.
+        Exchanges the authorization code for an access token, stores it in
+        captain_mp_config, and redirects (307) to the frontend /fees page with
+        flash message query params (?mp=success or ?mp=error&message=...).
+        MP_REDIRECT_URI must point to this endpoint (use ngrok in dev since MP
+        rejects localhost URLs).
       parameters:
         - name: code
           in: query
@@ -740,42 +743,23 @@ paths:
           schema:
             type: string
           description: Authorization code from Mercado Pago OAuth redirect
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Captain userId passed via OAuth state parameter
       responses:
-        '200':
-          description: MP account connected successfully
-          content:
-            application/json:
+        '307':
+          description: >
+            Redirects to FRONTEND_URL/fees with query params.
+            On success: ?mp=success.
+            On error: ?mp=error&message=<encoded error message>.
+          headers:
+            Location:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-        '400':
-          description: Missing code parameter, or captain not assigned to a category
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Non-captain role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Failed to exchange OAuth code with MP
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                type: string
+              description: Frontend URL with flash message params
 
   /api/mp/status:
     get:

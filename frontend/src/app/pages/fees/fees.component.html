@@ -2,6 +2,17 @@
   <div class="mx-auto max-w-2xl px-4 py-8">
     <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ isCaptain ? 'Category Fees' : 'My Fees' }}</h1>
 
+    <!-- MP OAuth Flash Message -->
+    <div
+      *ngIf="mpFlash() as flash"
+      [attr.data-testid]="flash.type === 'success' ? 'mp-flash-success' : 'mp-flash-error'"
+      [class]="flash.type === 'success'
+        ? 'mb-6 rounded-lg border border-green-300 bg-green-50 p-4 text-green-800'
+        : 'mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-red-800'"
+    >
+      <p class="font-semibold">{{ flash.message }}</p>
+    </div>
+
     <!-- Warning Banner (player only, pending fee, match within 4 days) -->
     <div
       *ngIf="showWarningBanner"

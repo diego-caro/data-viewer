@@ -48,7 +48,8 @@ WEBHOOK_BASE_URL=https://your-domain.com    # Base URL for MP webhook notificati
 MP_WEBHOOK_SECRET=your-mp-webhook-secret    # Mercado Pago webhook signing secret (omit to skip signature validation)
 MP_CLIENT_ID=your-mp-app-client-id          # Mercado Pago app client ID (required for captain OAuth flow)
 MP_CLIENT_SECRET=your-mp-app-client-secret  # Mercado Pago app client secret (required for captain OAuth flow)
-MP_REDIRECT_URI=http://localhost:4200/mp/callback  # OAuth redirect URI (must match MP app config)
+MP_REDIRECT_URI=https://your-ngrok-url.ngrok-free.app/api/mp/callback  # Must be a public HTTPS URL (use ngrok); MP rejects localhost
+FRONTEND_URL=http://localhost:4200              # Where the backend redirects after OAuth callback
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
@@ -224,6 +225,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Admin cannot delete their own account — backend enforces `auth.userId !== params.id` check before proceeding (SCRUM-22)
 - Frontend reuses the create-user form for editing — `editingUser()` signal toggles between create/edit mode, form title, and submit behavior (SCRUM-22)
 - Captain MP OAuth uses Mercado Pago's authorization code flow — captain clicks "Connect", gets redirected to MP login, authorizes, and app stores the access token in `captain_mp_config` (SCRUM-23)
-- MP OAuth requires `MP_CLIENT_ID`, `MP_CLIENT_SECRET`, and `MP_REDIRECT_URI` env vars — app must be registered with MP as an integration (one-time developer setup) (SCRUM-23)
-- Frontend `/mp/callback` page handles OAuth redirect — exchanges code via backend, shows success/error, auto-redirects to `/fees` after 2 seconds (SCRUM-23)
+- MP OAuth requires `MP_CLIENT_ID`, `MP_CLIENT_SECRET`, `MP_REDIRECT_URI`, and `FRONTEND_URL` env vars — app must be registered with MP as an integration (one-time developer setup) (SCRUM-23)
+- `MP_REDIRECT_URI` must point to the backend `/api/mp/callback` via a public HTTPS URL (ngrok in dev) — MP rejects localhost URLs (SCRUM-23)
+- OAuth callback (`/api/mp/callback`) has no JWT auth — uses `state` query param (captain userId) to identify the user, then 307 redirects to `FRONTEND_URL/fees?mp=success|error` (SCRUM-23)
+- Frontend `/fees` page reads `?mp=success` or `?mp=error&message=...` query params and displays a flash banner (SCRUM-23)
 - `POST /api/fees/pay` now returns 404 (not 500) when `captain_mp_config` is missing — friendly "Payments not yet configured for this category" message (SCRUM-23)
