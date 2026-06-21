@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-22 — Admin edit and delete users (full CRUD)
+> Last updated: SCRUM-23 — Captain MP OAuth flow to connect Mercado Pago account
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -46,6 +46,9 @@ DATABASE_URL=postgresql://cec:cec123@localhost:5433/data_viewer
 JWT_SECRET=dev-secret-change-in-production
 WEBHOOK_BASE_URL=https://your-domain.com    # Base URL for MP webhook notifications (omit in dev to skip)
 MP_WEBHOOK_SECRET=your-mp-webhook-secret    # Mercado Pago webhook signing secret (omit to skip signature validation)
+MP_CLIENT_ID=your-mp-app-client-id          # Mercado Pago app client ID (required for captain OAuth flow)
+MP_CLIENT_SECRET=your-mp-app-client-secret  # Mercado Pago app client secret (required for captain OAuth flow)
+MP_REDIRECT_URI=http://localhost:4200/mp/callback  # OAuth redirect URI (must match MP app config)
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
@@ -76,6 +79,7 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/users/[id]/number/ → PATCH: update jersey number — admin only
   src/app/api/categories/[id]/captain/ → PUT: change captain for a category — admin only
   src/app/api/fees/             → Fee management routes (list, create, mark-paid, pay, webhook)
+  src/app/api/mp/              → Mercado Pago OAuth routes (auth-url, callback, status)
   src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, categories, category_fees, player_fees, captain_mp_config)
   src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole, requireAnyRole)
   src/lib/services/             → Data layer (DB-backed queries)
@@ -126,6 +130,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-17 | Captain dashboard + player warning banner + admin fee chart — captain sees player list with paid/unpaid badges, player warning when match ≤4 days and fee unpaid, admin dashboard paid/unpaid donut charts | Done |
 | SCRUM-21 | Replace mock player data with DB — categories table, jersey numbers, captain badge, change captain, admin jersey number editing | Done |
 | SCRUM-22 | Admin edit and delete users — full CRUD on users page, edit form pre-filled, password optional on update, confirmation dialog on delete, FK cascade for player_fees | Done |
+| SCRUM-23 | Captain MP OAuth flow — connect Mercado Pago account via OAuth, callback page, status indicator, reconnect option | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -149,6 +154,9 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | PUT | `/api/categories/:id/captain` | Change captain for a category — swaps roles, admin only |
 | PUT | `/api/users/:id` | Update user fields — admin only (password optional, duplicate email → 409, role admin clears categoryId) |
 | DELETE | `/api/users/:id` | Hard-delete user — admin only (self-delete → 400, cascades player_fees, FK violation → 409) |
+| GET | `/api/mp/auth-url` | Generate MP OAuth authorization URL — captain only |
+| GET | `/api/mp/callback` | MP OAuth callback — exchanges code for access token, stores in captain_mp_config — captain only |
+| GET | `/api/mp/status` | Check MP connection status for captain's category — captain only |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -215,3 +223,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - User delete is hard delete — cascades `player_fees` rows first, catches FK constraint violations from `category_fees.created_by` and returns 409 instead of 500 (SCRUM-22)
 - Admin cannot delete their own account — backend enforces `auth.userId !== params.id` check before proceeding (SCRUM-22)
 - Frontend reuses the create-user form for editing — `editingUser()` signal toggles between create/edit mode, form title, and submit behavior (SCRUM-22)
+- Captain MP OAuth uses Mercado Pago's authorization code flow — captain clicks "Connect", gets redirected to MP login, authorizes, and app stores the access token in `captain_mp_config` (SCRUM-23)
+- MP OAuth requires `MP_CLIENT_ID`, `MP_CLIENT_SECRET`, and `MP_REDIRECT_URI` env vars — app must be registered with MP as an integration (one-time developer setup) (SCRUM-23)
+- Frontend `/mp/callback` page handles OAuth redirect — exchanges code via backend, shows success/error, auto-redirects to `/fees` after 2 seconds (SCRUM-23)
+- `POST /api/fees/pay` now returns 404 (not 500) when `captain_mp_config` is missing — friendly "Payments not yet configured for this category" message (SCRUM-23)
