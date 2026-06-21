@@ -137,6 +137,51 @@ async function seedDefaultAdmin(): Promise<void> {
   }
 }
 
+async function updateUser(
+  userId: string,
+  data: {
+    email: string;
+    role: 'admin' | 'player' | 'captain';
+    firstName: string;
+    lastName: string;
+    categoryId: string | null;
+    password?: string;
+  }
+): Promise<UserProfile | null> {
+  if (data.password) {
+    const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+    const rows = await query<UserRow>(
+      `UPDATE users SET email = $1, password_hash = $2, role = $3, first_name = $4, last_name = $5, category_id = $6
+       WHERE id = $7
+       RETURNING id, email, password_hash, role, first_name, last_name, category_id, player_number`,
+      [data.email, passwordHash, data.role, data.firstName, data.lastName, data.categoryId, userId]
+    );
+    return rows.length > 0 ? userToProfile(rowToUser(rows[0])) : null;
+  }
+
+  const rows = await query<UserRow>(
+    `UPDATE users SET email = $1, role = $2, first_name = $3, last_name = $4, category_id = $5
+     WHERE id = $6
+     RETURNING id, email, password_hash, role, first_name, last_name, category_id, player_number`,
+    [data.email, data.role, data.firstName, data.lastName, data.categoryId, userId]
+  );
+  return rows.length > 0 ? userToProfile(rowToUser(rows[0])) : null;
+}
+
+async function deleteUser(userId: string): Promise<boolean> {
+  await query('DELETE FROM player_fees WHERE user_id = $1', [userId]);
+  try {
+    const rows = await query<{ id: string }>('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
+    return rows.length > 0;
+  } catch (err: unknown) {
+    const pgError = err as { code?: string };
+    if (pgError.code === '23503') {
+      throw new Error('Cannot delete user with associated records');
+    }
+    throw err;
+  }
+}
+
 export const userService = {
   findByEmail,
   findById,
@@ -144,6 +189,8 @@ export const userService = {
   verifyToken,
   getProfile,
   createUser,
+  updateUser,
+  deleteUser,
   listUsers,
   getUserCount,
   seedDefaultAdmin,

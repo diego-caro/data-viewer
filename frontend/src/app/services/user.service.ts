@@ -15,6 +15,15 @@ export interface CreateUserRequest {
   playerNumber?: number | null;
 }
 
+export interface UpdateUserRequest {
+  email: string;
+  role: 'admin' | 'player' | 'captain';
+  firstName: string;
+  lastName: string;
+  categoryId: string | null;
+  password?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly http = inject(HttpClient);
@@ -42,6 +51,18 @@ export class UserService {
     return this.http.put<{ newCaptain: UserProfile; oldCaptain: UserProfile | null }>(
       `${this.apiUrl}/categories/${categoryId}/captain`, { userId }
     ).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  updateUser(id: string, request: UpdateUserRequest): Observable<{ user: UserProfile }> {
+    return this.http.put<{ user: UserProfile }>(`${this.apiUrl}/users/${id}`, request).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  deleteUser(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/users/${id}`).pipe(
       catchError((error: HttpErrorResponse) => throwError(() => error)),
     );
   }

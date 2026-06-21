@@ -26,6 +26,8 @@ describe('AdminUsersComponent', () => {
     const userServiceMock = {
       getUsers: jest.fn().mockReturnValue(of({ data: mockUsers })),
       createUser: jest.fn(),
+      updateUser: jest.fn(),
+      deleteUser: jest.fn(),
     };
 
     const playerServiceMock = {
@@ -234,6 +236,133 @@ describe('AdminUsersComponent', () => {
 
     it('should return raw id for unknown category', () => {
       expect(component.getCategoryName('unknown')).toBe('unknown');
+    });
+  });
+
+  describe('edit user', () => {
+    it('should show edit and delete buttons in each row', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelectorAll('[data-testid="edit-user-button"]')).toHaveLength(2);
+      expect(compiled.querySelectorAll('[data-testid="delete-user-button"]')).toHaveLength(2);
+    });
+
+    it('should open form pre-filled with user data when edit is clicked', () => {
+      const editBtn = fixture.nativeElement.querySelector('[data-testid="edit-user-button"]') as HTMLButtonElement;
+      editBtn.click();
+      fixture.detectChanges();
+
+      expect(component.showForm()).toBe(true);
+      expect(component.editingUser()).not.toBeNull();
+      expect(component.formData.email).toBe('admin@cec.com');
+      expect(component.formData.firstName).toBe('Admin');
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="user-form"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="user-form"]')?.textContent).toContain('Edit User');
+    });
+
+    it('should have empty password field in edit mode', () => {
+      component.openEditForm(mockUsers[1]);
+      fixture.detectChanges();
+
+      expect(component.formData.password).toBe('');
+    });
+
+    it('should call updateUser on submit in edit mode', fakeAsync(() => {
+      const updatedUser = { ...mockUsers[1], firstName: 'Updated' };
+      userService.updateUser.mockReturnValue(of({ user: updatedUser }));
+
+      component.openEditForm(mockUsers[1]);
+      component.formData.firstName = 'Updated';
+      component.onSubmit();
+      tick();
+      fixture.detectChanges();
+
+      expect(userService.updateUser).toHaveBeenCalledWith('u2', expect.objectContaining({
+        firstName: 'Updated',
+      }));
+      expect(component.users.find(u => u.id === 'u2')?.firstName).toBe('Updated');
+      expect(component.showForm()).toBe(false);
+    }));
+
+    it('should show 409 error when email taken by another user', fakeAsync(() => {
+      const error = new HttpErrorResponse({
+        status: 409,
+        error: { error: 'Email already exists' },
+      });
+      userService.updateUser.mockReturnValue(throwError(() => error));
+
+      component.openEditForm(mockUsers[1]);
+      component.formData.email = 'admin@cec.com';
+      component.onSubmit();
+      tick();
+      fixture.detectChanges();
+
+      expect(component.formError()).toBe('Email already exists');
+    }));
+
+    it('should not require password field in edit mode submit button', () => {
+      component.openEditForm(mockUsers[0]);
+      component.formData.password = '';
+      fixture.detectChanges();
+
+      const submitBtn = fixture.nativeElement.querySelector('[data-testid="submit-button"]') as HTMLButtonElement;
+      expect(submitBtn.disabled).toBe(false);
+    });
+
+    it('should show form title as New User in create mode', () => {
+      component.openForm();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="user-form"]')?.textContent).toContain('New User');
+    });
+  });
+
+  describe('delete user', () => {
+    it('should show confirmation dialog when delete is clicked', () => {
+      const deleteBtn = fixture.nativeElement.querySelectorAll('[data-testid="delete-user-button"]')[1] as HTMLButtonElement;
+      deleteBtn.click();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const modal = compiled.querySelector('[data-testid="confirm-delete-modal"]');
+      expect(modal).toBeTruthy();
+      expect(modal?.textContent).toContain('Player');
+      expect(modal?.textContent).toContain('One');
+    });
+
+    it('should cancel deletion when cancel button is clicked', () => {
+      component.confirmDeleteUser(mockUsers[1]);
+      fixture.detectChanges();
+
+      const cancelBtn = fixture.nativeElement.querySelector('[data-testid="cancel-delete-button"]') as HTMLButtonElement;
+      cancelBtn.click();
+      fixture.detectChanges();
+
+      expect(component.deletingUser()).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="confirm-delete-modal"]')).toBeNull();
+    });
+
+    it('should delete user and remove from list on confirm', fakeAsync(() => {
+      userService.deleteUser.mockReturnValue(of({ message: 'User deleted' }));
+
+      component.confirmDeleteUser(mockUsers[1]);
+      fixture.detectChanges();
+
+      const confirmBtn = fixture.nativeElement.querySelector('[data-testid="confirm-delete-button"]') as HTMLButtonElement;
+      confirmBtn.click();
+      tick();
+      fixture.detectChanges();
+
+      expect(userService.deleteUser).toHaveBeenCalledWith('u2');
+      expect(component.users).toHaveLength(1);
+      expect(component.users[0].id).toBe('u1');
+      expect(component.deletingUser()).toBeNull();
+    }));
+
+    it('should not show modal when no user is being deleted', () => {
+      expect(fixture.nativeElement.querySelector('[data-testid="confirm-delete-modal"]')).toBeNull();
     });
   });
 });

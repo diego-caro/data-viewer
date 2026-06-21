@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-21 — Replace mock player data with DB, categories table, jersey numbers, captain badge, change captain
+> Last updated: SCRUM-22 — Admin edit and delete users (full CRUD)
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -125,6 +125,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-16 | Mercado Pago integration + player payment flow — MP Checkout Pro via captain's account, webhook-based automatic payment tracking, player fees page with Pay/Paid states | Done |
 | SCRUM-17 | Captain dashboard + player warning banner + admin fee chart — captain sees player list with paid/unpaid badges, player warning when match ≤4 days and fee unpaid, admin dashboard paid/unpaid donut charts | Done |
 | SCRUM-21 | Replace mock player data with DB — categories table, jersey numbers, captain badge, change captain, admin jersey number editing | Done |
+| SCRUM-22 | Admin edit and delete users — full CRUD on users page, edit form pre-filled, password optional on update, confirmation dialog on delete, FK cascade for player_fees | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -146,6 +147,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | POST | `/api/fees/webhook` | Mercado Pago webhook — marks player fee as paid (public, no JWT, signature-validated) |
 | PATCH | `/api/users/:id/number` | Update a player's jersey number — admin only |
 | PUT | `/api/categories/:id/captain` | Change captain for a category — swaps roles, admin only |
+| PUT | `/api/users/:id` | Update user fields — admin only (password optional, duplicate email → 409, role admin clears categoryId) |
+| DELETE | `/api/users/:id` | Hard-delete user — admin only (self-delete → 400, cascades player_fees, FK violation → 409) |
 
 ## Known Decisions & Trade-offs
 > Architecture decisions are added here as they are made.
@@ -208,3 +211,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - `player_number` column added to `users` table via idempotent `DO $ ... IF NOT EXISTS ... END $` migration block — nullable integer for jersey number (SCRUM-21)
 - Captain swap uses PostgreSQL transaction (`BEGIN/COMMIT/ROLLBACK` via `getClient()`) — demotes old captain and promotes new captain atomically to prevent inconsistent state on failure (SCRUM-21)
 - Player `status` hardcoded to `'active'` — monthly fee-based status calculation is TBD (SCRUM-21)
+- User update (`PUT /api/users/:id`) password field is optional — only hashes and updates if provided, otherwise keeps current hash (SCRUM-22)
+- User delete is hard delete — cascades `player_fees` rows first, catches FK constraint violations from `category_fees.created_by` and returns 409 instead of 500 (SCRUM-22)
+- Admin cannot delete their own account — backend enforces `auth.userId !== params.id` check before proceeding (SCRUM-22)
+- Frontend reuses the create-user form for editing — `editingUser()` signal toggles between create/edit mode, form title, and submit behavior (SCRUM-22)
