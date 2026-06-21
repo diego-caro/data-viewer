@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
-import { MpService } from '../../services/mp.service';
+import { MpService, MpStatus } from '../../services/mp.service';
 import { CategoryFee, PlayerFee } from '../../models/fee.model';
 import { FixtureMatch } from '../../models/fixture.model';
 
@@ -51,7 +51,7 @@ export class PlayerFeesComponent implements OnInit {
       this.mpService.getStatus()
         .pipe(
           takeUntilDestroyed(this.destroyRef),
-          catchError(() => of({ connected: false }))
+          catchError(() => of({ connected: false } as MpStatus))
         )
         .subscribe((status) => {
           this.mpConnected.set(status.connected);
