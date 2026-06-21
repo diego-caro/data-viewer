@@ -35,7 +35,7 @@
         data-testid="user-form"
         class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
       >
-        <h2 class="mb-4 text-lg font-semibold text-gray-900">New User</h2>
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">{{ editingUser() ? 'Edit User' : 'New User' }}</h2>
 
         <div
           *ngIf="formError()"
@@ -84,14 +84,16 @@
               />
             </div>
             <div>
-              <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+              <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
+                Password{{ editingUser() ? ' (leave blank to keep current)' : '' }}
+              </label>
               <input
                 id="password"
                 type="password"
                 data-testid="password-input"
                 [(ngModel)]="formData.password"
                 name="password"
-                required
+                [required]="!editingUser()"
                 class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -143,11 +145,13 @@
             <button
               type="submit"
               data-testid="submit-button"
-              [disabled]="formLoading() || !formData.email || !formData.password || !formData.firstName || !formData.lastName"
+              [disabled]="formLoading() || !formData.email || (!editingUser() && !formData.password) || !formData.firstName || !formData.lastName"
               class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               @if (formLoading()) {
-                Creating...
+                Saving...
+              } @else if (editingUser()) {
+                Update User
               } @else {
                 Create User
               }
@@ -181,6 +185,7 @@
             <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
             <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Role</th>
             <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Category</th>
+            <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -201,9 +206,56 @@
               </span>
             </td>
             <td class="px-4 py-3 text-sm text-gray-600">{{ getCategoryName(user.categoryId) }}</td>
+            <td class="px-4 py-3 text-right">
+              <button
+                data-testid="edit-user-button"
+                (click)="openEditForm(user)"
+                class="mr-2 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+              >
+                Edit
+              </button>
+              <button
+                data-testid="delete-user-button"
+                (click)="confirmDeleteUser(user)"
+                class="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                Delete
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if (deletingUser()) {
+      <div
+        data-testid="confirm-delete-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      >
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <h3 class="mb-2 text-lg font-semibold text-gray-900">Delete User</h3>
+          <p class="mb-6 text-sm text-gray-600">
+            Are you sure you want to delete {{ deletingUser()!.firstName }} {{ deletingUser()!.lastName }}?
+          </p>
+          <div class="flex justify-end gap-3">
+            <button
+              data-testid="cancel-delete-button"
+              (click)="cancelDelete()"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              data-testid="confirm-delete-button"
+              (click)="onConfirmDelete()"
+              class="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 </div>

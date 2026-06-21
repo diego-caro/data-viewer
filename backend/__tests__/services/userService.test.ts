@@ -258,4 +258,127 @@ describe('userService', () => {
       expect(result!.playerNumber).toBeNull();
     });
   });
+
+  describe('updateUser', () => {
+    it('should update user fields without changing password', async () => {
+      mockedDb.query.mockResolvedValue([{
+        ...mockUserRow,
+        email: 'updated@cec.com',
+        first_name: 'Updated',
+        last_name: 'Name',
+      }]);
+
+      const result = await userService.updateUser('user-1', {
+        email: 'updated@cec.com',
+        role: 'admin',
+        firstName: 'Updated',
+        lastName: 'Name',
+        categoryId: null,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.email).toBe('updated@cec.com');
+      expect(result!.firstName).toBe('Updated');
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users SET'),
+        expect.not.arrayContaining([expect.stringContaining('$2b$')])
+      );
+    });
+
+    it('should hash and update password when provided', async () => {
+      (mockedBcrypt.hash as jest.Mock).mockResolvedValue('$2b$10$newhash');
+      mockedDb.query.mockResolvedValue([mockUserRow]);
+
+      const result = await userService.updateUser('user-1', {
+        email: 'admin@cec.com',
+        role: 'admin',
+        firstName: 'Admin',
+        lastName: 'CEC',
+        categoryId: null,
+        password: 'newpass123',
+      });
+
+      expect(result).not.toBeNull();
+      expect(mockedBcrypt.hash).toHaveBeenCalledWith('newpass123', 10);
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('password_hash'),
+        expect.arrayContaining(['$2b$10$newhash'])
+      );
+    });
+
+    it('should return null when user not found', async () => {
+      mockedDb.query.mockResolvedValue([]);
+
+      const result = await userService.updateUser('nonexistent', {
+        email: 'test@cec.com',
+        role: 'admin',
+        firstName: 'Test',
+        lastName: 'User',
+        categoryId: null,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('should clear categoryId when role is admin', async () => {
+      mockedDb.query.mockResolvedValue([{
+        ...mockUserRow,
+        category_id: null,
+      }]);
+
+      await userService.updateUser('user-1', {
+        email: 'admin@cec.com',
+        role: 'admin',
+        firstName: 'Admin',
+        lastName: 'CEC',
+        categoryId: null,
+      });
+
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users SET'),
+        expect.arrayContaining([null])
+      );
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete dependent player_fees and the user', async () => {
+      mockedDb.query
+        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockResolvedValueOnce([{ id: 'user-1' }]); // DELETE user RETURNING id
+
+      const result = await userService.deleteUser('user-1');
+
+      expect(result).toBe(true);
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM player_fees'),
+        ['user-1']
+      );
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM users'),
+        ['user-1']
+      );
+    });
+
+    it('should return false when user not found', async () => {
+      mockedDb.query
+        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockResolvedValueOnce([]); // DELETE user returns nothing
+
+      const result = await userService.deleteUser('nonexistent');
+
+      expect(result).toBe(false);
+    });
+
+    it('should throw descriptive error on FK constraint violation', async () => {
+      const fkError = new Error('FK violation') as Error & { code: string };
+      fkError.code = '23503';
+      mockedDb.query
+        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockRejectedValueOnce(fkError); // DELETE user FK error
+
+      await expect(userService.deleteUser('user-1'))
+        .rejects.toThrow('Cannot delete user with associated records');
+    });
+  });
 });

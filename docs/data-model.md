@@ -210,6 +210,24 @@ interface CreateUserRequest {
 - **Backend validation**: `backend/src/app/api/users/route.ts` (manual field checks)
 - **Frontend type**: `frontend/src/app/services/user.service.ts`
 
+### UpdateUserRequest
+
+Request body for admin user update endpoint. Password is optional — only updated if provided.
+
+```typescript
+interface UpdateUserRequest {
+  email: string;
+  role: 'admin' | 'player' | 'captain';
+  firstName: string;
+  lastName: string;
+  categoryId: string | null; // required when role is 'player' or 'captain'; cleared for admin
+  password?: string;         // optional — only hashes if provided
+}
+```
+
+- **Backend validation**: `backend/src/app/api/users/[id]/route.ts` (manual field checks)
+- **Frontend type**: `frontend/src/app/services/user.service.ts`
+
 ### CategoryFee
 
 Represents the fee configuration for a category in a given week. Per-player amount is auto-calculated from `totalAmount / availablePlayers`.

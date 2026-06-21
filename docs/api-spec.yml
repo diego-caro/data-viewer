@@ -145,6 +145,122 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/users/{id}:
+    put:
+      summary: Update a user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Missing required fields, invalid role, or missing categoryId for player/captain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Non-admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already in use by another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a user (admin only)
+      description: >
+        Hard-deletes a user and cascades deletion to player_fees records.
+        Returns 400 if the admin attempts to delete themselves.
+        Returns 409 if the user has associated records that prevent deletion.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Cannot delete your own account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Non-admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User has associated records that cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/categories:
     get:
       summary: List all player categories
@@ -750,6 +866,28 @@ components:
           nullable: true
           description: Optional jersey number for player/captain
       required: [email, password, role, firstName, lastName]
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, player, captain]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        categoryId:
+          type: string
+          nullable: true
+          description: Required when role is 'player' or 'captain'; cleared automatically when role is 'admin'
+        password:
+          type: string
+          description: Optional — only hashes and updates if provided
+      required: [email, role, firstName, lastName]
 
     LoginResponse:
       type: object
