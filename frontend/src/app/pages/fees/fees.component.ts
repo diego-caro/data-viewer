@@ -6,6 +6,7 @@ import { catchError } from 'rxjs/operators';
 import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
+import { MpService, MpStatus } from '../../services/mp.service';
 import { CategoryFee, PlayerFee } from '../../models/fee.model';
 import { FixtureMatch } from '../../models/fixture.model';
 
@@ -19,6 +20,7 @@ export class PlayerFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
   private readonly authService = inject(AuthService);
   private readonly fixtureService = inject(FixtureService);
+  private readonly mpService = inject(MpService);
   private readonly destroyRef = inject(DestroyRef);
 
   categoryFee: CategoryFee | null = null;
@@ -30,6 +32,9 @@ export class PlayerFeesComponent implements OnInit {
 
   paying = signal(false);
   payError = signal<string | null>(null);
+  mpConnected = signal(false);
+  mpUpdatedAt = signal<string | null>(null);
+  mpConnecting = signal(false);
 
   get showWarningBanner(): boolean {
     return !this.isCaptain
@@ -41,6 +46,18 @@ export class PlayerFeesComponent implements OnInit {
   ngOnInit(): void {
     const user = this.authService.user();
     this.isCaptain = user?.role === 'captain';
+
+    if (this.isCaptain) {
+      this.mpService.getStatus()
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          catchError(() => of({ connected: false } as MpStatus))
+        )
+        .subscribe((status) => {
+          this.mpConnected.set(status.connected);
+          this.mpUpdatedAt.set(status.updatedAt ?? null);
+        });
+    }
 
     const fees$ = this.feeService.getCurrentFees();
     const matches$ = this.fixtureService.getMatches().pipe(
@@ -73,6 +90,20 @@ export class PlayerFeesComponent implements OnInit {
         error: () => {
           this.error = 'Unable to load fee data. Please try again later.';
           this.loading = false;
+        },
+      });
+  }
+
+  onConnectMp(): void {
+    this.mpConnecting.set(true);
+    this.mpService.getAuthUrl()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          window.location.href = response.url;
+        },
+        error: () => {
+          this.mpConnecting.set(false);
         },
       });
   }

@@ -143,7 +143,7 @@ describe('POST /api/fees/pay', () => {
     const response = await POST(createRequest('Bearer player-token'));
     const body = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(body.error).toContain('Payment');
+    expect(response.status).toBe(404);
+    expect(body.error).toContain('not yet configured');
   });
 });

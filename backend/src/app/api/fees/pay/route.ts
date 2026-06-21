@@ -35,8 +35,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<PaymentPr
   const mpConfig = await mercadoPagoService.getCaptainMpConfig(profile.categoryId);
   if (!mpConfig) {
     return NextResponse.json(
-      { error: 'Payment configuration not available' },
-      { status: 500 }
+      { error: 'Payments not yet configured for this category' },
+      { status: 404 }
     );
   }
 
