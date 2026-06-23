@@ -1,7 +1,5 @@
 import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
-import * as db from '@/lib/db';
 
-jest.mock('@/lib/db');
 jest.mock('mercadopago', () => {
   const mockPreferenceCreate = jest.fn();
   const mockPaymentGet = jest.fn();
@@ -21,41 +19,17 @@ jest.mock('mercadopago', () => {
 });
 
 const mp = jest.requireMock('mercadopago');
-const mockedQueryOne = db.queryOne as jest.MockedFunction<typeof db.queryOne>;
 
 describe('mercadoPagoService', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env = { ...originalEnv, MP_ACCESS_TOKEN: 'TEST-token-123' };
   });
 
-  describe('getCaptainMpConfig', () => {
-    it('should return captain MP config for a category', async () => {
-      const configRow = {
-        id: 'mp-1',
-        category_id: 'cat-1',
-        access_token: 'TEST-token-123',
-        updated_at: '2026-06-19T00:00:00Z',
-      };
-      mockedQueryOne.mockResolvedValue(configRow);
-
-      const result = await mercadoPagoService.getCaptainMpConfig('cat-1');
-
-      expect(result).not.toBeNull();
-      expect(result!.categoryId).toBe('cat-1');
-      expect(result!.accessToken).toBe('TEST-token-123');
-      expect(mockedQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('captain_mp_config'),
-        ['cat-1']
-      );
-    });
-
-    it('should return null when no config exists for category', async () => {
-      mockedQueryOne.mockResolvedValue(null);
-
-      const result = await mercadoPagoService.getCaptainMpConfig('cat-99');
-
-      expect(result).toBeNull();
-    });
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe('createPaymentPreference', () => {
@@ -67,7 +41,6 @@ describe('mercadoPagoService', () => {
       });
 
       const result = await mercadoPagoService.createPaymentPreference(
-        'TEST-token-123',
         300,
         'pf-1',
         'Player One - Sub 14 fee'
@@ -92,14 +65,12 @@ describe('mercadoPagoService', () => {
       );
     });
 
-    it('should throw when MP API fails', async () => {
-      mp._mockPreferenceCreate.mockRejectedValue(new Error('MP API error'));
+    it('should throw when MP_ACCESS_TOKEN is not configured', async () => {
+      delete process.env.MP_ACCESS_TOKEN;
 
       await expect(
-        mercadoPagoService.createPaymentPreference(
-          'TEST-token-123', 300, 'pf-1', 'Test fee'
-        )
-      ).rejects.toThrow('Failed to create payment preference');
+        mercadoPagoService.createPaymentPreference(300, 'pf-1', 'Test fee')
+      ).rejects.toThrow('MP_ACCESS_TOKEN is not configured');
     });
   });
 
@@ -112,7 +83,7 @@ describe('mercadoPagoService', () => {
         transaction_amount: 300,
       });
 
-      const result = await mercadoPagoService.getPaymentStatus('TEST-token-123', '12345');
+      const result = await mercadoPagoService.getPaymentStatus('12345');
 
       expect(result.status).toBe('approved');
       expect(result.externalReference).toBe('pf-1');
@@ -123,12 +94,12 @@ describe('mercadoPagoService', () => {
       );
     });
 
-    it('should throw when payment not found', async () => {
-      mp._mockPaymentGet.mockRejectedValue(new Error('Not found'));
+    it('should throw when MP_ACCESS_TOKEN is not configured', async () => {
+      delete process.env.MP_ACCESS_TOKEN;
 
       await expect(
-        mercadoPagoService.getPaymentStatus('TEST-token-123', '99999')
-      ).rejects.toThrow('Failed to get payment status');
+        mercadoPagoService.getPaymentStatus('12345')
+      ).rejects.toThrow('MP_ACCESS_TOKEN is not configured');
     });
   });
 });

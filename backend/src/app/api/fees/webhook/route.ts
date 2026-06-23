@@ -56,12 +56,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ status: 'already_paid' });
   }
 
-  const mpConfig = await mercadoPagoService.getCaptainMpConfig(feeWithCategory.categoryId);
-  if (!mpConfig) {
-    return NextResponse.json({ error: 'No MP config for category' }, { status: 500 });
-  }
-
-  const payment = await mercadoPagoService.getPaymentStatus(mpConfig.accessToken, paymentId);
+  const payment = await mercadoPagoService.getPaymentStatus(paymentId);
 
   if (payment.externalReference !== playerFeeId) {
     return NextResponse.json({ error: 'Payment external_reference mismatch' }, { status: 400 });

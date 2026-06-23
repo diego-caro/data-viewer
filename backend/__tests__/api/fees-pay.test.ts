@@ -39,9 +39,6 @@ describe('POST /api/fees/pay', () => {
       id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1',
       playerName: 'One, Player', status: 'pending', paidAt: null,
     });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue({
-      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
-    });
     mockedFeeService.getCurrentFeesByCategory.mockResolvedValue({
       id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
       totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
@@ -61,7 +58,7 @@ describe('POST /api/fees/pay', () => {
     expect(body.preferenceId).toBe('pref-123');
     expect(body.initPoint).toContain('mercadopago.com');
     expect(mockedMpService.createPaymentPreference).toHaveBeenCalledWith(
-      'TEST-token', 300, 'pf-1', expect.stringContaining('Sub 14'), undefined
+      300, 'pf-1', expect.stringContaining('Sub 14'), undefined
     );
   });
 
@@ -126,24 +123,5 @@ describe('POST /api/fees/pay', () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toContain('already paid');
-  });
-
-  it('should return 500 when captain has no MP config', async () => {
-    mockedUserService.verifyToken.mockReturnValue(playerPayload);
-    mockedUserService.getProfile.mockResolvedValue({
-      id: 'player-1', email: 'p@cec.com', role: 'player',
-      firstName: 'Player', lastName: 'One', categoryId: 'cat-1',
-    });
-    mockedFeeService.getPlayerFeeForUser.mockResolvedValue({
-      id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1',
-      playerName: 'One, Player', status: 'pending', paidAt: null,
-    });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue(null);
-
-    const response = await POST(createRequest('Bearer player-token'));
-    const body = await response.json();
-
-    expect(response.status).toBe(404);
-    expect(body.error).toContain('not yet configured');
   });
 });

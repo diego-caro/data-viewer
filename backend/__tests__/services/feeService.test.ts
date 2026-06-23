@@ -28,6 +28,10 @@ describe('feeService', () => {
         created_at: '2026-06-15T00:00:00Z',
       };
       mockedQueryOne.mockResolvedValue(feeRow);
+      mockedQuery.mockResolvedValueOnce([{ id: 'player-1' }, { id: 'player-2' }]);
+      mockedQuery.mockResolvedValueOnce([]);
+      mockedQuery.mockResolvedValueOnce([]);
+      mockedQuery.mockResolvedValueOnce([]);
 
       const result = await feeService.createCategoryFee(
         'cat-1', 3000, 10, 'admin-1'

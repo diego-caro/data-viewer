@@ -36,4 +36,13 @@ export class FeeService {
       catchError((error: HttpErrorResponse) => throwError(() => error)),
     );
   }
+
+  verifyPayment(paymentId: string, playerFeeId: string): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.apiUrl}/fees/verify-payment`, {
+      paymentId,
+      playerFeeId,
+    }).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
 }

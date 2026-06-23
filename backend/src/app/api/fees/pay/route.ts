@@ -32,14 +32,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<PaymentPr
     );
   }
 
-  const mpConfig = await mercadoPagoService.getCaptainMpConfig(profile.categoryId);
-  if (!mpConfig) {
-    return NextResponse.json(
-      { error: 'Payments not yet configured for this category' },
-      { status: 404 }
-    );
-  }
-
   const categoryFee = await feeService.getCurrentFeesByCategory(profile.categoryId);
   if (!categoryFee) {
     return NextResponse.json(
@@ -53,13 +45,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<PaymentPr
     ? `${process.env.WEBHOOK_BASE_URL}/api/fees/webhook?playerFeeId=${playerFee.id}`
     : undefined;
 
-  const preference = await mercadoPagoService.createPaymentPreference(
-    mpConfig.accessToken,
-    categoryFee.perPlayerAmount,
-    playerFee.id,
-    description,
-    notificationUrl
-  );
+  try {
+    const preference = await mercadoPagoService.createPaymentPreference(
+      categoryFee.perPlayerAmount,
+      playerFee.id,
+      description,
+      notificationUrl
+    );
 
-  return NextResponse.json(preference);
+    return NextResponse.json(preference);
+  } catch (err) {
+    console.error('Mercado Pago preference creation failed:', err);
+    return NextResponse.json(
+      { error: 'Failed to create payment preference' },
+      { status: 500 }
+    );
+  }
 }

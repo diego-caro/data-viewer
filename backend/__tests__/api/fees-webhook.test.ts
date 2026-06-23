@@ -46,9 +46,6 @@ describe('POST /api/fees/webhook', () => {
       categoryId: 'cat-1',
       perPlayerAmount: 300,
     });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue({
-      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
-    });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
       status: 'approved',
@@ -69,7 +66,7 @@ describe('POST /api/fees/webhook', () => {
     expect(response.status).toBe(200);
     expect(body.status).toBe('paid');
     expect(mockedFeeService.getPlayerFeeWithCategory).toHaveBeenCalledWith('pf-1');
-    expect(mockedMpService.getPaymentStatus).toHaveBeenCalledWith('TEST-token', '12345');
+    expect(mockedMpService.getPaymentStatus).toHaveBeenCalledWith('12345');
     expect(mockedFeeService.markPlayerPaid).toHaveBeenCalledWith('pf-1');
   });
 
@@ -93,9 +90,6 @@ describe('POST /api/fees/webhook', () => {
       },
       categoryId: 'cat-1',
       perPlayerAmount: 300,
-    });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue({
-      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
     });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
@@ -173,9 +167,6 @@ describe('POST /api/fees/webhook', () => {
       categoryId: 'cat-1',
       perPlayerAmount: 300,
     });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue({
-      id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
-    });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
       status: 'approved',
@@ -192,25 +183,6 @@ describe('POST /api/fees/webhook', () => {
     const body = await response.json();
     expect(body.error).toContain('mismatch');
     expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
-  });
-
-  it('should return 500 when captain has no MP config', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
-      playerFee: {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
-        playerName: 'One, Player', status: 'pending', paidAt: null,
-      },
-      categoryId: 'cat-1',
-      perPlayerAmount: 300,
-    });
-    mockedMpService.getCaptainMpConfig.mockResolvedValue(null);
-
-    const response = await POST(createWebhookRequest(
-      { type: 'payment', data: { id: '12345' } },
-      'playerFeeId=pf-1'
-    ));
-
-    expect(response.status).toBe(500);
   });
 
   describe('webhook signature validation', () => {
@@ -251,9 +223,6 @@ describe('POST /api/fees/webhook', () => {
         },
         categoryId: 'cat-1',
         perPlayerAmount: 300,
-      });
-      mockedMpService.getCaptainMpConfig.mockResolvedValue({
-        id: 'mp-1', categoryId: 'cat-1', accessToken: 'TEST-token', updatedAt: '2026-06-19',
       });
       mockedMpService.getPaymentStatus.mockResolvedValue({
         paymentId: '12345',

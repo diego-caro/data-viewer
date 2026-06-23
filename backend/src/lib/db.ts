@@ -96,14 +96,6 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
-  await query(`
-    CREATE TABLE IF NOT EXISTS captain_mp_config (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      category_id VARCHAR(50) UNIQUE NOT NULL,
-      access_token VARCHAR(500) NOT NULL,
-      updated_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
 
   await query(`
     DO $$
