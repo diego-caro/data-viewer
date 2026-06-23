@@ -1,12 +1,12 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
-import { MpService, MpStatus } from '../../services/mp.service';
 import { CategoryFee, PlayerFee } from '../../models/fee.model';
 import { FixtureMatch } from '../../models/fixture.model';
 
@@ -20,7 +20,7 @@ export class PlayerFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
   private readonly authService = inject(AuthService);
   private readonly fixtureService = inject(FixtureService);
-  private readonly mpService = inject(MpService);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   categoryFee: CategoryFee | null = null;
@@ -32,9 +32,7 @@ export class PlayerFeesComponent implements OnInit {
 
   paying = signal(false);
   payError = signal<string | null>(null);
-  mpConnected = signal(false);
-  mpUpdatedAt = signal<string | null>(null);
-  mpConnecting = signal(false);
+  paymentFlash = signal<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
 
   get showWarningBanner(): boolean {
     return !this.isCaptain
@@ -44,20 +42,32 @@ export class PlayerFeesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const paymentParam = this.route.snapshot.queryParamMap.get('payment');
+    const paymentId = this.route.snapshot.queryParamMap.get('collection_id')
+      || this.route.snapshot.queryParamMap.get('payment_id');
+    const externalRef = this.route.snapshot.queryParamMap.get('external_reference');
+
+    if (paymentParam === 'success') {
+      this.paymentFlash.set({ type: 'success', message: 'Payment completed successfully!' });
+      if (paymentId && externalRef) {
+        this.feeService.verifyPayment(paymentId, externalRef)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((result) => {
+            if (result.status === 'paid' || result.status === 'already_paid') {
+              if (this.myFee) {
+                this.myFee = { ...this.myFee, status: 'paid', paidAt: new Date().toISOString() };
+              }
+            }
+          });
+      }
+    } else if (paymentParam === 'failure') {
+      this.paymentFlash.set({ type: 'error', message: 'Payment failed. Please try again.' });
+    } else if (paymentParam === 'pending') {
+      this.paymentFlash.set({ type: 'pending', message: 'Payment is being processed. It may take a few minutes.' });
+    }
+
     const user = this.authService.user();
     this.isCaptain = user?.role === 'captain';
-
-    if (this.isCaptain) {
-      this.mpService.getStatus()
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          catchError(() => of({ connected: false } as MpStatus))
-        )
-        .subscribe((status) => {
-          this.mpConnected.set(status.connected);
-          this.mpUpdatedAt.set(status.updatedAt ?? null);
-        });
-    }
 
     const fees$ = this.feeService.getCurrentFees();
     const matches$ = this.fixtureService.getMatches().pipe(
@@ -94,20 +104,6 @@ export class PlayerFeesComponent implements OnInit {
       });
   }
 
-  onConnectMp(): void {
-    this.mpConnecting.set(true);
-    this.mpService.getAuthUrl()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          window.location.href = response.url;
-        },
-        error: () => {
-          this.mpConnecting.set(false);
-        },
-      });
-  }
-
   onPay(): void {
     this.paying.set(true);
     this.payError.set(null);
@@ -118,7 +114,7 @@ export class PlayerFeesComponent implements OnInit {
       .subscribe({
         next: (result) => {
           this.paying.set(false);
-          window.open(result.initPoint, '_blank');
+          window.location.href = result.initPoint;
         },
         error: () => {
           this.paying.set(false);

@@ -2,6 +2,19 @@
   <div class="mx-auto max-w-2xl px-4 py-8">
     <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ isCaptain ? 'Category Fees' : 'My Fees' }}</h1>
 
+    <!-- Payment Flash Message -->
+    <div
+      *ngIf="paymentFlash() as flash"
+      [attr.data-testid]="'payment-flash-' + flash.type"
+      [class]="flash.type === 'success'
+        ? 'mb-6 rounded-lg border border-green-300 bg-green-50 p-4 text-green-800'
+        : flash.type === 'pending'
+          ? 'mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800'
+          : 'mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-red-800'"
+    >
+      <p class="font-semibold">{{ flash.message }}</p>
+    </div>
+
     <!-- Warning Banner (player only, pending fee, match within 4 days) -->
     <div
       *ngIf="showWarningBanner"
@@ -61,44 +74,6 @@
           <p class="text-sm font-medium text-gray-700">{{ categoryFee.weekStartDate }}</p>
         </div>
       </div>
-
-      <!-- Captain View: MP Connection Status -->
-      <ng-container *ngIf="isCaptain">
-        <!-- Connected state -->
-        <div
-          *ngIf="mpConnected()"
-          data-testid="mp-connected-status"
-          class="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3"
-        >
-          <div class="flex items-center gap-2">
-            <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
-            <span class="text-sm font-medium text-green-800">Mercado Pago connected</span>
-          </div>
-          <button
-            data-testid="mp-reconnect-button"
-            (click)="onConnectMp()"
-            [disabled]="mpConnecting()"
-            class="text-xs text-green-700 underline hover:text-green-900"
-          >Reconnect</button>
-        </div>
-
-        <!-- Not connected state -->
-        <div *ngIf="!mpConnected()" class="mb-4">
-          <button
-            data-testid="mp-connect-button"
-            (click)="onConnectMp()"
-            [disabled]="mpConnecting()"
-            class="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            @if (mpConnecting()) {
-              Connecting...
-            } @else {
-              Connect Mercado Pago
-            }
-          </button>
-          <p class="mt-2 text-xs text-gray-500">Connect your Mercado Pago account so players can pay fees directly to you.</p>
-        </div>
-      </ng-container>
 
       <!-- Captain View: Player list with badges + summary -->
       <ng-container *ngIf="isCaptain">

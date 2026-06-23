@@ -79,7 +79,21 @@ async function createCategoryFee(
     [categoryId, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy]
   );
 
-  return await rowToCategoryFee(row!, []);
+  const players = await query<{ id: string }>(
+    `SELECT id FROM users WHERE category_id = $1 AND role IN ('player', 'captain')`,
+    [categoryId]
+  );
+
+  for (const player of players) {
+    await query(
+      `INSERT INTO player_fees (category_fee_id, user_id) VALUES ($1, $2)
+       ON CONFLICT (category_fee_id, user_id) DO NOTHING`,
+      [row!.id, player.id]
+    );
+  }
+
+  const playerFees = await getPlayerFees(row!.id);
+  return await rowToCategoryFee(row!, playerFees);
 }
 
 async function getPlayerFees(categoryFeeId: string): Promise<PlayerFee[]> {

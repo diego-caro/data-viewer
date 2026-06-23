@@ -43,14 +43,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'mp/callback',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./pages/mp-callback/mp-callback.component').then(
-        (m) => m.MpCallbackComponent,
-      ),
-  },
-  {
     path: 'admin/users',
     canActivate: [adminGuard],
     loadComponent: () =>

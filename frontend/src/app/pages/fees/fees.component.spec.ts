@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { PlayerFeesComponent } from './fees.component';
 import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
-import { MpService } from '../../services/mp.service';
 import { CategoryFee } from '../../models/fee.model';
 import { FixtureMatch } from '../../models/fixture.model';
 
@@ -34,7 +34,6 @@ describe('PlayerFeesComponent', () => {
   let feeServiceMock: jest.Mocked<Partial<FeeService>>;
   let authServiceMock: Partial<AuthService>;
   let fixtureServiceMock: jest.Mocked<Partial<FixtureService>>;
-  let mpServiceMock: jest.Mocked<Partial<MpService>>;
 
   function setupMocks(overrides?: {
     fees?: CategoryFee[];
@@ -52,6 +51,7 @@ describe('PlayerFeesComponent', () => {
         initPoint: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref-123',
         sandboxInitPoint: 'https://sandbox.mercadopago.com/checkout',
       })),
+      verifyPayment: jest.fn().mockReturnValue(of({ status: 'paid' })),
     };
 
     authServiceMock = {
@@ -61,22 +61,19 @@ describe('PlayerFeesComponent', () => {
     fixtureServiceMock = {
       getMatches: jest.fn().mockReturnValue(of(matches)),
     };
-
-    mpServiceMock = {
-      getStatus: jest.fn().mockReturnValue(of({ connected: false })),
-      getAuthUrl: jest.fn().mockReturnValue(of({ url: 'https://auth.mercadopago.com/authorization?client_id=123' })),
-      handleCallback: jest.fn().mockReturnValue(of({ success: true, message: 'Connected' })),
-    };
   }
 
-  async function createComponent() {
+  async function createComponent(queryParams: Record<string, string> = {}) {
     await TestBed.configureTestingModule({
       imports: [PlayerFeesComponent],
       providers: [
         { provide: FeeService, useValue: feeServiceMock },
         { provide: AuthService, useValue: authServiceMock },
         { provide: FixtureService, useValue: fixtureServiceMock },
-        { provide: MpService, useValue: mpServiceMock },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
       ],
     }).compileComponents();
 
@@ -449,109 +446,49 @@ describe('PlayerFeesComponent', () => {
     });
   });
 
-  describe('MP connection — captain view', () => {
-    const captainFee: CategoryFee = {
-      id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
-      totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-      weekStartDate: '2026-06-15', createdBy: 'admin-1',
-      createdAt: '2026-06-15T00:00:00Z',
-      playerFees: [
-        { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'captain-1', playerName: 'Captain, One', status: 'pending', paidAt: null },
-      ],
-      paidCount: 0, unpaidCount: 1,
-    };
+  describe('payment flash messages', () => {
+    it('should show success flash when payment=success query param', async () => {
+      setupMocks();
+      await createComponent({ payment: 'success' });
+      fixture.detectChanges();
 
-    it('should show "Connect Mercado Pago" button when not connected', async () => {
-      setupMocks({
-        fees: [captainFee],
-        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
-      });
-      mpServiceMock.getStatus!.mockReturnValue(of({ connected: false }));
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="payment-flash-success"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('Payment completed successfully');
+    });
+
+    it('should show error flash when payment=failure query param', async () => {
+      setupMocks();
+      await createComponent({ payment: 'failure' });
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="payment-flash-error"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('Payment failed');
+    });
+
+    it('should show pending flash when payment=pending query param', async () => {
+      setupMocks();
+      await createComponent({ payment: 'pending' });
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const flash = el.querySelector('[data-testid="payment-flash-pending"]');
+      expect(flash).toBeTruthy();
+      expect(flash?.textContent).toContain('being processed');
+    });
+
+    it('should not show flash when no payment query param', async () => {
+      setupMocks();
       await createComponent();
       fixture.detectChanges();
 
       const el = fixture.nativeElement as HTMLElement;
-      const connectBtn = el.querySelector('[data-testid="mp-connect-button"]');
-      expect(connectBtn).toBeTruthy();
-      expect(connectBtn?.textContent).toContain('Connect Mercado Pago');
-    });
-
-    it('should show "Mercado Pago connected" status when already connected', async () => {
-      setupMocks({
-        fees: [captainFee],
-        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
-      });
-      mpServiceMock.getStatus!.mockReturnValue(of({ connected: true, updatedAt: '2026-06-20T10:00:00Z' }));
-      await createComponent();
-      fixture.detectChanges();
-
-      const el = fixture.nativeElement as HTMLElement;
-      const status = el.querySelector('[data-testid="mp-connected-status"]');
-      expect(status).toBeTruthy();
-      expect(status?.textContent).toContain('Mercado Pago connected');
-    });
-
-    it('should show reconnect option when already connected', async () => {
-      setupMocks({
-        fees: [captainFee],
-        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
-      });
-      mpServiceMock.getStatus!.mockReturnValue(of({ connected: true, updatedAt: '2026-06-20T10:00:00Z' }));
-      await createComponent();
-      fixture.detectChanges();
-
-      const el = fixture.nativeElement as HTMLElement;
-      const reconnectBtn = el.querySelector('[data-testid="mp-reconnect-button"]');
-      expect(reconnectBtn).toBeTruthy();
-    });
-
-    it('should redirect to MP OAuth URL when connect is clicked', async () => {
-      const originalLocation = window.location;
-      Object.defineProperty(window, 'location', {
-        writable: true,
-        value: { ...originalLocation, href: '' },
-      });
-
-      setupMocks({
-        fees: [captainFee],
-        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
-      });
-      mpServiceMock.getStatus!.mockReturnValue(of({ connected: false }));
-      await createComponent();
-      fixture.detectChanges();
-
-      component.onConnectMp();
-
-      expect(mpServiceMock.getAuthUrl).toHaveBeenCalled();
-
-      Object.defineProperty(window, 'location', { writable: true, value: originalLocation });
-    });
-
-    it('should not show MP connection UI for players', async () => {
-      setupMocks({
-        fees: [mockFeeWithPending],
-        user: { id: 'player-1', role: 'player', categoryId: 'cat-1' },
-      });
-      await createComponent();
-      fixture.detectChanges();
-
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.querySelector('[data-testid="mp-connect-button"]')).toBeNull();
-      expect(el.querySelector('[data-testid="mp-connected-status"]')).toBeNull();
-    });
-
-    it('should show error when MP status check fails', async () => {
-      setupMocks({
-        fees: [captainFee],
-        user: { id: 'captain-1', role: 'captain', categoryId: 'cat-1' },
-      });
-      mpServiceMock.getStatus!.mockReturnValue(throwError(() => new Error('Network error')));
-      await createComponent();
-      fixture.detectChanges();
-
-      const el = fixture.nativeElement as HTMLElement;
-      const connectBtn = el.querySelector('[data-testid="mp-connect-button"]');
-      expect(connectBtn).toBeTruthy();
+      expect(el.querySelector('[data-testid="payment-flash-success"]')).toBeNull();
+      expect(el.querySelector('[data-testid="payment-flash-error"]')).toBeNull();
+      expect(el.querySelector('[data-testid="payment-flash-pending"]')).toBeNull();
     });
   });
 });
