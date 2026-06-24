@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
@@ -70,7 +70,12 @@ export class PlayerFeesComponent implements OnInit {
     this.isCaptain = user?.role === 'captain';
 
     const fees$ = this.feeService.getCurrentFees();
-    const matches$ = this.fixtureService.getMatches().pipe(
+    const matches$ = this.fixtureService.getDivisions().pipe(
+      switchMap((divisions) =>
+        divisions.length > 0
+          ? this.fixtureService.getMatches(divisions[0].id)
+          : of([] as FixtureMatch[])
+      ),
       catchError(() => of([] as FixtureMatch[]))
     );
 

@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-27 — Tournament standings table with category filter and dynamic fixture IDs
+> Last updated: SCRUM-29 — Fix fees page getMatches missing fixtureId after SCRUM-27 refactor
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -134,6 +134,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-22 | Admin edit and delete users — full CRUD on users page, edit form pre-filled, password optional on update, confirmation dialog on delete, FK cascade for player_fees | Done |
 | SCRUM-23 | Captain MP OAuth flow — connect Mercado Pago account via OAuth, callback page, status indicator, reconnect option | Done |
 | SCRUM-27 | Tournament standings table — category filter dropdown, fixture/standings tabs, dynamic fixture IDs via TOURNAMENT_ID env var, mobile-friendly sticky columns | Done |
+| SCRUM-29 | Fix fees page build error — getMatches missing fixtureId after SCRUM-27 refactor | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
