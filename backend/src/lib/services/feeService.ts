@@ -29,7 +29,11 @@ function getWeekStartDate(): string {
   const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(now);
   monday.setDate(now.getDate() - diff);
-  return monday.toISOString().split('T')[0];
+
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, '0');
+  const dd = String(monday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function rowToPlayerFee(row: PlayerFeeRow): PlayerFee {
@@ -65,7 +69,7 @@ async function createCategoryFee(
   categoryId: string,
   totalAmount: number,
   availablePlayers: number,
-  createdBy: string
+  createdBy: string,
 ): Promise<CategoryFeeWithPlayers> {
   const perPlayerAmount = Math.round((totalAmount / availablePlayers) * 100) / 100;
   const weekStartDate = getWeekStartDate();
@@ -76,19 +80,18 @@ async function createCategoryFee(
      ON CONFLICT (category_id, week_start_date)
      DO UPDATE SET total_amount = $2, available_players = $3, per_player_amount = $4
      RETURNING *`,
-    [categoryId, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy]
+    [categoryId, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy],
   );
 
-  const players = await query<{ id: string }>(
-    `SELECT id FROM users WHERE category_id = $1 AND role IN ('player', 'captain')`,
-    [categoryId]
-  );
+  const players = await query<{ id: string }>(`SELECT id FROM users WHERE category_id = $1 AND role IN ('player', 'captain')`, [
+    categoryId,
+  ]);
 
   for (const player of players) {
     await query(
       `INSERT INTO player_fees (category_fee_id, user_id) VALUES ($1, $2)
        ON CONFLICT (category_fee_id, user_id) DO NOTHING`,
-      [row!.id, player.id]
+      [row!.id, player.id],
     );
   }
 
@@ -104,17 +107,14 @@ async function getPlayerFees(categoryFeeId: string): Promise<PlayerFee[]> {
      JOIN users u ON u.id = pf.user_id
      WHERE pf.category_fee_id = $1
      ORDER BY u.last_name, u.first_name`,
-    [categoryFeeId]
+    [categoryFeeId],
   );
   return rows.map(rowToPlayerFee);
 }
 
 async function getCurrentFees(): Promise<CategoryFeeWithPlayers[]> {
   const weekStart = getWeekStartDate();
-  const feeRows = await query<CategoryFeeRow>(
-    'SELECT * FROM category_fees WHERE week_start_date = $1 ORDER BY category_id',
-    [weekStart]
-  );
+  const feeRows = await query<CategoryFeeRow>('SELECT * FROM category_fees WHERE week_start_date = $1 ORDER BY category_id', [weekStart]);
 
   if (feeRows.length === 0) return [];
 
@@ -128,10 +128,10 @@ async function getCurrentFees(): Promise<CategoryFeeWithPlayers[]> {
 
 async function getCurrentFeesByCategory(categoryId: string): Promise<CategoryFeeWithPlayers | null> {
   const weekStart = getWeekStartDate();
-  const row = await queryOne<CategoryFeeRow>(
-    'SELECT * FROM category_fees WHERE category_id = $1 AND week_start_date = $2',
-    [categoryId, weekStart]
-  );
+  const row = await queryOne<CategoryFeeRow>('SELECT * FROM category_fees WHERE category_id = $1 AND week_start_date = $2', [
+    categoryId,
+    weekStart,
+  ]);
 
   if (!row) return null;
 
@@ -146,7 +146,7 @@ async function markPlayerPaid(playerFeeId: string): Promise<PlayerFee | null> {
      RETURNING id, category_fee_id, user_id, status, paid_at,
        (SELECT first_name FROM users WHERE id = player_fees.user_id) as first_name,
        (SELECT last_name FROM users WHERE id = player_fees.user_id) as last_name`,
-    [playerFeeId]
+    [playerFeeId],
   );
   return row ? rowToPlayerFee(row) : null;
 }
@@ -171,7 +171,7 @@ async function getPlayerFeeWithCategory(playerFeeId: string): Promise<PlayerFeeW
      JOIN users u ON u.id = pf.user_id
      JOIN category_fees cf ON cf.id = pf.category_fee_id
      WHERE pf.id = $1`,
-    [playerFeeId]
+    [playerFeeId],
   );
 
   if (!row) return null;
@@ -192,7 +192,7 @@ async function getPlayerFeeForUser(userId: string, categoryId: string): Promise<
      JOIN users u ON u.id = pf.user_id
      JOIN category_fees cf ON cf.id = pf.category_fee_id
      WHERE pf.user_id = $1 AND cf.category_id = $2 AND cf.week_start_date = $3`,
-    [userId, categoryId, weekStart]
+    [userId, categoryId, weekStart],
   );
 
   return row ? rowToPlayerFee(row) : null;
@@ -215,20 +215,19 @@ async function resetWeeklyFees(): Promise<number> {
        VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (category_id, week_start_date) DO NOTHING
        RETURNING *`,
-      [fee.category_id, fee.total_amount, fee.available_players, fee.per_player_amount, newWeekStart, fee.created_by]
+      [fee.category_id, fee.total_amount, fee.available_players, fee.per_player_amount, newWeekStart, fee.created_by],
     );
 
     if (newFee) {
-      const players = await query<{ id: string }>(
-        `SELECT id FROM users WHERE category_id = $1 AND role IN ('player', 'captain')`,
-        [fee.category_id]
-      );
+      const players = await query<{ id: string }>(`SELECT id FROM users WHERE category_id = $1 AND role IN ('player', 'captain')`, [
+        fee.category_id,
+      ]);
 
       for (const player of players) {
         await query(
           `INSERT INTO player_fees (category_fee_id, user_id) VALUES ($1, $2)
            ON CONFLICT (category_fee_id, user_id) DO NOTHING`,
-          [newFee.id, player.id]
+          [newFee.id, player.id],
         );
       }
 
