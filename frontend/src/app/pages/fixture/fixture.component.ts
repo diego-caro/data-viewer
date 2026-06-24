@@ -47,14 +47,12 @@ export class FixtureComponent implements OnInit {
     const date = new Date(dateStr);
     const isDateOnly = dateStr.includes('T03:00:00Z');
 
-    if (isDateOnly) {
       return date.toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
         timeZone: 'America/Argentina/Buenos_Aires',
       });
-    }
 
     return date.toLocaleString('en-GB', {
       day: '2-digit',
