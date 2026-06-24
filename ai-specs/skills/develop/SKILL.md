@@ -13,10 +13,19 @@ Input: `$ARGUMENTS` (SCRUM ticket ID)
 Fetch SCRUM-[N] from Jira MCP. Confirm it has status "Ready for Dev" and a complete enriched story.
 If not enriched: stop and run the `enrich` skill first.
 
-### Step 2 — Move to "In Progress"
+### Step 2 — Create feature branch from updated master
+Always start development on a clean branch from the latest master:
+```bash
+git checkout master
+git pull origin master
+git checkout -b feat/SCRUM-[N]-[short-description]
+```
+> **Why**: branching from a stale or previous feature branch causes merge conflicts in the PR because master has moved ahead.
+
+### Step 3 — Move to "In Progress"
 Via Jira MCP: set ticket status to "In Progress".
 
-### Step 3 — Backend implementation
+### Step 4 — Backend implementation
 Load `ai-specs/agents/backend-developer.md`.
 
 TDD cycle:
@@ -25,7 +34,7 @@ TDD cycle:
 3. Run: `npx jest --testPathPattern="api|services" --coverage`
 4. Confirm ≥70% before continuing
 
-### Step 4 — Frontend implementation
+### Step 5 — Frontend implementation
 Load `ai-specs/agents/frontend-developer.md`.
 
 TDD cycle:
@@ -34,7 +43,7 @@ TDD cycle:
 3. Run: `npx jest --testPathPattern="components|hooks" --coverage`
 4. Confirm ≥70% before continuing
 
-### Step 5 — Trigger QA
+### Step 6 — Trigger QA
 Signal that development is complete and automatically trigger the `qa` skill.
 
 ## Rules
