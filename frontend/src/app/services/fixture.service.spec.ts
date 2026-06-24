@@ -4,7 +4,12 @@ import {
   HttpTestingController,
 } from '@angular/common/http/testing';
 import { FixtureService } from './fixture.service';
-import { FixtureMatch, FixtureClub } from '../models/fixture.model';
+import {
+  FixtureMatch,
+  FixtureClub,
+  FixtureDivision,
+  StandingsEntry,
+} from '../models/fixture.model';
 import { environment } from '../../environments/environment';
 
 describe('FixtureService', () => {
@@ -22,21 +27,33 @@ describe('FixtureService', () => {
       awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
       score: { home: 2, away: 2 },
     },
-    {
-      id: 208130,
-      status: 'pending',
-      date: '2026-06-20T03:00:00Z',
-      venue: 'C.E.C. Hockey',
-      round: 3,
-      homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-      awayTeam: { clubId: 12, clubName: 'Trelew R.C.' },
-      score: null,
-    },
   ];
 
   const MOCK_CLUBS: FixtureClub[] = [
     { id: 3, name: 'Bigornia Club', logo: 'base64data1' },
     { id: 5, name: 'Club Empleados de Comercio', logo: null },
+  ];
+
+  const MOCK_DIVISIONS: FixtureDivision[] = [
+    { id: 206754, name: 'Caballeros Primera' },
+    { id: 206752, name: 'Mixto Sub 14 A' },
+  ];
+
+  const MOCK_STANDINGS: StandingsEntry[] = [
+    {
+      position: 1,
+      clubId: 1,
+      clubName: 'Patoruzú Rugby Club',
+      clubLogo: 'base64logo1',
+      points: 9,
+      played: 3,
+      won: 3,
+      drawn: 0,
+      lost: 0,
+      goalsFor: 8,
+      goalsAgainst: 2,
+      goalDifference: 6,
+    },
   ];
 
   beforeEach(() => {
@@ -55,33 +72,65 @@ describe('FixtureService', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('getDivisions', () => {
+    it('should fetch and return divisions', () => {
+      service.getDivisions().subscribe((divisions) => {
+        expect(divisions).toEqual(MOCK_DIVISIONS);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fixture/divisions`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ data: MOCK_DIVISIONS });
+    });
+
+    it('should return empty array when no divisions', () => {
+      service.getDivisions().subscribe((divisions) => {
+        expect(divisions).toEqual([]);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fixture/divisions`);
+      req.flush({ data: [] });
+    });
+
+    it('should handle error when fetching divisions', () => {
+      service.getDivisions().subscribe({
+        error: (error) => {
+          expect(error).toBeTruthy();
+          expect(error.status).toBe(500);
+        },
+      });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fixture/divisions`);
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
+
   describe('getMatches', () => {
-    it('should fetch and return matches', () => {
-      service.getMatches().subscribe((matches) => {
+    it('should fetch matches with fixtureId', () => {
+      service.getMatches(206752).subscribe((matches) => {
         expect(matches).toEqual(MOCK_MATCHES);
-        expect(matches).toHaveLength(2);
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/matches`
+        `${environment.apiBaseUrl}/fixture/matches?fixtureId=206752`
       );
       expect(req.request.method).toBe('GET');
       req.flush({ data: MOCK_MATCHES });
     });
 
     it('should return empty array when no matches', () => {
-      service.getMatches().subscribe((matches) => {
+      service.getMatches(206752).subscribe((matches) => {
         expect(matches).toEqual([]);
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/matches`
+        `${environment.apiBaseUrl}/fixture/matches?fixtureId=206752`
       );
       req.flush({ data: [] });
     });
 
     it('should handle error when fetching matches', () => {
-      service.getMatches().subscribe({
+      service.getMatches(206752).subscribe({
         error: (error) => {
           expect(error).toBeTruthy();
           expect(error.status).toBe(500);
@@ -89,42 +138,38 @@ describe('FixtureService', () => {
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/matches`
+        `${environment.apiBaseUrl}/fixture/matches?fixtureId=206752`
       );
-      req.flush('Server Error', {
-        status: 500,
-        statusText: 'Internal Server Error',
-      });
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
   describe('getClubs', () => {
-    it('should fetch and return clubs', () => {
-      service.getClubs().subscribe((clubs) => {
+    it('should fetch clubs with fixtureId', () => {
+      service.getClubs(206752).subscribe((clubs) => {
         expect(clubs).toEqual(MOCK_CLUBS);
-        expect(clubs).toHaveLength(2);
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/clubs`
+        `${environment.apiBaseUrl}/fixture/clubs?fixtureId=206752`
       );
       expect(req.request.method).toBe('GET');
       req.flush({ data: MOCK_CLUBS });
     });
 
     it('should return empty array when no clubs', () => {
-      service.getClubs().subscribe((clubs) => {
+      service.getClubs(206752).subscribe((clubs) => {
         expect(clubs).toEqual([]);
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/clubs`
+        `${environment.apiBaseUrl}/fixture/clubs?fixtureId=206752`
       );
       req.flush({ data: [] });
     });
 
     it('should handle error when fetching clubs', () => {
-      service.getClubs().subscribe({
+      service.getClubs(206752).subscribe({
         error: (error) => {
           expect(error).toBeTruthy();
           expect(error.status).toBe(500);
@@ -132,12 +177,48 @@ describe('FixtureService', () => {
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiBaseUrl}/fixture/clubs`
+        `${environment.apiBaseUrl}/fixture/clubs?fixtureId=206752`
       );
-      req.flush('Server Error', {
-        status: 500,
-        statusText: 'Internal Server Error',
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
+
+  describe('getStandings', () => {
+    it('should fetch standings with fixtureId', () => {
+      service.getStandings(206752).subscribe((standings) => {
+        expect(standings).toEqual(MOCK_STANDINGS);
       });
+
+      const req = httpMock.expectOne(
+        `${environment.apiBaseUrl}/fixture/standings?fixtureId=206752`
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush({ data: MOCK_STANDINGS });
+    });
+
+    it('should return empty array when no standings', () => {
+      service.getStandings(206752).subscribe((standings) => {
+        expect(standings).toEqual([]);
+      });
+
+      const req = httpMock.expectOne(
+        `${environment.apiBaseUrl}/fixture/standings?fixtureId=206752`
+      );
+      req.flush({ data: [] });
+    });
+
+    it('should handle error when fetching standings', () => {
+      service.getStandings(206752).subscribe({
+        error: (error) => {
+          expect(error).toBeTruthy();
+          expect(error.status).toBe(500);
+        },
+      });
+
+      const req = httpMock.expectOne(
+        `${environment.apiBaseUrl}/fixture/standings?fixtureId=206752`
+      );
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
 });

@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-23 — Captain MP OAuth flow to connect Mercado Pago account
+> Last updated: SCRUM-27 — Tournament standings table with category filter and dynamic fixture IDs
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -49,6 +49,7 @@ MP_WEBHOOK_SECRET=your-mp-webhook-secret    # Mercado Pago webhook signing secre
 MP_CLIENT_ID=your-mp-app-client-id          # Mercado Pago app client ID (required for captain OAuth flow)
 MP_CLIENT_SECRET=your-mp-app-client-secret  # Mercado Pago app client secret (required for captain OAuth flow)
 MP_REDIRECT_URI=http://localhost:4200/mp/callback  # OAuth redirect URI (must match MP app config)
+TOURNAMENT_ID=205151                               # Hockey Chubut tournament ID (default: 205151, current tournament)
 ```
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
@@ -78,6 +79,7 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/users/            → User management routes (list, create) — admin only
   src/app/api/users/[id]/number/ → PATCH: update jersey number — admin only
   src/app/api/categories/[id]/captain/ → PUT: change captain for a category — admin only
+  src/app/api/fixture/           → Fixture proxy routes (divisions, matches, clubs, standings)
   src/app/api/fees/             → Fee management routes (list, create, mark-paid, pay, webhook)
   src/app/api/mp/              → Mercado Pago OAuth routes (auth-url, callback, status)
   src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, categories, category_fees, player_fees, captain_mp_config)
@@ -131,6 +133,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-21 | Replace mock player data with DB — categories table, jersey numbers, captain badge, change captain, admin jersey number editing | Done |
 | SCRUM-22 | Admin edit and delete users — full CRUD on users page, edit form pre-filled, password optional on update, confirmation dialog on delete, FK cascade for player_fees | Done |
 | SCRUM-23 | Captain MP OAuth flow — connect Mercado Pago account via OAuth, callback page, status indicator, reconnect option | Done |
+| SCRUM-27 | Tournament standings table — category filter dropdown, fixture/standings tabs, dynamic fixture IDs via TOURNAMENT_ID env var, mobile-friendly sticky columns | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -139,8 +142,10 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 |--------|------|-------------|
 | GET | `/api/categories` | List all player categories |
 | GET | `/api/players?categoryId=X` | List players filtered by category (400 if missing, 404 if not found) |
-| GET | `/api/fixture/matches` | Proxy: tournament matches from Hockey Chubut API (normalized) |
-| GET | `/api/fixture/clubs` | Proxy: clubs with base64 logos from Hockey Chubut API |
+| GET | `/api/fixture/divisions` | Proxy: list all fixture divisions for current tournament — auth required |
+| GET | `/api/fixture/matches?fixtureId=X` | Proxy: matches for a division from Hockey Chubut API (normalized) — auth required |
+| GET | `/api/fixture/clubs?fixtureId=X` | Proxy: clubs with base64 logos for a division — auth required |
+| GET | `/api/fixture/standings?fixtureId=X` | Proxy: standings table for a division from Hockey Chubut API (normalized) — auth required |
 | POST | `/api/auth/login` | Authenticate user — returns JWT token + user profile (401 on invalid credentials) |
 | GET | `/api/auth/me` | Get current user profile from JWT (requires `Authorization: Bearer <token>`) |
 | GET | `/api/users` | List all users — admin only (401/403 for non-admin) |
@@ -168,7 +173,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - CORS headers configured in `backend/next.config.mjs` for dev (allows `http://localhost:4200`)
 - Category change does not trigger a loading spinner — content stays visible during player fetch (SCRUM-7)
 - Fixture page uses `forkJoin` to load matches and clubs in parallel — if either fails, the whole page shows an error (SCRUM-8)
-- External Hockey Chubut API URLs hardcoded in `fixtureService.ts` — matches current tournament/fixture IDs (SCRUM-8)
+- External Hockey Chubut API URLs built dynamically in `fixtureService.ts` from `TOURNAMENT_ID` env var + `fixtureId` param — no hardcoded IDs (SCRUM-27, replaces SCRUM-8 hardcoded approach)
 - Date-only detection for pending matches uses `T03:00:00Z` heuristic (midnight Argentina time) — revisit if API changes (SCRUM-8)
 - Dashboard uses Chart.js directly (not ng2-charts wrapper) — ng2-charts `BaseChartDirective` caused Angular rendering issues where sibling cards failed to render; manual `AfterViewChecked` initialization avoids this (SCRUM-9)
 - Dashboard `forkJoin` for player data: if any single category's player fetch fails, the entire dashboard shows an error (all-or-nothing) — matches fixture page pattern (SCRUM-9)
@@ -227,3 +232,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - MP OAuth requires `MP_CLIENT_ID`, `MP_CLIENT_SECRET`, and `MP_REDIRECT_URI` env vars — app must be registered with MP as an integration (one-time developer setup) (SCRUM-23)
 - Frontend `/mp/callback` page handles OAuth redirect — exchanges code via backend, shows success/error, auto-redirects to `/fees` after 2 seconds (SCRUM-23)
 - `POST /api/fees/pay` now returns 404 (not 500) when `captain_mp_config` is missing — friendly "Payments not yet configured for this category" message (SCRUM-23)
+- Tournament page renamed from "Fixture" to "Tournament" — nav link, page title, and all references updated (SCRUM-27)
+- Fixture page refactored with category dropdown + fixture/standings tabs — both tabs share the same division selector and reload on category change (SCRUM-27)
+- Standings table on mobile uses `overflow-x-auto` with sticky `#` and `Club` columns (`left-0` / `left-10`) — background color applied to sticky cells to prevent see-through on scroll (SCRUM-27)
+- Standings data comes pre-sorted by `position` from the external API — frontend renders in received order without explicit sorting (SCRUM-27)
+- `TOURNAMENT_ID` env var defaults to `205151` (current tournament) — when the tournament changes, only the env var needs updating (SCRUM-27)

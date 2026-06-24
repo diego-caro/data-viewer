@@ -70,7 +70,7 @@ interface FixtureMatch {
 }
 ```
 
-- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/partido` — normalized from raw Spanish field names (`estado`, `cancha`, `instancia`, etc.)
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/{tournamentId}/fixture/{fixtureId}/partido` — normalized from raw Spanish field names (`estado`, `cancha`, `instancia`, etc.). Tournament ID configured via `TOURNAMENT_ID` env var (default: `205151`), fixture ID passed as query param.
 - **Backend type**: `backend/src/lib/types/fixture.ts`
 - **Frontend type**: `frontend/src/app/models/fixture.model.ts`
 
@@ -86,7 +86,47 @@ interface FixtureClub {
 }
 ```
 
-- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/club`
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/{tournamentId}/fixture/{fixtureId}/club`
+- **Backend type**: `backend/src/lib/types/fixture.ts`
+- **Frontend type**: `frontend/src/app/models/fixture.model.ts`
+
+### FixtureDivision
+
+Represents a fixture division/category within the tournament (e.g., "Mixto Sub 14 A", "Caballeros Primera").
+
+```typescript
+interface FixtureDivision {
+  id: number;
+  name: string;
+}
+```
+
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/{tournamentId}/fixture` — normalized from raw `nombre` field
+- **Backend type**: `backend/src/lib/types/fixture.ts`
+- **Frontend type**: `frontend/src/app/models/fixture.model.ts`
+
+### StandingsEntry
+
+Represents a single row in the standings table for a fixture division.
+
+```typescript
+interface StandingsEntry {
+  position: number;
+  clubId: number;
+  clubName: string;
+  clubLogo: string | null; // base64-encoded PNG
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+}
+```
+
+- **Source**: External API at `https://sistema.hockeychubut.com.ar/api/public/torneo/{tournamentId}/fixture/{fixtureId}/tabla-posiciones` — normalized from Spanish field names (`posicion`, `nombreClub`, `puntos`, etc.)
 - **Backend type**: `backend/src/lib/types/fixture.ts`
 - **Frontend type**: `frontend/src/app/models/fixture.model.ts`
 
@@ -333,6 +373,14 @@ interface PlayersResponse {
 interface CategoriesResponse {
   data: Category[];
 }
+
+interface FixtureDivisionsResponse {
+  data: FixtureDivision[];
+}
+
+interface FixtureStandingsResponse {
+  data: StandingsEntry[];
+}
 ```
 
 ## Source Data (from external API — Hockey Chubut)
@@ -355,5 +403,25 @@ interface RawClubWithLogo {
   id: number;
   razonSocial: string;
   logo: string | null;  // base64-encoded PNG
+}
+
+interface RawFixtureDivision {
+  id: number;
+  nombre: string;
+}
+
+interface RawStandingsEntry {
+  clubId: number;
+  nombreClub: string;
+  logoClub: string | null;
+  posicion: number;
+  puntos: number;
+  partidosJugados: number;
+  partidosGanados: number;
+  partidosEmpatados: number;
+  partidosPerdidos: number;
+  golesFavor: number;
+  golesContra: number;
+  diferenciaGoles: number;
 }
 ```

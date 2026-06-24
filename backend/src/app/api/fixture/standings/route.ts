@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fixtureService } from '@/lib/services/fixtureService';
 import { requireAuth } from '@/lib/middleware/auth';
-import { FixtureMatchesResponse } from '@/lib/types/fixture';
+import { FixtureStandingsResponse } from '@/lib/types/fixture';
 
-export async function GET(request: NextRequest): Promise<NextResponse<FixtureMatchesResponse | { error: string }>> {
+export async function GET(request: NextRequest): Promise<NextResponse<FixtureStandingsResponse | { error: string }>> {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -18,11 +18,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<FixtureMat
   }
 
   try {
-    const matches = await fixtureService.getMatches(fixtureId);
-    return NextResponse.json({ data: matches });
+    const standings = await fixtureService.getStandings(fixtureId);
+    return NextResponse.json({ data: standings });
   } catch {
     return NextResponse.json(
-      { error: 'Failed to fetch fixture matches' },
+      { error: 'Failed to fetch fixture standings' },
       { status: 500 }
     );
   }

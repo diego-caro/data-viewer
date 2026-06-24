@@ -4,7 +4,7 @@ info:
   description: >
     Internal API served by the Next.js backend.
     Source API spec will be added once the external endpoint is defined.
-  version: 0.6.0
+  version: 0.7.0
 
 paths:
   /api/auth/login:
@@ -272,12 +272,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/CategoriesResponse'
 
+  /api/fixture/divisions:
+    get:
+      summary: List all fixture divisions/categories
+      description: >
+        Proxies the Hockey Chubut external API and returns all fixture
+        divisions for the current tournament (configured via TOURNAMENT_ID env var).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixtureDivisionsResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: External API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/fixture/matches:
     get:
-      summary: List all tournament fixture matches
+      summary: List tournament fixture matches by division
       description: >
         Proxies the Hockey Chubut external API, normalizes match data,
-        and returns matches with status, score, venue, and round number.
+        and returns matches with status, score, venue, and round number
+        for the specified fixture division.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fixtureId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Fixture division ID (from /api/fixture/divisions)
       responses:
         '200':
           description: Success
@@ -285,6 +323,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FixtureMatchesResponse'
+        '400':
+          description: Missing or invalid fixtureId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: External API failure
           content:
@@ -294,10 +344,19 @@ paths:
 
   /api/fixture/clubs:
     get:
-      summary: List all clubs with logos
+      summary: List clubs with logos by division
       description: >
         Proxies the Hockey Chubut external API and returns clubs
-        with base64-encoded logo images.
+        with base64-encoded logo images for the specified fixture division.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fixtureId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Fixture division ID (from /api/fixture/divisions)
       responses:
         '200':
           description: Success
@@ -305,6 +364,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FixtureClubsResponse'
+        '400':
+          description: Missing or invalid fixtureId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: External API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/fixture/standings:
+    get:
+      summary: Get standings table by division
+      description: >
+        Proxies the Hockey Chubut external API and returns the standings
+        table for the specified fixture division. Data is normalized from
+        Spanish field names to English.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fixtureId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Fixture division ID (from /api/fixture/divisions)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixtureStandingsResponse'
+        '400':
+          description: Missing or invalid fixtureId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: External API failure
           content:
@@ -923,6 +1036,62 @@ components:
           nullable: true
           description: Base64-encoded PNG image
       required: [id, name, logo]
+
+    FixtureDivision:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required: [id, name]
+
+    StandingsEntry:
+      type: object
+      properties:
+        position:
+          type: integer
+        clubId:
+          type: integer
+        clubName:
+          type: string
+        clubLogo:
+          type: string
+          nullable: true
+          description: Base64-encoded PNG image
+        points:
+          type: integer
+        played:
+          type: integer
+        won:
+          type: integer
+        drawn:
+          type: integer
+        lost:
+          type: integer
+        goalsFor:
+          type: integer
+        goalsAgainst:
+          type: integer
+        goalDifference:
+          type: integer
+      required: [position, clubId, clubName, clubLogo, points, played, won, drawn, lost, goalsFor, goalsAgainst, goalDifference]
+
+    FixtureDivisionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixtureDivision'
+
+    FixtureStandingsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingsEntry'
 
     FixtureMatchesResponse:
       type: object

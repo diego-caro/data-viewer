@@ -58,7 +58,7 @@ describe('AppComponent', () => {
       const linkTexts = Array.from(links).map((l) => l.textContent?.trim());
       expect(linkTexts).toContain('Dashboard');
       expect(linkTexts).toContain('Players');
-      expect(linkTexts).toContain('Fixture');
+      expect(linkTexts).toContain('Tournament');
     });
   });
 
@@ -91,7 +91,7 @@ describe('AppComponent', () => {
       const linkTexts = Array.from(links).map((l) => l.textContent?.trim());
       expect(linkTexts).toContain('Dashboard');
       expect(linkTexts).toContain('Players');
-      expect(linkTexts).toContain('Fixture');
+      expect(linkTexts).toContain('Tournament');
     });
 
     it('should close mobile menu when a link is clicked', () => {

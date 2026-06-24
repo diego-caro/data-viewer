@@ -2,8 +2,12 @@ import { fixtureService } from '@/lib/services/fixtureService';
 import {
   RawMatch,
   RawClubWithLogo,
+  RawFixtureDivision,
+  RawStandingsEntry,
   FixtureMatch,
   FixtureClub,
+  FixtureDivision,
+  StandingsEntry,
 } from '@/lib/types/fixture';
 
 const mockFetch = jest.fn();
@@ -54,19 +58,77 @@ const RAW_CLUBS: RawClubWithLogo[] = [
   { id: 12, razonSocial: 'Trelew R.C.', logo: 'base64data3' },
 ];
 
+const RAW_DIVISIONS: RawFixtureDivision[] = [
+  { id: 206754, nombre: 'Caballeros Primera' },
+  { id: 206752, nombre: 'Mixto Sub 14 A' },
+  { id: 206753, nombre: 'Mixto Sub 16 A' },
+];
+
+const RAW_STANDINGS: RawStandingsEntry[] = [
+  {
+    clubId: 1,
+    nombreClub: 'Patoruzú Rugby Club',
+    logoClub: 'base64logo1',
+    posicion: 1,
+    puntos: 9,
+    partidosJugados: 3,
+    partidosGanados: 3,
+    partidosEmpatados: 0,
+    partidosPerdidos: 0,
+    golesFavor: 8,
+    golesContra: 2,
+    diferenciaGoles: 6,
+  },
+  {
+    clubId: 6,
+    nombreClub: 'Puerto Madryn Rugby Club',
+    logoClub: null,
+    posicion: 2,
+    puntos: 6,
+    partidosJugados: 3,
+    partidosGanados: 2,
+    partidosEmpatados: 0,
+    partidosPerdidos: 1,
+    golesFavor: 7,
+    golesContra: 6,
+    diferenciaGoles: 1,
+  },
+];
+
+const TOURNAMENT_ID = '205151';
+const BASE_URL = `https://sistema.hockeychubut.com.ar/api/public/torneo/${TOURNAMENT_ID}`;
+
 describe('FixtureService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.TOURNAMENT_ID = TOURNAMENT_ID;
+  });
+
+  afterEach(() => {
+    delete process.env.TOURNAMENT_ID;
   });
 
   describe('getMatches', () => {
+    it('should fetch matches using fixtureId and tournament env var', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_MATCHES,
+      });
+
+      await fixtureService.getMatches(206752);
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${BASE_URL}/fixture/206752/partido`
+      );
+    });
+
     it('should fetch and normalize matches from external API', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => RAW_MATCHES,
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
 
       expect(matches).toHaveLength(2);
       expect(fetch).toHaveBeenCalledTimes(1);
@@ -78,7 +140,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_MATCHES[0]],
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
 
       expect(matches[0].status).toBe('completed');
     });
@@ -89,7 +151,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_MATCHES[1]],
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
 
       expect(matches[0].status).toBe('pending');
     });
@@ -100,7 +162,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_MATCHES[0]],
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
       const match = matches[0];
 
       expect(match).toEqual<FixtureMatch>({
@@ -121,7 +183,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_MATCHES[1]],
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
 
       expect(matches[0].score).toBeNull();
     });
@@ -132,7 +194,7 @@ describe('FixtureService', () => {
         json: async () => [],
       });
 
-      const matches = await fixtureService.getMatches();
+      const matches = await fixtureService.getMatches(206752);
 
       expect(matches).toEqual([]);
     });
@@ -144,7 +206,7 @@ describe('FixtureService', () => {
         statusText: 'Internal Server Error',
       });
 
-      await expect(fixtureService.getMatches()).rejects.toThrow(
+      await expect(fixtureService.getMatches(206752)).rejects.toThrow(
         'Failed to fetch matches: 500 Internal Server Error'
       );
     });
@@ -152,18 +214,45 @@ describe('FixtureService', () => {
     it('should throw when fetch fails with network error', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(fixtureService.getMatches()).rejects.toThrow('Network error');
+      await expect(fixtureService.getMatches(206752)).rejects.toThrow('Network error');
+    });
+
+    it('should use default tournament ID when env var is not set', async () => {
+      delete process.env.TOURNAMENT_ID;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      await fixtureService.getMatches(206752);
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${BASE_URL}/fixture/206752/partido`
+      );
     });
   });
 
   describe('getClubs', () => {
+    it('should fetch clubs using fixtureId', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_CLUBS,
+      });
+
+      await fixtureService.getClubs(206752);
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${BASE_URL}/fixture/206752/club`
+      );
+    });
+
     it('should fetch and normalize clubs from external API', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => RAW_CLUBS,
       });
 
-      const clubs = await fixtureService.getClubs();
+      const clubs = await fixtureService.getClubs(206752);
 
       expect(clubs).toHaveLength(3);
       expect(fetch).toHaveBeenCalledTimes(1);
@@ -175,7 +264,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_CLUBS[0]],
       });
 
-      const clubs = await fixtureService.getClubs();
+      const clubs = await fixtureService.getClubs(206752);
 
       expect(clubs[0]).toEqual<FixtureClub>({
         id: 3,
@@ -190,7 +279,7 @@ describe('FixtureService', () => {
         json: async () => [RAW_CLUBS[1]],
       });
 
-      const clubs = await fixtureService.getClubs();
+      const clubs = await fixtureService.getClubs(206752);
 
       expect(clubs[0].logo).toBeNull();
     });
@@ -201,7 +290,7 @@ describe('FixtureService', () => {
         json: async () => [],
       });
 
-      const clubs = await fixtureService.getClubs();
+      const clubs = await fixtureService.getClubs(206752);
 
       expect(clubs).toEqual([]);
     });
@@ -213,9 +302,158 @@ describe('FixtureService', () => {
         statusText: 'Service Unavailable',
       });
 
-      await expect(fixtureService.getClubs()).rejects.toThrow(
+      await expect(fixtureService.getClubs(206752)).rejects.toThrow(
         'Failed to fetch clubs: 503 Service Unavailable'
       );
+    });
+  });
+
+  describe('getDivisions', () => {
+    it('should fetch divisions from external API', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_DIVISIONS,
+      });
+
+      await fixtureService.getDivisions();
+
+      expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/fixture`);
+    });
+
+    it('should normalize division fields to id and name', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_DIVISIONS,
+      });
+
+      const divisions = await fixtureService.getDivisions();
+
+      expect(divisions).toEqual<FixtureDivision[]>([
+        { id: 206754, name: 'Caballeros Primera' },
+        { id: 206752, name: 'Mixto Sub 14 A' },
+        { id: 206753, name: 'Mixto Sub 16 A' },
+      ]);
+    });
+
+    it('should return empty array when API returns empty list', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      const divisions = await fixtureService.getDivisions();
+
+      expect(divisions).toEqual([]);
+    });
+
+    it('should throw when external API returns non-OK response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      await expect(fixtureService.getDivisions()).rejects.toThrow(
+        'Failed to fetch divisions: 500 Internal Server Error'
+      );
+    });
+
+    it('should throw when fetch fails with network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(fixtureService.getDivisions()).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('getStandings', () => {
+    it('should fetch standings using fixtureId', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_STANDINGS,
+      });
+
+      await fixtureService.getStandings(206752);
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${BASE_URL}/fixture/206752/tabla-posiciones`
+      );
+    });
+
+    it('should normalize standings fields correctly', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [RAW_STANDINGS[0]],
+      });
+
+      const standings = await fixtureService.getStandings(206752);
+
+      expect(standings[0]).toEqual<StandingsEntry>({
+        position: 1,
+        clubId: 1,
+        clubName: 'Patoruzú Rugby Club',
+        clubLogo: 'base64logo1',
+        points: 9,
+        played: 3,
+        won: 3,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 8,
+        goalsAgainst: 2,
+        goalDifference: 6,
+      });
+    });
+
+    it('should handle null logo in standings', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [RAW_STANDINGS[1]],
+      });
+
+      const standings = await fixtureService.getStandings(206752);
+
+      expect(standings[0].clubLogo).toBeNull();
+    });
+
+    it('should return all entries sorted by position', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_STANDINGS,
+      });
+
+      const standings = await fixtureService.getStandings(206752);
+
+      expect(standings).toHaveLength(2);
+      expect(standings[0].position).toBe(1);
+      expect(standings[1].position).toBe(2);
+    });
+
+    it('should return empty array when API returns empty list', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      const standings = await fixtureService.getStandings(206752);
+
+      expect(standings).toEqual([]);
+    });
+
+    it('should throw when external API returns non-OK response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      await expect(fixtureService.getStandings(206752)).rejects.toThrow(
+        'Failed to fetch standings: 500 Internal Server Error'
+      );
+    });
+
+    it('should throw when fetch fails with network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(fixtureService.getStandings(206752)).rejects.toThrow('Network error');
     });
   });
 });

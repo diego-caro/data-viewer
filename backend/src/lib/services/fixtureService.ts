@@ -1,15 +1,25 @@
 import {
   RawMatch,
   RawClubWithLogo,
+  RawFixtureDivision,
+  RawStandingsEntry,
   FixtureMatch,
   FixtureClub,
+  FixtureDivision,
+  StandingsEntry,
   MatchStatus,
 } from '@/lib/types/fixture';
 
-const MATCHES_URL =
-  'https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/partido';
-const CLUBS_URL =
-  'https://sistema.hockeychubut.com.ar/api/public/torneo/205151/fixture/206752/club';
+const HOCKEY_CHUBUT_BASE = 'https://sistema.hockeychubut.com.ar/api/public';
+const DEFAULT_TOURNAMENT_ID = '205151';
+
+function getTournamentId(): string {
+  return process.env.TOURNAMENT_ID || DEFAULT_TOURNAMENT_ID;
+}
+
+function buildUrl(path: string): string {
+  return `${HOCKEY_CHUBUT_BASE}/torneo/${getTournamentId()}/${path}`;
+}
 
 function mapStatus(estado: string): MatchStatus {
   return estado === 'CERRADO' ? 'completed' : 'pending';
@@ -44,8 +54,32 @@ function normalizeClub(raw: RawClubWithLogo): FixtureClub {
   };
 }
 
-async function getMatches(): Promise<FixtureMatch[]> {
-  const response = await fetch(MATCHES_URL);
+function normalizeDivision(raw: RawFixtureDivision): FixtureDivision {
+  return {
+    id: raw.id,
+    name: raw.nombre,
+  };
+}
+
+function normalizeStandingsEntry(raw: RawStandingsEntry): StandingsEntry {
+  return {
+    position: raw.posicion,
+    clubId: raw.clubId,
+    clubName: raw.nombreClub,
+    clubLogo: raw.logoClub,
+    points: raw.puntos,
+    played: raw.partidosJugados,
+    won: raw.partidosGanados,
+    drawn: raw.partidosEmpatados,
+    lost: raw.partidosPerdidos,
+    goalsFor: raw.golesFavor,
+    goalsAgainst: raw.golesContra,
+    goalDifference: raw.diferenciaGoles,
+  };
+}
+
+async function getMatches(fixtureId: number): Promise<FixtureMatch[]> {
+  const response = await fetch(buildUrl(`fixture/${fixtureId}/partido`));
 
   if (!response.ok) {
     throw new Error(
@@ -57,8 +91,8 @@ async function getMatches(): Promise<FixtureMatch[]> {
   return raw.map(normalizeMatch);
 }
 
-async function getClubs(): Promise<FixtureClub[]> {
-  const response = await fetch(CLUBS_URL);
+async function getClubs(fixtureId: number): Promise<FixtureClub[]> {
+  const response = await fetch(buildUrl(`fixture/${fixtureId}/club`));
 
   if (!response.ok) {
     throw new Error(
@@ -70,7 +104,35 @@ async function getClubs(): Promise<FixtureClub[]> {
   return raw.map(normalizeClub);
 }
 
+async function getDivisions(): Promise<FixtureDivision[]> {
+  const response = await fetch(buildUrl('fixture'));
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch divisions: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const raw: RawFixtureDivision[] = await response.json();
+  return raw.map(normalizeDivision);
+}
+
+async function getStandings(fixtureId: number): Promise<StandingsEntry[]> {
+  const response = await fetch(buildUrl(`fixture/${fixtureId}/tabla-posiciones`));
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch standings: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const raw: RawStandingsEntry[] = await response.json();
+  return raw.map(normalizeStandingsEntry);
+}
+
 export const fixtureService = {
   getMatches,
   getClubs,
+  getDivisions,
+  getStandings,
 };

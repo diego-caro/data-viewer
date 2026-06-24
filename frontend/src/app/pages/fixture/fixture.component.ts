@@ -1,42 +1,68 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { FixtureService } from '../../services/fixture.service';
-import { FixtureMatch, FixtureRound } from '../../models/fixture.model';
+import { FixtureMatch, FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
+
+type ActiveTab = 'fixture' | 'standings';
 
 @Component({
   selector: 'app-fixture',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './fixture.component.html',
 })
 export class FixtureComponent implements OnInit {
   private readonly fixtureService = inject(FixtureService);
   private readonly destroyRef = inject(DestroyRef);
 
+  divisions: FixtureDivision[] = [];
+  selectedDivisionId = signal<number | null>(null);
+  activeTab = signal<ActiveTab>('fixture');
+
   rounds: FixtureRound[] = [];
   clubLogos = new Map<number, string | null>();
-  loading = true;
+  standings: StandingsEntry[] = [];
+
+  loadingDivisions = true;
+  loadingContent = false;
+  loadingStandings = false;
   error: string | null = null;
+  standingsError: string | null = null;
 
   ngOnInit(): void {
-    forkJoin({
-      matches: this.fixtureService.getMatches(),
-      clubs: this.fixtureService.getClubs(),
-    })
+    this.fixtureService
+      .getDivisions()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ matches, clubs }) => {
-          clubs.forEach((club) => this.clubLogos.set(club.id, club.logo));
-          this.rounds = this.groupByRound(matches);
-          this.loading = false;
+        next: (divisions) => {
+          this.divisions = divisions;
+          this.loadingDivisions = false;
+          if (divisions.length > 0) {
+            this.selectedDivisionId.set(divisions[0].id);
+            this.loadFixtureData(divisions[0].id);
+            this.loadStandings(divisions[0].id);
+          }
         },
-        error: (err: Error) => {
-          this.error = err.message || 'Failed to load fixture';
-          this.loading = false;
+        error: () => {
+          this.error = 'Failed to load divisions';
+          this.loadingDivisions = false;
         },
       });
+  }
+
+  onDivisionChange(divisionId: number): void {
+    this.selectedDivisionId.set(divisionId);
+    this.error = null;
+    this.standingsError = null;
+    this.loadFixtureData(divisionId);
+    this.loadStandings(divisionId);
+  }
+
+  setActiveTab(tab: ActiveTab): void {
+    this.activeTab.set(tab);
   }
 
   getClubLogo(clubId: number): string | null {
@@ -45,23 +71,55 @@ export class FixtureComponent implements OnInit {
 
   formatMatchDate(dateStr: string): string {
     const date = new Date(dateStr);
-    const isDateOnly = dateStr.includes('T03:00:00Z');
 
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'America/Argentina/Buenos_Aires',
-      });
-
-    return date.toLocaleString('en-GB', {
+    return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
       timeZone: 'America/Argentina/Buenos_Aires',
     });
+  }
+
+  private loadFixtureData(fixtureId: number): void {
+    this.loadingContent = true;
+    this.error = null;
+
+    forkJoin({
+      matches: this.fixtureService.getMatches(fixtureId),
+      clubs: this.fixtureService.getClubs(fixtureId),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ matches, clubs }) => {
+          this.clubLogos.clear();
+          clubs.forEach((club) => this.clubLogos.set(club.id, club.logo));
+          this.rounds = this.groupByRound(matches);
+          this.loadingContent = false;
+        },
+        error: () => {
+          this.error = 'Failed to load fixture';
+          this.loadingContent = false;
+        },
+      });
+  }
+
+  private loadStandings(fixtureId: number): void {
+    this.loadingStandings = true;
+    this.standingsError = null;
+
+    this.fixtureService
+      .getStandings(fixtureId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (standings) => {
+          this.standings = standings;
+          this.loadingStandings = false;
+        },
+        error: () => {
+          this.standingsError = 'Failed to load standings';
+          this.loadingStandings = false;
+        },
+      });
   }
 
   private groupByRound(matches: FixtureMatch[]): FixtureRound[] {
