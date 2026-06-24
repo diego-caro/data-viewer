@@ -3,58 +3,41 @@
     <h1 class="mb-8 text-3xl font-bold text-gray-900">Fixture</h1>
 
     <!-- Loading State -->
-    <div
-      *ngIf="loading"
-      data-testid="loading-state"
-      class="flex items-center justify-center py-16"
-    >
+    <div *ngIf="loading" data-testid="loading-state" class="flex items-center justify-center py-16">
       <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
     </div>
 
     <!-- Error State -->
-    <div
-      *ngIf="error"
-      data-testid="error-state"
-      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
-    >
+    <div *ngIf="error" data-testid="error-state" class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
       <p>Unable to load fixture. Please try again later.</p>
     </div>
 
     <!-- Content -->
     <div *ngIf="!loading && !error" data-testid="fixture-content">
       <!-- Empty State -->
-      <div
-        *ngIf="rounds.length === 0"
-        data-testid="empty-state"
-        class="rounded-lg border border-gray-200 bg-white py-12 text-center"
-      >
+      <div *ngIf="rounds.length === 0" data-testid="empty-state"
+        class="rounded-lg border border-gray-200 bg-white py-12 text-center">
         <p class="text-gray-500">No matches scheduled yet.</p>
       </div>
 
       <!-- Rounds -->
       <div *ngFor="let round of rounds" class="mb-8">
-        <h2
-          data-testid="round-header"
-          class="mb-4 text-lg font-semibold text-gray-700 border-b border-gray-200 pb-2"
-        >
-          Fecha {{ round.number }}
-        </h2>
-
+        <div
+          class="mb-4 flex items-center justify-between border-b border-gray-200 text-lg font-semibold text-gray-700">
+          <h2 data-testid="round-header" class="">
+            Fecha {{ round.number }}
+          </h2>
+          <span class=" text-blue-600">{{ formatMatchDate(round.matches[0].date) }}</span>
+        </div>
         <div class="space-y-3">
-          <div
-            *ngFor="let match of round.matches"
-            [attr.data-testid]="'match-card-' + match.status"
-            class="overflow-hidden rounded-lg border bg-white shadow-sm"
-            [ngClass]="{
+          <div *ngFor="let match of round.matches" [attr.data-testid]="'match-card-' + match.status"
+            class="overflow-hidden rounded-lg border bg-white shadow-sm" [ngClass]="{
               'border-gray-200': match.status === 'completed',
               'border-blue-200': match.status === 'pending'
-            }"
-          >
+            }">
             <!-- Venue -->
-            <div
-              data-testid="match-venue"
-              class="bg-gray-50 px-4 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide"
-            >
+            <div data-testid="match-venue"
+              class="bg-gray-50 px-4 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
               {{ match.venue }}
             </div>
 
@@ -62,66 +45,40 @@
             <div class="flex items-center justify-between px-4 py-4">
               <!-- Home Team -->
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <img
-                  *ngIf="getClubLogo(match.homeTeam.clubId)"
-                  data-testid="team-logo"
-                  [src]="'data:image/png;base64,' + getClubLogo(match.homeTeam.clubId)"
-                  [alt]="match.homeTeam.clubName"
-                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100"
-                />
-                <div
-                  *ngIf="!getClubLogo(match.homeTeam.clubId)"
-                  data-testid="team-logo-placeholder"
-                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500"
-                >
+                <img *ngIf="getClubLogo(match.homeTeam.clubId)" data-testid="team-logo"
+                  [src]="'data:image/png;base64,' + getClubLogo(match.homeTeam.clubId)" [alt]="match.homeTeam.clubName"
+                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
+                <div *ngIf="!getClubLogo(match.homeTeam.clubId)" data-testid="team-logo-placeholder"
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
                   {{ match.homeTeam.clubName.charAt(0) }}
                 </div>
-                <span
-                  data-testid="team-name"
-                  class="text-sm font-medium text-gray-900 truncate"
-                >
+                <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate">
                   {{ match.homeTeam.clubName }}
                 </span>
               </div>
 
               <!-- Score or Date -->
               <div class="flex-shrink-0 px-4 text-center">
-                <div
-                  *ngIf="match.status === 'completed' && match.score"
-                  data-testid="match-score"
-                  class="text-xl font-bold text-gray-900"
-                >
+                <div *ngIf="match.status === 'completed' && match.score" data-testid="match-score"
+                  class="text-xl font-bold text-gray-900">
                   {{ match.score.home }} - {{ match.score.away }}
                 </div>
-                <div
-                  *ngIf="match.status === 'pending'"
-                  data-testid="match-date-pending"
-                  class="text-sm font-medium text-blue-600"
-                >
-                  {{ formatMatchDate(match.date) }}
+                <div *ngIf="match.status === 'pending'" data-testid="match-date-pending"
+                  class="text-sm font-medium text-blue-600">
+                  VS
                 </div>
               </div>
 
               <!-- Away Team -->
               <div class="flex items-center gap-3 flex-1 min-w-0 justify-end">
-                <span
-                  data-testid="team-name"
-                  class="text-sm font-medium text-gray-900 truncate text-right"
-                >
+                <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate text-right">
                   {{ match.awayTeam.clubName }}
                 </span>
-                <img
-                  *ngIf="getClubLogo(match.awayTeam.clubId)"
-                  data-testid="team-logo"
-                  [src]="'data:image/png;base64,' + getClubLogo(match.awayTeam.clubId)"
-                  [alt]="match.awayTeam.clubName"
-                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100"
-                />
-                <div
-                  *ngIf="!getClubLogo(match.awayTeam.clubId)"
-                  data-testid="team-logo-placeholder"
-                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500"
-                >
+                <img *ngIf="getClubLogo(match.awayTeam.clubId)" data-testid="team-logo"
+                  [src]="'data:image/png;base64,' + getClubLogo(match.awayTeam.clubId)" [alt]="match.awayTeam.clubName"
+                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
+                <div *ngIf="!getClubLogo(match.awayTeam.clubId)" data-testid="team-logo-placeholder"
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
                   {{ match.awayTeam.clubName.charAt(0) }}
                 </div>
               </div>

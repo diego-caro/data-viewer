@@ -100,6 +100,7 @@ export class PlayersComponent implements OnInit {
   }
 
   saveNumber(player: Player): void {
+    console.log('Saving number for player:', player);
     this.savingNumber.set(true);
     this.userService
       .updatePlayerNumber(player.id, this.editingNumber())
