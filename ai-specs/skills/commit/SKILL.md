@@ -21,10 +21,8 @@ git status
 git diff
 git diff --staged
 ```
-Identify the current branch. If on `main`/`master`, create a feature branch:
-```bash
-git checkout -b SCRUM-[N]-[short-description]
-```
+Verify you are on the feature branch created by the `develop` skill (e.g. `feat/SCRUM-[N]-...`).
+If on `main`/`master` or a wrong branch, **stop and ask the user** — the branch should have been created during the develop step.
 
 ### Step 2 — Resolve scope
 - **No arguments**: stage all relevant changes (exclude `.env`, build artifacts, local config)
