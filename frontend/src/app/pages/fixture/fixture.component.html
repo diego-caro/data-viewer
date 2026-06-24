@@ -1,91 +1,226 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-4xl px-4 py-8">
-    <h1 class="mb-8 text-3xl font-bold text-gray-900">Fixture</h1>
+    <h1 class="mb-6 text-3xl font-bold text-gray-900">Tournament</h1>
 
-    <!-- Loading State -->
-    <div *ngIf="loading" data-testid="loading-state" class="flex items-center justify-center py-16">
+    <!-- Loading Divisions -->
+    <div *ngIf="loadingDivisions" data-testid="loading-state" class="flex items-center justify-center py-16">
       <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
     </div>
 
-    <!-- Error State -->
-    <div *ngIf="error" data-testid="error-state" class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-      <p>Unable to load fixture. Please try again later.</p>
+    <!-- Divisions load error -->
+    <div *ngIf="!loadingDivisions && divisions.length === 0 && error" data-testid="error-state"
+      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+      <p>Unable to load tournament data. Please try again later.</p>
     </div>
 
-    <!-- Content -->
-    <div *ngIf="!loading && !error" data-testid="fixture-content">
-      <!-- Empty State -->
-      <div *ngIf="rounds.length === 0" data-testid="empty-state"
-        class="rounded-lg border border-gray-200 bg-white py-12 text-center">
-        <p class="text-gray-500">No matches scheduled yet.</p>
+    <ng-container *ngIf="!loadingDivisions && divisions.length > 0">
+      <!-- Category Dropdown -->
+      <div class="mb-4">
+        <label for="division-select" class="mb-2 block text-sm font-medium text-gray-700">
+          Category
+        </label>
+        <select
+          id="division-select"
+          data-testid="division-select"
+          class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [ngModel]="selectedDivisionId()"
+          (ngModelChange)="onDivisionChange($event)"
+        >
+          <option *ngFor="let division of divisions" [ngValue]="division.id">
+            {{ division.name }}
+          </option>
+        </select>
       </div>
 
-      <!-- Rounds -->
-      <div *ngFor="let round of rounds" class="mb-8">
-        <div
-          class="mb-4 flex items-center justify-between border-b border-gray-200 text-lg font-semibold text-gray-700">
-          <h2 data-testid="round-header" class="">
-            Fecha {{ round.number }}
-          </h2>
-          <span class=" text-blue-600">{{ formatMatchDate(round.matches[0].date) }}</span>
+      <!-- Tabs -->
+      <div class="mb-6 flex border-b border-gray-200">
+        <button
+          data-testid="tab-fixture"
+          (click)="setActiveTab('fixture')"
+          class="px-4 py-2 text-sm font-medium transition-colors"
+          [ngClass]="{
+            'border-b-2 border-blue-600 text-blue-600': activeTab() === 'fixture',
+            'text-gray-500 hover:text-gray-700': activeTab() !== 'fixture'
+          }"
+        >
+          Fixture
+        </button>
+        <button
+          data-testid="tab-standings"
+          (click)="setActiveTab('standings')"
+          class="px-4 py-2 text-sm font-medium transition-colors"
+          [ngClass]="{
+            'border-b-2 border-blue-600 text-blue-600': activeTab() === 'standings',
+            'text-gray-500 hover:text-gray-700': activeTab() !== 'standings'
+          }"
+        >
+          Standings
+        </button>
+      </div>
+
+      <!-- ======================== FIXTURE TAB ======================== -->
+      @if (activeTab() === 'fixture') {
+        <!-- Loading -->
+        <div *ngIf="loadingContent" data-testid="fixture-loading" class="flex items-center justify-center py-16">
+          <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
         </div>
-        <div class="space-y-3">
-          <div *ngFor="let match of round.matches" [attr.data-testid]="'match-card-' + match.status"
-            class="overflow-hidden rounded-lg border bg-white shadow-sm" [ngClass]="{
-              'border-gray-200': match.status === 'completed',
-              'border-blue-200': match.status === 'pending'
-            }">
-            <!-- Venue -->
-            <div data-testid="match-venue"
-              class="bg-gray-50 px-4 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
-              {{ match.venue }}
+
+        <!-- Error -->
+        <div *ngIf="!loadingContent && error" data-testid="fixture-error"
+          class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <p>Unable to load fixture. Please try again later.</p>
+        </div>
+
+        <!-- Content -->
+        <div *ngIf="!loadingContent && !error" data-testid="fixture-content">
+          <!-- Empty -->
+          <div *ngIf="rounds.length === 0" data-testid="fixture-empty"
+            class="rounded-lg border border-gray-200 bg-white py-12 text-center">
+            <p class="text-gray-500">No matches scheduled yet.</p>
+          </div>
+
+          <!-- Rounds -->
+          <div *ngFor="let round of rounds" class="mb-8">
+            <div class="mb-4 flex items-center justify-between border-b border-gray-200 text-lg font-semibold text-gray-700">
+              <h2 data-testid="round-header">Fecha {{ round.number }}</h2>
+              <span class="text-blue-600">{{ formatMatchDate(round.matches[0].date) }}</span>
             </div>
-
-            <!-- Match Row -->
-            <div class="flex items-center justify-between px-4 py-4">
-              <!-- Home Team -->
-              <div class="flex items-center gap-3 flex-1 min-w-0">
-                <img *ngIf="getClubLogo(match.homeTeam.clubId)" data-testid="team-logo"
-                  [src]="'data:image/png;base64,' + getClubLogo(match.homeTeam.clubId)" [alt]="match.homeTeam.clubName"
-                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
-                <div *ngIf="!getClubLogo(match.homeTeam.clubId)" data-testid="team-logo-placeholder"
-                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
-                  {{ match.homeTeam.clubName.charAt(0) }}
+            <div class="space-y-3">
+              <div *ngFor="let match of round.matches" [attr.data-testid]="'match-card-' + match.status"
+                class="overflow-hidden rounded-lg border bg-white shadow-sm" [ngClass]="{
+                  'border-gray-200': match.status === 'completed',
+                  'border-blue-200': match.status === 'pending'
+                }">
+                <!-- Venue -->
+                <div data-testid="match-venue"
+                  class="bg-gray-50 px-4 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  {{ match.venue }}
                 </div>
-                <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate">
-                  {{ match.homeTeam.clubName }}
-                </span>
-              </div>
-
-              <!-- Score or Date -->
-              <div class="flex-shrink-0 px-4 text-center">
-                <div *ngIf="match.status === 'completed' && match.score" data-testid="match-score"
-                  class="text-xl font-bold text-gray-900">
-                  {{ match.score.home }} - {{ match.score.away }}
-                </div>
-                <div *ngIf="match.status === 'pending'" data-testid="match-date-pending"
-                  class="text-sm font-medium text-blue-600">
-                  VS
-                </div>
-              </div>
-
-              <!-- Away Team -->
-              <div class="flex items-center gap-3 flex-1 min-w-0 justify-end">
-                <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate text-right">
-                  {{ match.awayTeam.clubName }}
-                </span>
-                <img *ngIf="getClubLogo(match.awayTeam.clubId)" data-testid="team-logo"
-                  [src]="'data:image/png;base64,' + getClubLogo(match.awayTeam.clubId)" [alt]="match.awayTeam.clubName"
-                  class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
-                <div *ngIf="!getClubLogo(match.awayTeam.clubId)" data-testid="team-logo-placeholder"
-                  class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
-                  {{ match.awayTeam.clubName.charAt(0) }}
+                <!-- Match Row -->
+                <div class="flex items-center justify-between px-4 py-4">
+                  <!-- Home Team -->
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <img *ngIf="getClubLogo(match.homeTeam.clubId)" data-testid="team-logo"
+                      [src]="'data:image/png;base64,' + getClubLogo(match.homeTeam.clubId)" [alt]="match.homeTeam.clubName"
+                      class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
+                    <div *ngIf="!getClubLogo(match.homeTeam.clubId)" data-testid="team-logo-placeholder"
+                      class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
+                      {{ match.homeTeam.clubName.charAt(0) }}
+                    </div>
+                    <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate">
+                      {{ match.homeTeam.clubName }}
+                    </span>
+                  </div>
+                  <!-- Score or VS -->
+                  <div class="flex-shrink-0 px-4 text-center">
+                    <div *ngIf="match.status === 'completed' && match.score" data-testid="match-score"
+                      class="text-xl font-bold text-gray-900">
+                      {{ match.score.home }} - {{ match.score.away }}
+                    </div>
+                    <div *ngIf="match.status === 'pending'" data-testid="match-date-pending"
+                      class="text-sm font-medium text-blue-600">
+                      VS
+                    </div>
+                  </div>
+                  <!-- Away Team -->
+                  <div class="flex items-center gap-3 flex-1 min-w-0 justify-end">
+                    <span data-testid="team-name" class="text-sm font-medium text-gray-900 truncate text-right">
+                      {{ match.awayTeam.clubName }}
+                    </span>
+                    <img *ngIf="getClubLogo(match.awayTeam.clubId)" data-testid="team-logo"
+                      [src]="'data:image/png;base64,' + getClubLogo(match.awayTeam.clubId)" [alt]="match.awayTeam.clubName"
+                      class="h-10 w-10 rounded-full object-contain bg-white border border-gray-100" />
+                    <div *ngIf="!getClubLogo(match.awayTeam.clubId)" data-testid="team-logo-placeholder"
+                      class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-500">
+                      {{ match.awayTeam.clubName.charAt(0) }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+
+      <!-- ======================== STANDINGS TAB ======================== -->
+      @if (activeTab() === 'standings') {
+        <!-- Loading -->
+        <div *ngIf="loadingStandings" data-testid="standings-loading" class="flex items-center justify-center py-16">
+          <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="!loadingStandings && standingsError" data-testid="standings-error"
+          class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <p>Unable to load standings. Please try again later.</p>
+        </div>
+
+        <!-- Content -->
+        <div *ngIf="!loadingStandings && !standingsError" data-testid="standings-content">
+          <!-- Empty -->
+          <div *ngIf="standings.length === 0" data-testid="standings-empty"
+            class="rounded-lg border border-gray-200 bg-white py-12 text-center">
+            <p class="text-gray-500">No standings data available.</p>
+          </div>
+
+          <!-- Standings Table -->
+          <div *ngIf="standings.length > 0" class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+            <table data-testid="standings-table" class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-700 text-white text-left">
+                  <th class="sticky left-0 z-10 bg-gray-700 px-3 py-3 w-10 text-center">#</th>
+                  <th class="sticky left-10 z-10 bg-gray-700 px-3 py-3 min-w-[180px]">Club</th>
+                  <th class="px-3 py-3 text-center w-12">PTS</th>
+                  <th class="px-3 py-3 text-center w-12">PJ</th>
+                  <th class="px-3 py-3 text-center w-12">PG</th>
+                  <th class="px-3 py-3 text-center w-12">PE</th>
+                  <th class="px-3 py-3 text-center w-12">PP</th>
+                  <th class="px-3 py-3 text-center w-12">GF</th>
+                  <th class="px-3 py-3 text-center w-12">GC</th>
+                  <th class="px-3 py-3 text-center w-12">DIF</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let entry of standings; let odd = odd" data-testid="standings-row"
+                  class="border-t border-gray-100" [ngClass]="{ 'bg-gray-50': odd }">
+                  <td class="sticky left-0 z-10 px-3 py-3 text-center font-semibold text-gray-600"
+                    [ngClass]="{ 'bg-gray-50': odd, 'bg-white': !odd }">
+                    {{ entry.position }}
+                  </td>
+                  <td class="sticky left-10 z-10 px-3 py-3"
+                    [ngClass]="{ 'bg-gray-50': odd, 'bg-white': !odd }">
+                    <div class="flex items-center gap-2">
+                      <img *ngIf="entry.clubLogo" data-testid="standings-club-logo"
+                        [src]="'data:image/png;base64,' + entry.clubLogo" [alt]="entry.clubName"
+                        class="h-7 w-7 rounded-full object-contain bg-white border border-gray-100" />
+                      <div *ngIf="!entry.clubLogo" data-testid="standings-club-logo-placeholder"
+                        class="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-500">
+                        {{ entry.clubName.charAt(0) }}
+                      </div>
+                      <span class="font-medium text-gray-900">{{ entry.clubName }}</span>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-center font-bold text-gray-900">{{ entry.points }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.played }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.won }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.drawn }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.lost }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.goalsFor }}</td>
+                  <td class="px-3 py-3 text-center text-gray-600">{{ entry.goalsAgainst }}</td>
+                  <td class="px-3 py-3 text-center font-medium"
+                    [ngClass]="{
+                      'text-green-600': entry.goalDifference > 0,
+                      'text-red-600': entry.goalDifference < 0,
+                      'text-gray-600': entry.goalDifference === 0
+                    }">
+                    {{ entry.goalDifference > 0 ? '+' : '' }}{{ entry.goalDifference }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </ng-container>
   </div>
 </div>

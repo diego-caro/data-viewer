@@ -39,3 +39,31 @@ export interface FixtureRound {
   number: number;
   matches: FixtureMatch[];
 }
+
+export interface FixtureDivision {
+  id: number;
+  name: string;
+}
+
+export interface StandingsEntry {
+  position: number;
+  clubId: number;
+  clubName: string;
+  clubLogo: string | null;
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+}
+
+export interface FixtureDivisionsResponse {
+  data: FixtureDivision[];
+}
+
+export interface FixtureStandingsResponse {
+  data: StandingsEntry[];
+}

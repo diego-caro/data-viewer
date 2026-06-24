@@ -10,10 +10,11 @@ jest.mock('@/lib/services/userService');
 const mockedFixtureService = fixtureService as jest.Mocked<typeof fixtureService>;
 const mockedUserService = userService as jest.Mocked<typeof userService>;
 
-function createRequest(authHeader?: string): NextRequest {
+function createRequest(fixtureId?: string, authHeader?: string): NextRequest {
   const headers: Record<string, string> = {};
   if (authHeader) headers['authorization'] = authHeader;
-  return new NextRequest('http://localhost:3000/api/fixture/matches', { headers });
+  const query = fixtureId ? `?fixtureId=${fixtureId}` : '';
+  return new NextRequest(`http://localhost:3000/api/fixture/matches${query}`, { headers });
 }
 
 const MOCK_MATCHES: FixtureMatch[] = [
@@ -45,25 +46,41 @@ describe('GET /api/fixture/matches', () => {
     mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'admin' });
   });
 
-  it('should return matches from fixtureService', async () => {
+  it('should return matches for the given fixtureId', async () => {
     mockedFixtureService.getMatches.mockResolvedValue(MOCK_MATCHES);
 
-    const response = await GET(createRequest('Bearer valid-token'));
+    const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.data).toEqual(MOCK_MATCHES);
-    expect(mockedFixtureService.getMatches).toHaveBeenCalledTimes(1);
+    expect(mockedFixtureService.getMatches).toHaveBeenCalledWith(206752);
   });
 
   it('should return empty array when no matches exist', async () => {
     mockedFixtureService.getMatches.mockResolvedValue([]);
 
-    const response = await GET(createRequest('Bearer valid-token'));
+    const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.data).toEqual([]);
+  });
+
+  it('should return 400 when fixtureId is missing', async () => {
+    const response = await GET(createRequest(undefined, 'Bearer valid-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe('fixtureId query parameter is required');
+  });
+
+  it('should return 400 when fixtureId is not a number', async () => {
+    const response = await GET(createRequest('abc', 'Bearer valid-token'));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe('fixtureId must be a number');
   });
 
   it('should return 500 when service throws', async () => {
@@ -71,7 +88,7 @@ describe('GET /api/fixture/matches', () => {
       new Error('Failed to fetch matches: 500 Internal Server Error')
     );
 
-    const response = await GET(createRequest('Bearer valid-token'));
+    const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(500);
@@ -79,7 +96,7 @@ describe('GET /api/fixture/matches', () => {
   });
 
   it('should return 401 without auth', async () => {
-    const response = await GET(createRequest());
+    const response = await GET(createRequest('206752'));
     expect(response.status).toBe(401);
   });
 });

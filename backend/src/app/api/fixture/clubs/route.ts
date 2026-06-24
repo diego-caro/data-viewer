@@ -7,8 +7,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<FixtureClu
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
+  const fixtureIdParam = request.nextUrl.searchParams.get('fixtureId');
+  if (!fixtureIdParam) {
+    return NextResponse.json({ error: 'fixtureId query parameter is required' }, { status: 400 });
+  }
+
+  const fixtureId = Number(fixtureIdParam);
+  if (isNaN(fixtureId)) {
+    return NextResponse.json({ error: 'fixtureId must be a number' }, { status: 400 });
+  }
+
   try {
-    const clubs = await fixtureService.getClubs();
+    const clubs = await fixtureService.getClubs(fixtureId);
     return NextResponse.json({ data: clubs });
   } catch {
     return NextResponse.json(

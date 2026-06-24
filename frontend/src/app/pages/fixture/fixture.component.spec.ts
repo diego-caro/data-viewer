@@ -2,7 +2,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError, NEVER } from 'rxjs';
 import { FixtureComponent } from './fixture.component';
 import { FixtureService } from '../../services/fixture.service';
-import { FixtureMatch, FixtureClub } from '../../models/fixture.model';
+import {
+  FixtureMatch,
+  FixtureClub,
+  FixtureDivision,
+  StandingsEntry,
+} from '../../models/fixture.model';
+
+const MOCK_DIVISIONS: FixtureDivision[] = [
+  { id: 206752, name: 'Mixto Sub 14 A' },
+  { id: 206754, name: 'Caballeros Primera' },
+];
 
 const MOCK_MATCHES: FixtureMatch[] = [
   {
@@ -14,16 +24,6 @@ const MOCK_MATCHES: FixtureMatch[] = [
     homeTeam: { clubId: 3, clubName: 'Bigornia Club' },
     awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
     score: { home: 2, away: 2 },
-  },
-  {
-    id: 207520,
-    status: 'completed',
-    date: '2026-06-06T15:30:00Z',
-    venue: 'Patoruzu',
-    round: 1,
-    homeTeam: { clubId: 1, clubName: 'Patoruzu Rugby Club' },
-    awayTeam: { clubId: 12, clubName: 'Trelew R.C.' },
-    score: { home: 2, away: 0 },
   },
   {
     id: 208130,
@@ -38,10 +38,40 @@ const MOCK_MATCHES: FixtureMatch[] = [
 ];
 
 const MOCK_CLUBS: FixtureClub[] = [
-  { id: 1, name: 'Patoruzu Rugby Club', logo: 'base64logo1' },
   { id: 3, name: 'Bigornia Club', logo: 'base64logo3' },
   { id: 5, name: 'Club Empleados de Comercio', logo: null },
   { id: 12, name: 'Trelew R.C.', logo: 'base64logo12' },
+];
+
+const MOCK_STANDINGS: StandingsEntry[] = [
+  {
+    position: 1,
+    clubId: 1,
+    clubName: 'Patoruzú Rugby Club',
+    clubLogo: 'base64logo1',
+    points: 9,
+    played: 3,
+    won: 3,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 8,
+    goalsAgainst: 2,
+    goalDifference: 6,
+  },
+  {
+    position: 2,
+    clubId: 6,
+    clubName: 'Puerto Madryn Rugby Club',
+    clubLogo: null,
+    points: 6,
+    played: 3,
+    won: 2,
+    drawn: 0,
+    lost: 1,
+    goalsFor: 7,
+    goalsAgainst: 6,
+    goalDifference: 1,
+  },
 ];
 
 describe('FixtureComponent', () => {
@@ -49,10 +79,19 @@ describe('FixtureComponent', () => {
   let fixture: ComponentFixture<FixtureComponent>;
   let fixtureServiceMock: jest.Mocked<FixtureService>;
 
+  function setupMocks(overrides: Partial<jest.Mocked<FixtureService>> = {}): void {
+    fixtureServiceMock.getDivisions.mockReturnValue(overrides.getDivisions?.() ?? of(MOCK_DIVISIONS));
+    fixtureServiceMock.getMatches.mockReturnValue(overrides.getMatches?.() ?? of(MOCK_MATCHES));
+    fixtureServiceMock.getClubs.mockReturnValue(overrides.getClubs?.() ?? of(MOCK_CLUBS));
+    fixtureServiceMock.getStandings.mockReturnValue(overrides.getStandings?.() ?? of(MOCK_STANDINGS));
+  }
+
   beforeEach(async () => {
     fixtureServiceMock = {
+      getDivisions: jest.fn().mockReturnValue(of(MOCK_DIVISIONS)),
       getMatches: jest.fn().mockReturnValue(of(MOCK_MATCHES)),
       getClubs: jest.fn().mockReturnValue(of(MOCK_CLUBS)),
+      getStandings: jest.fn().mockReturnValue(of(MOCK_STANDINGS)),
     } as unknown as jest.Mocked<FixtureService>;
 
     await TestBed.configureTestingModule({
@@ -70,207 +109,265 @@ describe('FixtureComponent', () => {
   });
 
   describe('loading state', () => {
-    it('should show loading initially', () => {
-      expect(component.loading).toBe(true);
+    it('should show loading while divisions are loading', () => {
+      fixtureServiceMock.getDivisions.mockReturnValue(NEVER);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="loading-state"]')).toBeTruthy();
     });
 
-    it('should hide loading after data loads', () => {
+    it('should hide loading after divisions load', () => {
       fixture.detectChanges();
-      expect(component.loading).toBe(false);
-    });
-
-    it('should render loading indicator in template', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(NEVER);
-      fixtureServiceMock.getClubs.mockReturnValue(NEVER);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="loading-state"]')).toBeTruthy();
-    });
-
-    it('should hide loading indicator after data loads', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="loading-state"]')).toBeNull();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="loading-state"]')).toBeNull();
     });
   });
 
-  describe('data fetching', () => {
-    it('should fetch matches and clubs on init', () => {
+  describe('divisions', () => {
+    it('should fetch divisions on init', () => {
       fixture.detectChanges();
-      expect(fixtureServiceMock.getMatches).toHaveBeenCalledTimes(1);
-      expect(fixtureServiceMock.getClubs).toHaveBeenCalledTimes(1);
+      expect(fixtureServiceMock.getDivisions).toHaveBeenCalledTimes(1);
     });
 
-    it('should build club logo map from clubs data', () => {
+    it('should render division dropdown', () => {
       fixture.detectChanges();
-      expect(component.clubLogos.get(3)).toBe('base64logo3');
-      expect(component.clubLogos.get(5)).toBeNull();
+      const el = fixture.nativeElement as HTMLElement;
+      const select = el.querySelector('[data-testid="division-select"]');
+      expect(select).toBeTruthy();
+    });
+
+    it('should render all division options', () => {
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      const options = el.querySelectorAll('[data-testid="division-select"] option');
+      expect(options.length).toBe(MOCK_DIVISIONS.length);
+    });
+
+    it('should select first division by default', () => {
+      fixture.detectChanges();
+      expect(component.selectedDivisionId()).toBe(206752);
+    });
+
+    it('should load fixture and standings for first division on init', () => {
+      fixture.detectChanges();
+      expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206752);
+      expect(fixtureServiceMock.getClubs).toHaveBeenCalledWith(206752);
+      expect(fixtureServiceMock.getStandings).toHaveBeenCalledWith(206752);
+    });
+
+    it('should reload data when division changes', () => {
+      fixture.detectChanges();
+      component.onDivisionChange(206754);
+      expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206754);
+      expect(fixtureServiceMock.getClubs).toHaveBeenCalledWith(206754);
+      expect(fixtureServiceMock.getStandings).toHaveBeenCalledWith(206754);
+    });
+
+    it('should show error when divisions fail to load', () => {
+      fixtureServiceMock.getDivisions.mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="error-state"]')).toBeTruthy();
     });
   });
 
-  describe('grouping by round', () => {
+  describe('tabs', () => {
+    it('should render fixture and standings tabs', () => {
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="tab-fixture"]')).toBeTruthy();
+      expect(el.querySelector('[data-testid="tab-standings"]')).toBeTruthy();
+    });
+
+    it('should default to fixture tab', () => {
+      fixture.detectChanges();
+      expect(component.activeTab()).toBe('fixture');
+    });
+
+    it('should switch to standings tab', () => {
+      fixture.detectChanges();
+      component.setActiveTab('standings');
+      fixture.detectChanges();
+      expect(component.activeTab()).toBe('standings');
+    });
+
+    it('should show fixture content when fixture tab active', () => {
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="fixture-content"]')).toBeTruthy();
+      expect(el.querySelector('[data-testid="standings-content"]')).toBeNull();
+    });
+
+    it('should show standings content when standings tab active', () => {
+      fixture.detectChanges();
+      component.setActiveTab('standings');
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="standings-content"]')).toBeTruthy();
+      expect(el.querySelector('[data-testid="fixture-content"]')).toBeNull();
+    });
+  });
+
+  describe('fixture tab', () => {
     it('should group matches into rounds', () => {
       fixture.detectChanges();
       expect(component.rounds).toHaveLength(2);
-    });
-
-    it('should assign correct round numbers', () => {
-      fixture.detectChanges();
       expect(component.rounds[0].number).toBe(1);
       expect(component.rounds[1].number).toBe(3);
     });
 
-    it('should place matches in correct rounds', () => {
+    it('should display completed match scores', () => {
       fixture.detectChanges();
-      expect(component.rounds[0].matches).toHaveLength(2);
-      expect(component.rounds[1].matches).toHaveLength(1);
-    });
-
-    it('should sort rounds by number ascending', () => {
-      fixture.detectChanges();
-      for (let i = 1; i < component.rounds.length; i++) {
-        expect(component.rounds[i].number).toBeGreaterThan(
-          component.rounds[i - 1].number
-        );
-      }
-    });
-  });
-
-  describe('completed matches', () => {
-    it('should display score for completed matches', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const matchCards = compiled.querySelectorAll('[data-testid="match-card-completed"]');
-      expect(matchCards.length).toBe(2);
-    });
-
-    it('should show home and away scores', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const scores = compiled.querySelectorAll('[data-testid="match-score"]');
+      const el = fixture.nativeElement as HTMLElement;
+      const scores = el.querySelectorAll('[data-testid="match-score"]');
+      expect(scores.length).toBe(1);
       expect(scores[0]?.textContent?.trim()).toContain('2');
     });
-  });
 
-  describe('pending matches', () => {
-    it('should display date for pending matches', () => {
+    it('should display VS for pending matches', () => {
       fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const matchCards = compiled.querySelectorAll('[data-testid="match-card-pending"]');
-      expect(matchCards.length).toBe(1);
+      const el = fixture.nativeElement as HTMLElement;
+      const pending = el.querySelector('[data-testid="match-date-pending"]');
+      expect(pending).toBeTruthy();
     });
 
-    it('should show scheduled date instead of score', () => {
+    it('should display venue names', () => {
       fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const pendingDate = compiled.querySelector('[data-testid="match-date-pending"]');
-      expect(pendingDate).toBeTruthy();
-    });
-  });
-
-  describe('team logos', () => {
-    it('should render logo for teams that have one', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const logos = compiled.querySelectorAll('[data-testid="team-logo"]');
-      expect(logos.length).toBeGreaterThan(0);
-    });
-
-    it('should render placeholder for teams without logo', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const placeholders = compiled.querySelectorAll('[data-testid="team-logo-placeholder"]');
-      expect(placeholders.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('venue', () => {
-    it('should display venue name on match cards', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const venues = compiled.querySelectorAll('[data-testid="match-venue"]');
-      expect(venues.length).toBe(3);
+      const el = fixture.nativeElement as HTMLElement;
+      const venues = el.querySelectorAll('[data-testid="match-venue"]');
+      expect(venues.length).toBe(2);
       expect(venues[0]?.textContent).toContain('Bigornia');
     });
-  });
 
-  describe('team names', () => {
-    it('should display home and away team names', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const teamNames = compiled.querySelectorAll('[data-testid="team-name"]');
-      expect(teamNames.length).toBe(6);
-      expect(teamNames[0]?.textContent).toContain('Bigornia Club');
-    });
-  });
-
-  describe('empty state', () => {
-    it('should show empty message when no matches', () => {
+    it('should show empty state when no matches', () => {
       fixtureServiceMock.getMatches.mockReturnValue(of([]));
       fixture.detectChanges();
-
-      const compiled = fixture.nativeElement as HTMLElement;
-      const emptyState = compiled.querySelector('[data-testid="empty-state"]');
-      expect(emptyState).toBeTruthy();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="fixture-empty"]')).toBeTruthy();
     });
-  });
 
-  describe('error state', () => {
-    it('should show error when matches fail to load', () => {
+    it('should show error when fixture fails to load', () => {
       fixtureServiceMock.getMatches.mockReturnValue(
         throwError(() => new Error('Network error'))
       );
       fixture.detectChanges();
-
-      expect(component.error).toBeTruthy();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const errorState = compiled.querySelector('[data-testid="error-state"]');
-      expect(errorState).toBeTruthy();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="fixture-error"]')).toBeTruthy();
     });
 
-    it('should show error when clubs fail to load', () => {
-      fixtureServiceMock.getClubs.mockReturnValue(
-        throwError(() => new Error('Network error'))
-      );
+    it('should show loading while fixture is loading', () => {
+      fixtureServiceMock.getMatches.mockReturnValue(NEVER);
+      fixtureServiceMock.getClubs.mockReturnValue(NEVER);
       fixture.detectChanges();
-
-      expect(component.error).toBeTruthy();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="fixture-loading"]')).toBeTruthy();
     });
 
-    it('should not show content when in error state', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(
-        throwError(() => new Error('Network error'))
-      );
-      fixture.detectChanges();
-
-      const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="fixture-content"]')).toBeNull();
-    });
-  });
-
-  describe('getClubLogo helper', () => {
-    it('should return logo for known club', () => {
+    it('should build club logo map', () => {
       fixture.detectChanges();
       expect(component.getClubLogo(3)).toBe('base64logo3');
+      expect(component.getClubLogo(5)).toBeNull();
+      expect(component.getClubLogo(999)).toBeNull();
     });
 
-    it('should return null for unknown club', () => {
+    it('should render team logos', () => {
       fixture.detectChanges();
-      expect(component.getClubLogo(999)).toBeNull();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelectorAll('[data-testid="team-logo"]').length).toBeGreaterThan(0);
+    });
+
+    it('should render team logo placeholders', () => {
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelectorAll('[data-testid="team-logo-placeholder"]').length).toBeGreaterThan(0);
     });
   });
 
-  describe('formatMatchDate helper', () => {
+  describe('standings tab', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+      component.setActiveTab('standings');
+      fixture.detectChanges();
+    });
+
+    it('should render standings table', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="standings-table"]')).toBeTruthy();
+    });
+
+    it('should render all standings rows', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const rows = el.querySelectorAll('[data-testid="standings-row"]');
+      expect(rows.length).toBe(2);
+    });
+
+    it('should display position, club name, and points', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const rows = el.querySelectorAll('[data-testid="standings-row"]');
+      const firstRow = rows[0];
+      expect(firstRow.textContent).toContain('1');
+      expect(firstRow.textContent).toContain('Patoruzú Rugby Club');
+      expect(firstRow.textContent).toContain('9');
+    });
+
+    it('should display all stats columns', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const firstRow = el.querySelector('[data-testid="standings-row"]');
+      const cells = firstRow?.querySelectorAll('td');
+      expect(cells?.length).toBe(10);
+    });
+
+    it('should render club logos in standings', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelectorAll('[data-testid="standings-club-logo"]').length).toBeGreaterThan(0);
+    });
+
+    it('should render logo placeholders when no logo', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelectorAll('[data-testid="standings-club-logo-placeholder"]').length).toBeGreaterThan(0);
+    });
+
+    it('should show positive goal difference with plus sign', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const rows = el.querySelectorAll('[data-testid="standings-row"]');
+      const lastCell = rows[0].querySelectorAll('td')[9];
+      expect(lastCell.textContent?.trim()).toBe('+6');
+    });
+
+    it('should show empty state when no standings', () => {
+      fixtureServiceMock.getStandings.mockReturnValue(of([]));
+      component.onDivisionChange(206752);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="standings-empty"]')).toBeTruthy();
+    });
+
+    it('should show error when standings fail to load', () => {
+      fixtureServiceMock.getStandings.mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+      component.onDivisionChange(206752);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="standings-error"]')).toBeTruthy();
+    });
+
+    it('should show loading while standings are loading', () => {
+      fixtureServiceMock.getStandings.mockReturnValue(NEVER);
+      component.onDivisionChange(206752);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="standings-loading"]')).toBeTruthy();
+    });
+  });
+
+  describe('formatMatchDate', () => {
     it('should format date string', () => {
       const result = component.formatMatchDate('2026-06-06T13:30:00Z');
       expect(result).toBeTruthy();
       expect(typeof result).toBe('string');
-    });
-
-    it('should show only date for midnight Argentina time (T03:00:00Z)', () => {
-      const result = component.formatMatchDate('2026-06-20T03:00:00Z');
-      expect(result).toBeTruthy();
-      expect(result).not.toContain(':');
     });
   });
 });

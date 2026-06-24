@@ -22,7 +22,7 @@ export class AppComponent {
   navLinks: NavLink[] = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Players', path: '/players' },
-    { label: 'Fixture', path: '/fixture' },
+    { label: 'Tournament', path: '/fixture' },
     { label: 'My Fees', path: '/fees' },
   ];
 

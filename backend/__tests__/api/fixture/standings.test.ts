@@ -1,7 +1,7 @@
-import { GET } from '@/app/api/fixture/clubs/route';
+import { GET } from '@/app/api/fixture/standings/route';
 import { fixtureService } from '@/lib/services/fixtureService';
 import { userService } from '@/lib/services/userService';
-import { FixtureClub } from '@/lib/types/fixture';
+import { StandingsEntry } from '@/lib/types/fixture';
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/services/fixtureService');
@@ -14,34 +14,59 @@ function createRequest(fixtureId?: string, authHeader?: string): NextRequest {
   const headers: Record<string, string> = {};
   if (authHeader) headers['authorization'] = authHeader;
   const query = fixtureId ? `?fixtureId=${fixtureId}` : '';
-  return new NextRequest(`http://localhost:3000/api/fixture/clubs${query}`, { headers });
+  return new NextRequest(`http://localhost:3000/api/fixture/standings${query}`, { headers });
 }
 
-const MOCK_CLUBS: FixtureClub[] = [
-  { id: 3, name: 'Bigornia Club', logo: 'base64data1' },
-  { id: 5, name: 'Club Empleados de Comercio', logo: null },
-  { id: 12, name: 'Trelew R.C.', logo: 'base64data3' },
+const MOCK_STANDINGS: StandingsEntry[] = [
+  {
+    position: 1,
+    clubId: 1,
+    clubName: 'Patoruzú Rugby Club',
+    clubLogo: 'base64logo1',
+    points: 9,
+    played: 3,
+    won: 3,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 8,
+    goalsAgainst: 2,
+    goalDifference: 6,
+  },
+  {
+    position: 2,
+    clubId: 6,
+    clubName: 'Puerto Madryn Rugby Club',
+    clubLogo: null,
+    points: 6,
+    played: 3,
+    won: 2,
+    drawn: 0,
+    lost: 1,
+    goalsFor: 7,
+    goalsAgainst: 6,
+    goalDifference: 1,
+  },
 ];
 
-describe('GET /api/fixture/clubs', () => {
+describe('GET /api/fixture/standings', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'admin' });
   });
 
-  it('should return clubs for the given fixtureId', async () => {
-    mockedFixtureService.getClubs.mockResolvedValue(MOCK_CLUBS);
+  it('should return standings for the given fixtureId', async () => {
+    mockedFixtureService.getStandings.mockResolvedValue(MOCK_STANDINGS);
 
     const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.data).toEqual(MOCK_CLUBS);
-    expect(mockedFixtureService.getClubs).toHaveBeenCalledWith(206752);
+    expect(body.data).toEqual(MOCK_STANDINGS);
+    expect(mockedFixtureService.getStandings).toHaveBeenCalledWith(206752);
   });
 
-  it('should return empty array when no clubs exist', async () => {
-    mockedFixtureService.getClubs.mockResolvedValue([]);
+  it('should return empty array when no standings exist', async () => {
+    mockedFixtureService.getStandings.mockResolvedValue([]);
 
     const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
@@ -67,15 +92,15 @@ describe('GET /api/fixture/clubs', () => {
   });
 
   it('should return 500 when service throws', async () => {
-    mockedFixtureService.getClubs.mockRejectedValue(
-      new Error('Failed to fetch clubs: 503 Service Unavailable')
+    mockedFixtureService.getStandings.mockRejectedValue(
+      new Error('Failed to fetch standings: 500 Internal Server Error')
     );
 
     const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(500);
-    expect(body.error).toBe('Failed to fetch fixture clubs');
+    expect(body.error).toBe('Failed to fetch fixture standings');
   });
 
   it('should return 401 without auth', async () => {
