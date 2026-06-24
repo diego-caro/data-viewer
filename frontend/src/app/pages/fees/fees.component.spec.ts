@@ -6,7 +6,7 @@ import { FeeService } from '../../services/fee.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
 import { CategoryFee } from '../../models/fee.model';
-import { FixtureMatch } from '../../models/fixture.model';
+import { FixtureMatch, FixtureDivision } from '../../models/fixture.model';
 
 const mockFeeWithPending: CategoryFee = {
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
@@ -35,14 +35,21 @@ describe('PlayerFeesComponent', () => {
   let authServiceMock: Partial<AuthService>;
   let fixtureServiceMock: jest.Mocked<Partial<FixtureService>>;
 
+  const MOCK_DIVISIONS: FixtureDivision[] = [
+    { id: 206752, name: 'Mixto Sub 14 A' },
+    { id: 206754, name: 'Caballeros Primera' },
+  ];
+
   function setupMocks(overrides?: {
     fees?: CategoryFee[];
     user?: { id: string; role: string; categoryId: string | null };
     matches?: FixtureMatch[];
+    divisions?: FixtureDivision[];
   }) {
     const fees = overrides?.fees ?? [mockFeeWithPending];
     const user = overrides?.user ?? { id: 'player-1', role: 'player', categoryId: 'cat-1' };
     const matches = overrides?.matches ?? [];
+    const divisions = overrides?.divisions ?? MOCK_DIVISIONS;
 
     feeServiceMock = {
       getCurrentFees: jest.fn().mockReturnValue(of(fees)),
@@ -59,6 +66,7 @@ describe('PlayerFeesComponent', () => {
     };
 
     fixtureServiceMock = {
+      getDivisions: jest.fn().mockReturnValue(of(divisions)),
       getMatches: jest.fn().mockReturnValue(of(matches)),
     };
   }
@@ -317,6 +325,45 @@ describe('PlayerFeesComponent', () => {
     it('should not show player-only Pay button', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="pay-button"]')).toBeNull();
+    });
+  });
+
+  describe('fixture division loading', () => {
+    it('should call getDivisions to resolve fixtureId for matches', async () => {
+      setupMocks({ matches: [] });
+      await createComponent();
+      fixture.detectChanges();
+
+      expect(fixtureServiceMock.getDivisions).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call getMatches with the first division ID', async () => {
+      setupMocks({ matches: [] });
+      await createComponent();
+      fixture.detectChanges();
+
+      expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206752);
+    });
+
+    it('should not call getMatches when no divisions available', async () => {
+      setupMocks({ divisions: [], matches: [] });
+      await createComponent();
+      fixture.detectChanges();
+
+      expect(fixtureServiceMock.getMatches).not.toHaveBeenCalled();
+    });
+
+    it('should degrade gracefully when getDivisions fails', async () => {
+      setupMocks();
+      fixtureServiceMock.getDivisions!.mockReturnValue(throwError(() => new Error('API down')));
+      await createComponent();
+      fixture.detectChanges();
+
+      expect(component.loading).toBe(false);
+      expect(component.error).toBeNull();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="fee-amount"]')).toBeTruthy();
+      expect(el.querySelector('[data-testid="warning-banner"]')).toBeNull();
     });
   });
 
