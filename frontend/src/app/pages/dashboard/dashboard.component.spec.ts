@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterModule } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
 import { FeeService } from '../../services/fee.service';
 import { Category, Player } from '../../models/player.model';
-import { CategoryFee } from '../../models/fee.model';
+import { CategoryFee, PlayerFee } from '../../models/fee.model';
 
 const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Sub 14' },
@@ -49,6 +50,30 @@ const mockFees: CategoryFee[] = [
   },
 ];
 
+const mockPlayerFeePaid: PlayerFee = {
+  id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-1',
+  playerName: 'Mateo Alvarez', status: 'paid', paidAt: '2026-06-16T10:00:00Z',
+};
+
+const mockPlayerFeePending: PlayerFee = {
+  id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-1',
+  playerName: 'Mateo Alvarez', status: 'pending', paidAt: null,
+};
+
+const mockFeesWithPaidPlayer: CategoryFee[] = [{
+  id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+  totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
+  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  playerFees: [mockPlayerFeePaid], paidCount: 1, unpaidCount: 0,
+}];
+
+const mockFeesWithPendingPlayer: CategoryFee[] = [{
+  id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+  totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
+  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  playerFees: [mockPlayerFeePending], paidCount: 0, unpaidCount: 1,
+}];
+
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
@@ -79,14 +104,14 @@ describe('DashboardComponent', () => {
     };
 
     const authServiceMock = {
-      user: jest.fn().mockReturnValue({ role: userRole, categoryId: userRole === 'admin' ? null : 'cat-1' }),
+      user: jest.fn().mockReturnValue({ id: 'user-1', role: userRole, categoryId: userRole === 'admin' ? null : 'cat-1' }),
       isAuthenticated: jest.fn().mockReturnValue(true),
       userName: jest.fn().mockReturnValue('Admin CEC'),
       getToken: jest.fn().mockReturnValue('token'),
     };
 
     return TestBed.configureTestingModule({
-      imports: [DashboardComponent],
+      imports: [DashboardComponent, RouterModule.forRoot([])],
       providers: [
         { provide: PlayerService, useValue: playerServiceMock },
         { provide: AuthService, useValue: authServiceMock },
@@ -272,7 +297,7 @@ describe('DashboardComponent', () => {
 
       const compiled = fixture.nativeElement as HTMLElement;
       const errorEl = compiled.querySelector('[data-testid="error-state"]');
-      expect(errorEl?.textContent).toContain('Unable to load dashboard data');
+      expect(errorEl?.textContent).toContain('Unable to load signing data');
     });
   });
 
@@ -350,14 +375,14 @@ describe('DashboardComponent', () => {
   });
 
   describe('non-admin fee charts', () => {
-    it('should not load fee data for player role', async () => {
+    it('should load fee data for player role (used for play status)', async () => {
       TestBed.resetTestingModule();
       await createTestBed('player');
       fixture = TestBed.createComponent(DashboardComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
 
-      expect(feeServiceMock.getCurrentFees).not.toHaveBeenCalled();
+      expect(feeServiceMock.getCurrentFees).toHaveBeenCalled();
     });
 
     it('should not show fee chart cards for player role', async () => {
@@ -369,6 +394,116 @@ describe('DashboardComponent', () => {
 
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.querySelectorAll('[data-testid="fee-chart-card"]').length).toBe(0);
+    });
+  });
+
+  describe('play eligibility status card', () => {
+    it('should show enabled status when player fee is paid', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('enabled');
+      const compiled = fixture.nativeElement as HTMLElement;
+      const card = compiled.querySelector('[data-testid="play-status-enabled"]');
+      expect(card).toBeTruthy();
+      expect(card?.textContent).toContain("You're enabled to play this weekend");
+    });
+
+    it('should show not-enabled status when player fee is pending', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPendingPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('not-enabled');
+      const compiled = fixture.nativeElement as HTMLElement;
+      const card = compiled.querySelector('[data-testid="play-status-not-enabled"]');
+      expect(card).toBeTruthy();
+      expect(card?.textContent).toContain("you're not enabled to play this weekend");
+    });
+
+    it('should show link to fees page when fee is pending', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPendingPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const link = compiled.querySelector('[data-testid="play-status-not-enabled"] a');
+      expect(link).toBeTruthy();
+      expect(link?.textContent).toContain('Go to My Fees to pay and play this weekend');
+      expect(link?.getAttribute('href')).toBe('/fees');
+    });
+
+    it('should show no-fee status when no fee configured for the week', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('no-fee');
+      const compiled = fixture.nativeElement as HTMLElement;
+      const card = compiled.querySelector('[data-testid="play-status-no-fee"]');
+      expect(card).toBeTruthy();
+      expect(card?.textContent).toContain('No fee configured for this week yet');
+    });
+
+    it('should show enabled status for captain with paid fee', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('captain');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('enabled');
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="play-status-enabled"]')).toBeTruthy();
+    });
+
+    it('should not show play status card for admin', () => {
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBeNull();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="play-status-card"]')).toBeNull();
+    });
+
+    it('should handle no-fee when user not found in playerFees', async () => {
+      const feesWithOtherPlayer: CategoryFee[] = [{
+        ...mockFeesWithPaidPlayer[0],
+        playerFees: [{ ...mockPlayerFeePaid, userId: 'other-user' }],
+      }];
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(feesWithOtherPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('no-fee');
+    });
+
+    it('should not break dashboard when fee service fails for player', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(throwError(() => new Error('Fee error')));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBeNull();
+      expect(component.error).toBeNull();
     });
   });
 });

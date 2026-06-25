@@ -3,6 +3,7 @@ import {
   inject, DestroyRef, ElementRef, NgZone,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -31,7 +32,7 @@ export interface FeeChartData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
@@ -46,6 +47,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   categoryCharts: CategoryChartData[] = [];
   feeCharts: FeeChartData[] = [];
+  playStatus: 'enabled' | 'not-enabled' | 'no-fee' | null = null;
   loading = true;
   error: string | null = null;
 
@@ -103,6 +105,26 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
               isEmpty: fee.paidCount === 0 && fee.unpaidCount === 0,
             }));
             this.chartsRendered = false;
+          },
+        });
+    }
+
+    if (user && (user.role === 'player' || user.role === 'captain')) {
+      this.feeService
+        .getCurrentFees()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (fees) => {
+            if (fees.length === 0) {
+              this.playStatus = 'no-fee';
+              return;
+            }
+            const playerFee = fees[0]?.playerFees.find(pf => pf.userId === user.id);
+            if (!playerFee) {
+              this.playStatus = 'no-fee';
+              return;
+            }
+            this.playStatus = playerFee.status === 'paid' ? 'enabled' : 'not-enabled';
           },
         });
     }

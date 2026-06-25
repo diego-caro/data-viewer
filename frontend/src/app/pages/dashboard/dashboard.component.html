@@ -1,56 +1,53 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-5xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold text-gray-900">Dashboard</h1>
+    <h1 class="mb-6 text-2xl font-bold text-gray-900">Signing</h1>
 
     <!-- Loading State -->
-    <div
-      *ngIf="loading"
-      data-testid="loading-state"
-      class="flex items-center justify-center py-12"
-    >
+    <div *ngIf="loading" data-testid="loading-state" class="flex items-center justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
     </div>
 
     <!-- Error State -->
-    <div
-      *ngIf="error"
-      data-testid="error-state"
-      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
-    >
-      <p>Unable to load dashboard data. Please try again later.</p>
+    <div *ngIf="error" data-testid="error-state" class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+      <p>Unable to load signing data. Please try again later.</p>
+    </div>
+
+    <!-- Play Eligibility Status (player/captain only) -->
+    <div *ngIf="!loading && !error && playStatus" data-testid="play-status-card" class="mb-6">
+      <div *ngIf="playStatus === 'enabled'" data-testid="play-status-enabled"
+        class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
+        <p class="font-medium">You're enabled to play this weekend</p>
+      </div>
+      <div *ngIf="playStatus === 'not-enabled'" data-testid="play-status-not-enabled"
+        class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-700">
+        <p class="font-medium">Fee pending — you're not enabled to play this weekend</p>
+        <a routerLink="/fees" class="mt-2 inline-block text-sm font-medium text-yellow-800 underline hover:text-yellow-900">
+          Go to My Fees to pay and play this weekend
+        </a>
+      </div>
+      <div *ngIf="playStatus === 'no-fee'" data-testid="play-status-no-fee"
+        class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-gray-600">
+        <p class="font-medium">No fee configured for this week yet</p>
+      </div>
     </div>
 
     <!-- Charts Grid -->
-    <div
-      *ngIf="!loading && !error"
-      class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      <div
-        *ngFor="let chart of categoryCharts; let i = index"
-        data-testid="chart-card"
-        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-      >
-        <h2
-          data-testid="chart-title"
-          class="mb-4 text-center text-lg font-semibold text-gray-900"
-        >{{ chart.categoryName }}</h2>
+    <div *ngIf="!loading && !error" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div *ngFor="let chart of categoryCharts; let i = index" data-testid="chart-card"
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 data-testid="chart-title" class="mb-4 text-center text-lg font-semibold text-gray-900">{{ chart.categoryName
+          }}</h2>
 
         <!-- Empty State -->
-        <div
-          *ngIf="chart.isEmpty"
-          data-testid="chart-empty"
-          class="flex h-48 items-center justify-center text-gray-400"
-        >No players</div>
+        <div *ngIf="chart.isEmpty" data-testid="chart-empty"
+          class="flex h-48 items-center justify-center text-gray-400">No players</div>
 
         <!-- Chart -->
         <ng-container *ngIf="!chart.isEmpty">
           <div class="relative mx-auto h-48 w-48">
             <canvas [attr.data-chart-index]="i"></canvas>
           </div>
-          <div
-            data-testid="chart-legend"
-            class="mt-4 flex justify-center gap-4 text-sm"
-          >
+          <div data-testid="chart-legend" class="mt-4 flex justify-center gap-4 text-sm">
             <span class="flex items-center gap-1">
               <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
               Active: {{ chart.activeCount }}
@@ -66,36 +63,22 @@
 
     <!-- Fee Collection Charts (admin only) -->
     <div *ngIf="!loading && !error && feeCharts.length > 0">
-      <h2
-        data-testid="fee-charts-title"
-        class="mb-6 mt-10 text-xl font-bold text-gray-900"
-      >Fee Collection</h2>
+      <h2 data-testid="fee-charts-title" class="mb-6 mt-10 text-xl font-bold text-gray-900">Fee Collection</h2>
 
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div
-          *ngFor="let chart of feeCharts; let i = index"
-          data-testid="fee-chart-card"
-          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-        >
-          <h3
-            data-testid="fee-chart-title"
-            class="mb-4 text-center text-lg font-semibold text-gray-900"
-          >{{ chart.categoryName }}</h3>
+        <div *ngFor="let chart of feeCharts; let i = index" data-testid="fee-chart-card"
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 data-testid="fee-chart-title" class="mb-4 text-center text-lg font-semibold text-gray-900">{{
+            chart.categoryName }}</h3>
 
-          <div
-            *ngIf="chart.isEmpty"
-            data-testid="fee-chart-empty"
-            class="flex h-48 items-center justify-center text-gray-400"
-          >No fees</div>
+          <div *ngIf="chart.isEmpty" data-testid="fee-chart-empty"
+            class="flex h-48 items-center justify-center text-gray-400">No fees</div>
 
           <ng-container *ngIf="!chart.isEmpty">
             <div class="relative mx-auto h-48 w-48">
               <canvas [attr.data-fee-chart-index]="i"></canvas>
             </div>
-            <div
-              data-testid="fee-chart-legend"
-              class="mt-4 flex justify-center gap-4 text-sm"
-            >
+            <div data-testid="fee-chart-legend" class="mt-4 flex justify-center gap-4 text-sm">
               <span class="flex items-center gap-1">
                 <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
                 Paid: {{ chart.paidCount }}
