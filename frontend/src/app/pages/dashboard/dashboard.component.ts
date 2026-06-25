@@ -54,45 +54,39 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   ngOnInit(): void {
     const user = this.authService.user();
 
-    this.playerService
-      .getCategories()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        switchMap((categories: Category[]) => {
-          const filtered = user?.role === 'player' && user.categoryId
-            ? categories.filter((c) => c.id === user.categoryId)
-            : categories;
-          if (filtered.length === 0) {
-            return of([]);
-          }
-          return forkJoin(
-            filtered.map((cat) =>
-              this.playerService.getPlayersByCategory(cat.id)
-            )
-          );
-        }),
-      )
-      .subscribe({
-        next: (responses) => {
-          this.categoryCharts = responses.map((response) => {
-            const players = response.data;
-            const categoryName = response.category?.name ?? 'Unknown';
-            const activeCount = players.filter((p) => p.status === 'active').length;
-            const inactiveCount = players.filter((p) => p.status === 'inactive').length;
-            const isEmpty = players.length === 0;
-
-            return { categoryName, activeCount, inactiveCount, isEmpty };
-          });
-          this.loading = false;
-          this.chartsRendered = false;
-        },
-        error: () => {
-          this.error = 'Unable to load dashboard data. Please try again later.';
-          this.loading = false;
-        },
-      });
-
     if (user?.role === 'admin') {
+      this.playerService
+        .getCategories()
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          switchMap((categories: Category[]) => {
+            const filtered = user?.role === 'player' && user.categoryId ? categories.filter((c) => c.id === user.categoryId) : categories;
+            if (filtered.length === 0) {
+              return of([]);
+            }
+            return forkJoin(filtered.map((cat) => this.playerService.getPlayersByCategory(cat.id)));
+          }),
+        )
+        .subscribe({
+          next: (responses) => {
+            this.categoryCharts = responses.map((response) => {
+              const players = response.data;
+              const categoryName = response.category?.name ?? 'Unknown';
+              const activeCount = players.filter((p) => p.status === 'active').length;
+              const inactiveCount = players.filter((p) => p.status === 'inactive').length;
+              const isEmpty = players.length === 0;
+
+              return { categoryName, activeCount, inactiveCount, isEmpty };
+            });
+            this.loading = false;
+            this.chartsRendered = false;
+          },
+          error: () => {
+            this.error = 'Unable to load dashboard data. Please try again later.';
+            this.loading = false;
+          },
+        });
+
       this.feeService
         .getCurrentFees()
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -125,6 +119,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
               return;
             }
             this.playStatus = playerFee.status === 'paid' ? 'enabled' : 'not-enabled';
+            this.loading = false;
           },
         });
     }
