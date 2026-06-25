@@ -435,7 +435,7 @@ describe('PlayerFeesComponent', () => {
       expect(el.querySelector('[data-testid="warning-banner"]')).toBeNull();
     });
 
-    it('should not show warning banner for captains', async () => {
+    it('should show warning banner for captains with pending fee', async () => {
       setupMocks({
         fees: [mockFeeWithPending],
         user: { id: 'player-1', role: 'captain', categoryId: 'cat-1' },
@@ -445,7 +445,7 @@ describe('PlayerFeesComponent', () => {
       fixture.detectChanges();
 
       const el = fixture.nativeElement as HTMLElement;
-      expect(el.querySelector('[data-testid="warning-banner"]')).toBeNull();
+      expect(el.querySelector('[data-testid="warning-banner"]')).toBeTruthy();
     });
 
     it('should show warning for match exactly 4 days away', async () => {

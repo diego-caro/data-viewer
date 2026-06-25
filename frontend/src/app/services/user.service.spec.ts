@@ -29,7 +29,7 @@ describe('UserService', () => {
         expect(response.data).toEqual(mockUsers);
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users');
+      const req = httpMock.expectOne('/api/users');
       expect(req.request.method).toBe('GET');
       req.flush({ data: mockUsers });
     });
@@ -41,7 +41,7 @@ describe('UserService', () => {
         },
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users');
+      const req = httpMock.expectOne('/api/users');
       req.flush({ error: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
     });
   });
@@ -62,7 +62,7 @@ describe('UserService', () => {
         expect(response.user).toEqual(mockUser);
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users');
+      const req = httpMock.expectOne('/api/users');
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(request);
       req.flush({ user: mockUser });
@@ -84,7 +84,7 @@ describe('UserService', () => {
         },
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users');
+      const req = httpMock.expectOne('/api/users');
       req.flush({ error: 'Email already exists' }, { status: 409, statusText: 'Conflict' });
     });
   });

@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-30 — Dashboard play eligibility status card for players and captains
+> Last updated: SCRUM-33 — Angular proxy for external access via ngrok
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -52,7 +52,7 @@ MP_REDIRECT_URI=http://localhost:4200/mp/callback  # OAuth redirect URI (must ma
 TOURNAMENT_ID=205151                               # Hockey Chubut tournament ID (default: 205151, current tournament)
 ```
 
-Frontend API base URL is configured in `frontend/src/environments/environment.ts`.
+Frontend API base URL is configured in `frontend/src/environments/environment.ts` (set to `/api` — relative, not absolute). The Angular dev server proxies `/api` requests to `http://localhost:3000` via `frontend/proxy.conf.json`.
 
 ### Run Tests
 ```bash
@@ -136,6 +136,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-27 | Tournament standings table — category filter dropdown, fixture/standings tabs, dynamic fixture IDs via TOURNAMENT_ID env var, mobile-friendly sticky columns | Done |
 | SCRUM-29 | Fix fees page build error — getMatches missing fixtureId after SCRUM-27 refactor | Done |
 | SCRUM-30 | Dashboard play eligibility status card — players/captains see fee-based play status (enabled/pending/no-fee) with link to fees page | Done |
+| SCRUM-33 | Angular proxy for external access — relative API URLs + dev server proxy so app works via ngrok with a single tunnel | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -242,3 +243,5 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Standings table on mobile uses `overflow-x-auto` with sticky `#` and `Club` columns (`left-0` / `left-10`) — background color applied to sticky cells to prevent see-through on scroll (SCRUM-27)
 - Standings data comes pre-sorted by `position` from the external API — frontend renders in received order without explicit sorting (SCRUM-27)
 - `TOURNAMENT_ID` env var defaults to `205151` (current tournament) — when the tournament changes, only the env var needs updating (SCRUM-27)
+- Frontend `apiBaseUrl` changed from absolute `http://localhost:3000/api` to relative `/api` — Angular dev server proxy (`proxy.conf.json`) forwards to backend; this enables sharing the app via ngrok with a single tunnel on port 4200 (SCRUM-33)
+- `angular.json` includes `allowedHosts` with the ngrok subdomain — update this value if the ngrok URL changes (SCRUM-33)

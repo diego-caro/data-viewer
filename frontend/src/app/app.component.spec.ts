@@ -53,12 +53,35 @@ describe('AppComponent', () => {
       expect(logo.alt).toBeTruthy();
     });
 
-    it('should have links for Dashboard, Players, and Fixture', () => {
+    it('should have common links for Dashboard and Tournament', () => {
       const links = compiled.querySelectorAll('[data-testid="nav-link"]');
       const linkTexts = Array.from(links).map((l) => l.textContent?.trim());
       expect(linkTexts).toContain('Dashboard');
-      expect(linkTexts).toContain('Players');
       expect(linkTexts).toContain('Tournament');
+    });
+
+    it('should show admin links when user is admin', () => {
+      authServiceMock.isAuthenticated.mockReturnValue(true);
+      authServiceMock.user.mockReturnValue({ role: 'admin' });
+      fixture.detectChanges();
+      compiled = fixture.nativeElement as HTMLElement;
+
+      const adminLinks = compiled.querySelectorAll('[data-testid="admin-nav-link"]');
+      const linkTexts = Array.from(adminLinks).map((l) => l.textContent?.trim());
+      expect(linkTexts).toContain('Players');
+      expect(linkTexts).toContain('Fees');
+      expect(linkTexts).toContain('Users');
+    });
+
+    it('should show non-admin links when user is player', () => {
+      authServiceMock.isAuthenticated.mockReturnValue(true);
+      authServiceMock.user.mockReturnValue({ role: 'player' });
+      fixture.detectChanges();
+      compiled = fixture.nativeElement as HTMLElement;
+
+      const nonAdminLinks = compiled.querySelectorAll('[data-testid="nonAdmin-nav-link"]');
+      const linkTexts = Array.from(nonAdminLinks).map((l) => l.textContent?.trim());
+      expect(linkTexts).toContain('My Fees');
     });
   });
 
@@ -82,7 +105,7 @@ describe('AppComponent', () => {
       expect(mobileMenu).toBeTruthy();
     });
 
-    it('should have mobile menu links for all pages', () => {
+    it('should have mobile menu common links', () => {
       const hamburger = compiled.querySelector('[data-testid="hamburger-button"]') as HTMLButtonElement;
       hamburger.click();
       fixture.detectChanges();
@@ -90,7 +113,6 @@ describe('AppComponent', () => {
       const links = compiled.querySelectorAll('[data-testid="mobile-nav-link"]');
       const linkTexts = Array.from(links).map((l) => l.textContent?.trim());
       expect(linkTexts).toContain('Dashboard');
-      expect(linkTexts).toContain('Players');
       expect(linkTexts).toContain('Tournament');
     });
 

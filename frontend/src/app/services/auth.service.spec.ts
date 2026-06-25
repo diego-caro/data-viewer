@@ -52,7 +52,7 @@ describe('AuthService', () => {
         expect(service.userName()).toBe('Admin CEC');
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/login');
+      const req = httpMock.expectOne('/api/auth/login');
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ email: 'admin@cec.com', password: 'admin123' });
       req.flush(mockLoginResponse);
@@ -66,7 +66,7 @@ describe('AuthService', () => {
         },
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/login');
+      const req = httpMock.expectOne('/api/auth/login');
       req.flush({ error: 'Invalid email or password' }, { status: 401, statusText: 'Unauthorized' });
     });
   });
@@ -93,7 +93,7 @@ describe('AuthService', () => {
         expect(service.isAuthenticated()).toBe(true);
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/me');
+      const req = httpMock.expectOne('/api/auth/me');
       expect(req.request.method).toBe('GET');
       req.flush({ user: mockLoginResponse.user });
     });
@@ -108,7 +108,7 @@ describe('AuthService', () => {
         },
       });
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/me');
+      const req = httpMock.expectOne('/api/auth/me');
       req.flush({ error: 'Invalid token' }, { status: 401, statusText: 'Unauthorized' });
     });
   });
@@ -132,7 +132,7 @@ describe('AuthService', () => {
     it('should be true after login', () => {
       service.login('admin@cec.com', 'admin123').subscribe();
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/login');
+      const req = httpMock.expectOne('/api/auth/login');
       req.flush(mockLoginResponse);
 
       expect(service.isAuthenticated()).toBe(true);
@@ -147,7 +147,7 @@ describe('AuthService', () => {
     it('should return full name when authenticated', () => {
       service.login('admin@cec.com', 'admin123').subscribe();
 
-      const req = httpMock.expectOne('http://localhost:3000/api/auth/login');
+      const req = httpMock.expectOne('/api/auth/login');
       req.flush(mockLoginResponse);
 
       expect(service.userName()).toBe('Admin CEC');

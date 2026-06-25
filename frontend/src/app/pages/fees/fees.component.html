@@ -91,7 +91,7 @@
           </span>
         </div>
 
-        <ul class="divide-y divide-gray-100">
+        <ul class="divide-y divide-gray-100 mb-6">
           <li
             *ngFor="let pf of categoryFee.playerFees"
             data-testid="player-fee-item"
@@ -113,7 +113,7 @@
       </ng-container>
 
       <!-- Player View: Pay button or Paid badge -->
-      <ng-container *ngIf="!isCaptain">
+      <ng-container>
         <!-- Pending: Show Pay Button -->
         <ng-container *ngIf="myFee && myFee.status === 'pending'">
           <button
