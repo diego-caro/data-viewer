@@ -12,23 +12,24 @@ interface NavLink {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   private readonly router = inject(Router);
   readonly authService = inject(AuthService);
   menuOpen = signal(false);
 
-  navLinks: NavLink[] = [
+  commonLinks: NavLink[] = [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Players', path: '/players' },
     { label: 'Tournament', path: '/fixture' },
-    { label: 'My Fees', path: '/fees' },
   ];
-
+  
+  nonAdminLinks: NavLink[] = [{ label: 'My Fees', path: '/fees' }];
+  
   adminLinks: NavLink[] = [
-    { label: 'Users', path: '/admin/users' },
+    { label: 'Players', path: '/players' },
     { label: 'Fees', path: '/admin/fees' },
+    { label: 'Users', path: '/admin/users' },
   ];
 
   isLoginPage(): boolean {
