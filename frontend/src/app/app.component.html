@@ -74,9 +74,9 @@
 
       @if (authService.isAuthenticated() && authService.user()?.role !== 'admin') {
       @for (link of nonAdminLinks; track link.path) {
-      <a data-testid="nonAdmin-nav-link" [routerLink]="link.path"
-        routerLinkActive="text-blue-600 border-b-2 border-blue-600"
-        class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
+      <a data-testid="mobile-nonAdmin-link" [routerLink]="link.path" routerLinkActive="bg-blue-50 text-blue-600"
+        (click)="closeMenu()"
+        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors">
         {{ link.label }}
       </a>
       }

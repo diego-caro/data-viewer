@@ -35,22 +35,19 @@ export class PlayerFeesComponent implements OnInit {
   paymentFlash = signal<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
 
   get showWarningBanner(): boolean {
-    return !this.isCaptain
-      && this.myFee?.status === 'pending'
-      && this.daysUntilMatch !== null
-      && this.daysUntilMatch <= 4;
+    return this.myFee?.status === 'pending' && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
   }
 
   ngOnInit(): void {
     const paymentParam = this.route.snapshot.queryParamMap.get('payment');
-    const paymentId = this.route.snapshot.queryParamMap.get('collection_id')
-      || this.route.snapshot.queryParamMap.get('payment_id');
+    const paymentId = this.route.snapshot.queryParamMap.get('collection_id') || this.route.snapshot.queryParamMap.get('payment_id');
     const externalRef = this.route.snapshot.queryParamMap.get('external_reference');
 
     if (paymentParam === 'success') {
       this.paymentFlash.set({ type: 'success', message: 'Payment completed successfully!' });
       if (paymentId && externalRef) {
-        this.feeService.verifyPayment(paymentId, externalRef)
+        this.feeService
+          .verifyPayment(paymentId, externalRef)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((result) => {
             if (result.status === 'paid' || result.status === 'already_paid') {
@@ -71,12 +68,8 @@ export class PlayerFeesComponent implements OnInit {
 
     const fees$ = this.feeService.getCurrentFees();
     const matches$ = this.fixtureService.getDivisions().pipe(
-      switchMap((divisions) =>
-        divisions.length > 0
-          ? this.fixtureService.getMatches(divisions[0].id)
-          : of([] as FixtureMatch[])
-      ),
-      catchError(() => of([] as FixtureMatch[]))
+      switchMap((divisions) => (divisions.length > 0 ? this.fixtureService.getMatches(divisions[0].id) : of([] as FixtureMatch[]))),
+      catchError(() => of([] as FixtureMatch[])),
     );
 
     forkJoin([fees$, matches$])
@@ -95,9 +88,7 @@ export class PlayerFeesComponent implements OnInit {
 
           if (upcomingMatches.length > 0) {
             const nextMatchDate = new Date(upcomingMatches[0].date);
-            this.daysUntilMatch = Math.ceil(
-              (nextMatchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-            );
+            this.daysUntilMatch = Math.ceil((nextMatchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           }
 
           this.loading = false;
