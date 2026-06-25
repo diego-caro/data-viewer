@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-29 — Fix fees page getMatches missing fixtureId after SCRUM-27 refactor
+> Last updated: SCRUM-30 — Dashboard play eligibility status card for players and captains
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -135,6 +135,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-23 | Captain MP OAuth flow — connect Mercado Pago account via OAuth, callback page, status indicator, reconnect option | Done |
 | SCRUM-27 | Tournament standings table — category filter dropdown, fixture/standings tabs, dynamic fixture IDs via TOURNAMENT_ID env var, mobile-friendly sticky columns | Done |
 | SCRUM-29 | Fix fees page build error — getMatches missing fixtureId after SCRUM-27 refactor | Done |
+| SCRUM-30 | Dashboard play eligibility status card — players/captains see fee-based play status (enabled/pending/no-fee) with link to fees page | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -233,6 +234,9 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - MP OAuth requires `MP_CLIENT_ID`, `MP_CLIENT_SECRET`, and `MP_REDIRECT_URI` env vars — app must be registered with MP as an integration (one-time developer setup) (SCRUM-23)
 - Frontend `/mp/callback` page handles OAuth redirect — exchanges code via backend, shows success/error, auto-redirects to `/fees` after 2 seconds (SCRUM-23)
 - `POST /api/fees/pay` now returns 404 (not 500) when `captain_mp_config` is missing — friendly "Payments not yet configured for this category" message (SCRUM-23)
+- Dashboard play eligibility status card reuses existing `GET /api/fees` endpoint — no backend changes, purely frontend (SCRUM-30)
+- Play status determined by matching `userId` against `playerFees` array from fee response — `paid` → enabled, `pending` → not-enabled, empty/not-found → no-fee (SCRUM-30)
+- Status card only visible for player/captain roles — admin never triggers the fee fetch for play status (SCRUM-30)
 - Tournament page renamed from "Fixture" to "Tournament" — nav link, page title, and all references updated (SCRUM-27)
 - Fixture page refactored with category dropdown + fixture/standings tabs — both tabs share the same division selector and reload on category change (SCRUM-27)
 - Standings table on mobile uses `overflow-x-auto` with sticky `#` and `Club` columns (`left-0` / `left-10`) — background color applied to sticky cells to prevent see-through on scroll (SCRUM-27)
