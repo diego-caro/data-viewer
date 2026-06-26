@@ -1,14 +1,14 @@
 import { userService } from '@/lib/services/userService';
 import * as db from '@/lib/db';
-import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 jest.mock('@/lib/db');
-jest.mock('bcrypt');
+jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
 
 const mockedDb = db as jest.Mocked<typeof db>;
-const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
+const mockedBcrypt = bcryptjs as jest.Mocked<typeof bcryptjs>;
 const mockedJwt = jwt as jest.Mocked<typeof jwt>;
 
 const mockUserRow = {

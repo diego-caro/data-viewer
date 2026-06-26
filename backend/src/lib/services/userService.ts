@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query, queryOne } from '@/lib/db';
 import { User, UserProfile, AuthPayload } from '@/lib/types/user';
