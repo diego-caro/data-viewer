@@ -4,8 +4,10 @@ let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
+    const isLocal = process.env.DATABASE_URL?.includes('localhost');
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
+      ...(!isLocal && { ssl: { rejectUnauthorized: false } }),
     });
   }
   return pool;
