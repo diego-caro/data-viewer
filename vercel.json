@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "rootDirectory": "backend",
+  "buildCommand": "cd ../frontend && npm ci && npx ng build --configuration production && mkdir -p ../backend/public && cp -r dist/frontend/browser/* ../backend/public/ && cd ../backend && npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/((?!_next|.*\\..+).*)", "destination": "/index.html" }
+  ]
+}

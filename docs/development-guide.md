@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-33 — Angular proxy for external access via ngrok
+> Last updated: SCRUM-32 — Deploy app to Vercel + Supabase for public access
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -50,7 +50,24 @@ MP_CLIENT_ID=your-mp-app-client-id          # Mercado Pago app client ID (requir
 MP_CLIENT_SECRET=your-mp-app-client-secret  # Mercado Pago app client secret (required for captain OAuth flow)
 MP_REDIRECT_URI=http://localhost:4200/mp/callback  # OAuth redirect URI (must match MP app config)
 TOURNAMENT_ID=205151                               # Hockey Chubut tournament ID (default: 205151, current tournament)
+FRONTEND_URL=                                      # Production frontend URL for CORS (e.g., https://your-app.vercel.app)
 ```
+
+### Production Deployment (Vercel + Supabase)
+The app deploys to Vercel as a monorepo: Next.js backend as serverless functions + Angular frontend as static files.
+
+1. **Vercel**: Connect the GitHub repo, Vercel auto-detects `vercel.json` config
+   - Root directory: `backend/`
+   - Build: Angular → copies to `backend/public/` → Next.js builds
+   - SPA rewrites route non-API/non-static requests to Angular's `index.html`
+2. **Supabase**: Create a PostgreSQL database, copy the connection string
+3. **Environment variables**: Set in Vercel dashboard:
+   - `DATABASE_URL` — Supabase pooled connection string (port 6543)
+   - `JWT_SECRET` — strong random secret for production
+   - `WEBHOOK_BASE_URL` — Vercel deployment URL (for MP webhooks)
+   - `MP_ACCESS_TOKEN`, `TOURNAMENT_ID` — same as local
+   - `FRONTEND_URL` — Vercel deployment URL (for CORS, only needed if custom domain differs)
+4. **Database schema**: Auto-creates on first request via `initDatabase()` in `instrumentation.ts`
 
 Frontend API base URL is configured in `frontend/src/environments/environment.ts` (set to `/api` — relative, not absolute). The Angular dev server proxies `/api` requests to `http://localhost:3000` via `frontend/proxy.conf.json`.
 
@@ -137,6 +154,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-29 | Fix fees page build error — getMatches missing fixtureId after SCRUM-27 refactor | Done |
 | SCRUM-30 | Dashboard play eligibility status card — players/captains see fee-based play status (enabled/pending/no-fee) with link to fees page | Done |
 | SCRUM-33 | Angular proxy for external access — relative API URLs + dev server proxy so app works via ngrok with a single tunnel | Done |
+| SCRUM-32 | Deploy to Vercel + Supabase — monorepo config, Angular build into Next.js public/, SPA rewrites, dynamic CORS, production env | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -245,3 +263,8 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - `TOURNAMENT_ID` env var defaults to `205151` (current tournament) — when the tournament changes, only the env var needs updating (SCRUM-27)
 - Frontend `apiBaseUrl` changed from absolute `http://localhost:3000/api` to relative `/api` — Angular dev server proxy (`proxy.conf.json`) forwards to backend; this enables sharing the app via ngrok with a single tunnel on port 4200 (SCRUM-33)
 - `angular.json` includes `allowedHosts` with the ngrok subdomain — update this value if the ngrok URL changes (SCRUM-33)
+- Vercel deployment uses monorepo approach: `vercel.json` at repo root sets `rootDirectory: "backend"`, `buildCommand` builds Angular then copies output to `backend/public/` before building Next.js (SCRUM-32)
+- Next.js `page.tsx` removed — Angular's `index.html` is the only frontend entry point, served via SPA fallback rewrites in both `vercel.json` (production) and `next.config.mjs` (local `next start`) (SCRUM-32)
+- CORS middleware dynamically reads `FRONTEND_URL` env var — in production (same domain) CORS is not needed, but the env var supports custom domain setups (SCRUM-32)
+- Angular `fileReplacements` configured in `angular.json` — production build swaps `environment.ts` with `environment.prod.ts` (`production: true`) (SCRUM-32)
+- Supabase free tier (500MB, 2GB bandwidth) is sufficient for ~90 users — use pooled connection string (port 6543) to avoid exhausting serverless connection limits (SCRUM-32)
