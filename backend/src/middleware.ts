@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:4200',
-  'https://alabaster-anthem-silt.ngrok-free.dev',
-];
+function getAllowedOrigins(): string[] {
+  const origins = [
+    'http://localhost:4200',
+  ];
+  if (process.env.FRONTEND_URL) {
+    origins.push(process.env.FRONTEND_URL);
+  }
+  return origins;
+}
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigins = getAllowedOrigins();
+  const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
