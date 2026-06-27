@@ -10,7 +10,7 @@
         @for (link of commonLinks; track link.path) {
         <a data-testid="nav-link" [routerLink]="link.path" routerLinkActive="text-blue-600 border-b-2 border-blue-600"
           class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
-          {{ link.label }}
+          {{ link.labelKey | translate }}
         </a>
         }
 
@@ -19,7 +19,7 @@
         <a data-testid="nonAdmin-nav-link" [routerLink]="link.path"
           routerLinkActive="text-blue-600 border-b-2 border-blue-600"
           class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
-          {{ link.label }}
+          {{ link.labelKey | translate }}
         </a>
         }
         }
@@ -29,7 +29,7 @@
         <a data-testid="admin-nav-link" [routerLink]="link.path"
           routerLinkActive="text-blue-600 border-b-2 border-blue-600"
           class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
-          {{ link.label }}
+          {{ link.labelKey | translate }}
         </a>
         }
         }
@@ -40,7 +40,7 @@
         </span>
         <button data-testid="logout-button" (click)="logout()"
           class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
-          Logout
+          {{ 'NAV.LOGOUT' | translate }}
         </button>
         }
       </div>
@@ -68,7 +68,7 @@
       <a data-testid="mobile-nav-link" [routerLink]="link.path" routerLinkActive="bg-blue-50 text-blue-600"
         (click)="closeMenu()"
         class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors">
-        {{ link.label }}
+        {{ link.labelKey | translate }}
       </a>
       }
 
@@ -77,7 +77,7 @@
       <a data-testid="mobile-nonAdmin-link" [routerLink]="link.path" routerLinkActive="bg-blue-50 text-blue-600"
         (click)="closeMenu()"
         class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors">
-        {{ link.label }}
+        {{ link.labelKey | translate }}
       </a>
       }
       }
@@ -87,7 +87,7 @@
       <a data-testid="mobile-admin-link" [routerLink]="link.path" routerLinkActive="bg-blue-50 text-blue-600"
         (click)="closeMenu()"
         class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors">
-        {{ link.label }}
+        {{ link.labelKey | translate }}
       </a>
       }
       }
@@ -99,7 +99,7 @@
         </span>
         <button data-testid="mobile-logout-button" (click)="logout(); closeMenu()"
           class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 transition-colors">
-          Logout
+          {{ 'NAV.LOGOUT' | translate }}
         </button>
       </div>
       }

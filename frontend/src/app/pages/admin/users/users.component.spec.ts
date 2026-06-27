@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { AdminUsersComponent } from './users.component';
 import { UserService } from '../../../services/user.service';
 import { PlayerService } from '../../../services/player.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../../testing/translate-testing';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -41,9 +43,11 @@ describe('AdminUsersComponent', () => {
         { provide: UserService, useValue: userServiceMock },
         { provide: PlayerService, useValue: playerServiceMock },
         provideRouter([]),
+        ...provideTranslateTesting(),
       ],
     }).compileComponents();
 
+    setupTestTranslations(TestBed.inject(TranslateService));
     fixture = TestBed.createComponent(AdminUsersComponent);
     component = fixture.componentInstance;
     userService = TestBed.inject(UserService) as jest.Mocked<UserService>;

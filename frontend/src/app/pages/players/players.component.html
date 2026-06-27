@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-3xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold text-gray-900">Players</h1>
+    <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ 'PLAYERS.TITLE' | translate }}</h1>
 
     <!-- Error State -->
     <div
@@ -8,7 +8,7 @@
       data-testid="error-state"
       class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
     >
-      <p>Unable to load data. Please try again later.</p>
+      <p>{{ error }}</p>
     </div>
 
     <!-- Content -->
@@ -16,7 +16,7 @@
       <!-- Category Selector (hidden for player role) -->
       <div class="mb-6" *ngIf="categories.length > 0 && !isPlayer">
         <label for="category-select" class="mb-2 block text-sm font-medium text-gray-700">
-          Category
+          {{ 'PLAYERS.CATEGORY' | translate }}
         </label>
         <select
           id="category-select"
@@ -37,7 +37,7 @@
         data-testid="empty-state"
         class="rounded-lg border border-gray-200 bg-white py-12 text-center"
       >
-        <p class="text-gray-500">No players found in this category.</p>
+        <p class="text-gray-500">{{ 'PLAYERS.EMPTY' | translate }}</p>
       </div>
 
       <!-- Players List -->
@@ -65,7 +65,7 @@
                 *ngIf="player.role === 'captain'"
                 data-testid="captain-badge"
                 class="ml-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
-                title="Captain"
+                [title]="'PLAYERS.CAPTAIN' | translate"
               >
                 C
               </span>
@@ -89,14 +89,14 @@
                     [disabled]="savingNumber()"
                     class="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600 disabled:opacity-50"
                   >
-                    Save
+                    {{ 'PLAYERS.SAVE' | translate }}
                   </button>
                   <button
                     data-testid="cancel-number-button"
                     (click)="cancelEditNumber()"
                     class="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400"
                   >
-                    Cancel
+                    {{ 'PLAYERS.CANCEL' | translate }}
                   </button>
                 </div>
               } @else {
@@ -104,7 +104,7 @@
                   data-testid="edit-number-button"
                   (click)="startEditNumber(player)"
                   class="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
-                  title="Edit jersey number"
+                  [title]="'PLAYERS.EDIT_NUMBER' | translate"
                 >
                   #
                 </button>
@@ -117,9 +117,9 @@
                   (click)="onChangeCaptain(player)"
                   [disabled]="changingCaptain()"
                   class="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-50"
-                  title="Make captain"
+                  [title]="'PLAYERS.MAKE_CAPTAIN' | translate"
                 >
-                  Make Captain
+                  {{ 'PLAYERS.MAKE_CAPTAIN' | translate }}
                 </button>
               }
             }

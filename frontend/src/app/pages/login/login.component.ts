@@ -2,18 +2,20 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   email = '';
   password = '';
@@ -31,9 +33,9 @@ export class LoginComponent {
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
         if (err.status === 401) {
-          this.error.set('Invalid email or password');
+          this.error.set(this.translate.instant('LOGIN.ERROR_INVALID'));
         } else {
-          this.error.set('An unexpected error occurred. Please try again.');
+          this.error.set(this.translate.instant('LOGIN.ERROR_GENERIC'));
         }
       },
     });

@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { of, throwError, Subject } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
 import { FeeService } from '../../services/fee.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
 import { Category, Player } from '../../models/player.model';
 import { CategoryFee, PlayerFee } from '../../models/fee.model';
 
@@ -116,8 +118,11 @@ describe('DashboardComponent', () => {
         { provide: PlayerService, useValue: playerServiceMock },
         { provide: AuthService, useValue: authServiceMock },
         { provide: FeeService, useValue: feeServiceMock },
+        ...provideTranslateTesting(),
       ],
-    }).compileComponents();
+    }).compileComponents().then(() => {
+      setupTestTranslations(TestBed.inject(TranslateService));
+    });
   }
 
   beforeEach(async () => {

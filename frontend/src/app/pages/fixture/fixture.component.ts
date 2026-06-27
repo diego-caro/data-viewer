@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { FixtureService } from '../../services/fixture.service';
@@ -11,11 +12,12 @@ type ActiveTab = 'fixture' | 'standings';
 @Component({
   selector: 'app-fixture',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './fixture.component.html',
 })
 export class FixtureComponent implements OnInit {
   private readonly fixtureService = inject(FixtureService);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
   divisions: FixtureDivision[] = [];
@@ -47,7 +49,7 @@ export class FixtureComponent implements OnInit {
           }
         },
         error: () => {
-          this.error = 'Failed to load divisions';
+          this.error = this.translate.instant('FIXTURE.ERROR_DIVISIONS');
           this.loadingDivisions = false;
         },
       });
@@ -71,8 +73,10 @@ export class FixtureComponent implements OnInit {
 
   formatMatchDate(dateStr: string): string {
     const date = new Date(dateStr);
+    const lang = this.translate.getCurrentLang() || 'es';
+    const locale = lang === 'es' ? 'es-AR' : 'en-GB';
 
-    return date.toLocaleDateString('en-GB', {
+    return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -97,7 +101,7 @@ export class FixtureComponent implements OnInit {
           this.loadingContent = false;
         },
         error: () => {
-          this.error = 'Failed to load fixture';
+          this.error = this.translate.instant('FIXTURE.ERROR_FIXTURE');
           this.loadingContent = false;
         },
       });
@@ -116,7 +120,7 @@ export class FixtureComponent implements OnInit {
           this.loadingStandings = false;
         },
         error: () => {
-          this.standingsError = 'Failed to load standings';
+          this.standingsError = this.translate.instant('FIXTURE.ERROR_STANDINGS');
           this.loadingStandings = false;
         },
       });
