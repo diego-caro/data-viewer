@@ -10,12 +10,12 @@ import { FixtureMatch, FixtureRound, FixtureDivision, StandingsEntry } from '../
 type ActiveTab = 'fixture' | 'standings';
 
 @Component({
-  selector: 'app-fixture',
+  selector: 'app-tournament',
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe],
-  templateUrl: './fixture.component.html',
+  templateUrl: './tournament.component.html',
 })
-export class FixtureComponent implements OnInit {
+export class TournamentComponent implements OnInit {
   private readonly fixtureService = inject(FixtureService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);

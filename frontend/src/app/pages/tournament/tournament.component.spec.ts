@@ -1,15 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError, NEVER } from 'rxjs';
-import { FixtureComponent } from './fixture.component';
+import { TournamentComponent } from './tournament.component';
 import { FixtureService } from '../../services/fixture.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
-import {
-  FixtureMatch,
-  FixtureClub,
-  FixtureDivision,
-  StandingsEntry,
-} from '../../models/fixture.model';
+import { FixtureMatch, FixtureClub, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
 
 const MOCK_DIVISIONS: FixtureDivision[] = [
   { id: 206752, name: 'Mixto Sub 14 A' },
@@ -76,9 +71,9 @@ const MOCK_STANDINGS: StandingsEntry[] = [
   },
 ];
 
-describe('FixtureComponent', () => {
-  let component: FixtureComponent;
-  let fixture: ComponentFixture<FixtureComponent>;
+describe('TournamentComponent', () => {
+  let component: TournamentComponent;
+  let fixture: ComponentFixture<TournamentComponent>;
   let fixtureServiceMock: jest.Mocked<FixtureService>;
 
   function setupMocks(overrides: Partial<jest.Mocked<FixtureService>> = {}): void {
@@ -97,15 +92,12 @@ describe('FixtureComponent', () => {
     } as unknown as jest.Mocked<FixtureService>;
 
     await TestBed.configureTestingModule({
-      imports: [FixtureComponent],
-      providers: [
-        { provide: FixtureService, useValue: fixtureServiceMock },
-        ...provideTranslateTesting(),
-      ],
+      imports: [TournamentComponent],
+      providers: [{ provide: FixtureService, useValue: fixtureServiceMock }, ...provideTranslateTesting()],
     }).compileComponents();
 
     setupTestTranslations(TestBed.inject(TranslateService));
-    fixture = TestBed.createComponent(FixtureComponent);
+    fixture = TestBed.createComponent(TournamentComponent);
     component = fixture.componentInstance;
   });
 
@@ -170,9 +162,7 @@ describe('FixtureComponent', () => {
     });
 
     it('should show error when divisions fail to load', () => {
-      fixtureServiceMock.getDivisions.mockReturnValue(
-        throwError(() => new Error('Network error'))
-      );
+      fixtureServiceMock.getDivisions.mockReturnValue(throwError(() => new Error('Network error')));
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="error-state"]')).toBeTruthy();
@@ -255,9 +245,7 @@ describe('FixtureComponent', () => {
     });
 
     it('should show error when fixture fails to load', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(
-        throwError(() => new Error('Network error'))
-      );
+      fixtureServiceMock.getMatches.mockReturnValue(throwError(() => new Error('Network error')));
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="fixture-error"]')).toBeTruthy();
@@ -351,9 +339,7 @@ describe('FixtureComponent', () => {
     });
 
     it('should show error when standings fail to load', () => {
-      fixtureServiceMock.getStandings.mockReturnValue(
-        throwError(() => new Error('Network error'))
-      );
+      fixtureServiceMock.getStandings.mockReturnValue(throwError(() => new Error('Network error')));
       component.onDivisionChange(206752);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
