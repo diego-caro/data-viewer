@@ -1,6 +1,6 @@
-# data-viewer — Guía de Inicio
+# data-viewer — Getting Started Guide
 
-App que lee datos de una API externa y los visualiza de una forma diferente.
+App that reads data from an external API and visualizes it in a different way.
 
 - **Jira**: https://petreles.atlassian.net/jira/software/projects/SCRUM/boards/1
 - **GitHub**: https://github.com/diego-caro
@@ -8,115 +8,115 @@ App que lee datos de una API externa y los visualiza de una forma diferente.
 
 ---
 
-## Antes de empezar — Qué vas a tener al terminar esta guía
+## Before You Start — What You'll Have When Done
 
-Un ecosistema donde vos das una idea en lenguaje natural y Claude:
-1. La convierte en un ticket de Jira con criterios de aceptación
-2. Vos revisás y aprobás (o pedís otra iteración)
-3. Claude implementa el código con tests (70% coverage)
-4. Genera commit + PR en GitHub
-5. Cierra el ticket en Jira
+An ecosystem where you give an idea in natural language and Claude:
+1. Converts it into a Jira ticket with acceptance criteria
+2. You review and approve (or request another iteration)
+3. Claude implements the code with tests (70% coverage)
+4. Generates commit + PR on GitHub
+5. Closes the ticket in Jira
 
 ---
 
-## Paso 1 — Instalar los prerrequisitos
+## Step 1 — Install Prerequisites
 
-Abrí tu terminal y verificá que tenés todo instalado:
+Open your terminal and verify everything is installed:
 
 ```bash
-node --version    # necesitás 20.19.0 o superior
-npm --version     # necesitás 10 o superior
-git --version     # cualquier versión reciente
-gh --version      # GitHub CLI — si no lo tenés, ver abajo
+node --version    # you need 20.19.0 or higher
+npm --version     # you need 10 or higher
+git --version     # any recent version
+gh --version      # GitHub CLI — if you don't have it, see below
 ```
 
-**Instalar GitHub CLI** (si no lo tenés):
+**Install GitHub CLI** (if you don't have it):
 ```bash
 # macOS
 brew install gh
 
-# Luego autenticarte con tu cuenta de GitHub
+# Then authenticate with your GitHub account
 gh auth login
-# → Elegí "GitHub.com" → "HTTPS" → "Login with a web browser"
+# → Choose "GitHub.com" → "HTTPS" → "Login with a web browser"
 ```
 
-**Instalar Claude Code** (el agente de Anthropic para terminal):
+**Install Claude Code** (Anthropic's terminal agent):
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-Verificá que quedó instalado:
+Verify it's installed:
 ```bash
 claude --version
 ```
 
 ---
 
-## Paso 2 — Subir el proyecto a GitHub
+## Step 2 — Push the Project to GitHub
 
-Creá el repositorio en GitHub y conectalo:
+Create the repository on GitHub and connect it:
 
 ```bash
-# Posicionarte en la carpeta del proyecto
+# Navigate to the project folder
 cd /Users/diegocaro/Projects/data-viewer
 
-# Inicializar git (si no lo hiciste antes)
+# Initialize git (if you haven't already)
 git init -b main
 
-# Primer commit con todo el scaffold
+# First commit with the full scaffold
 git add .
 git commit -m "chore: initialize data-viewer project scaffold"
 
-# Crear el repo en GitHub y subir
+# Create the repo on GitHub and push
 gh repo create data-viewer --public --source=. --remote=origin --push
 ```
 
-> El repo va a quedar en https://github.com/diego-caro/data-viewer
+> The repo will be at https://github.com/diego-caro/data-viewer
 
 ---
 
-## Paso 3 — Configurar el Jira MCP
+## Step 3 — Configure the Jira MCP
 
-El Jira MCP le permite a Claude leer y escribir tickets en tu Jira sin que vos copies y pegues nada.
+The Jira MCP allows Claude to read and write tickets in your Jira without you having to copy and paste anything.
 
-### 3a — Obtener tu API token de Jira
+### 3a — Get Your Jira API Token
 
-1. Ir a: https://id.atlassian.com/manage-profile/security/api-tokens
-2. Click en **"Create API token"**
-3. Dale un nombre: `claude-data-viewer`
-4. Copiá el token (solo se muestra una vez)
+1. Go to: https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click **"Create API token"**
+3. Give it a name: `claude-data-viewer`
+4. Copy the token (it's only shown once)
 
-### 3b — Configurar el MCP en Claude Code
+### 3b — Configure the MCP in Claude Code
 
-Ejecutá este comando reemplazando los valores:
+Run this command, replacing the values:
 
 ```bash
 claude mcp add \
   --name jira \
   --transport http \
   "https://mcp.atlassian.com/v1/mcp" \
-  --header "Authorization: Basic $(echo -n 'diego.caro999@gmail.com:TU_API_TOKEN_AQUI' | base64)"
+  --header "Authorization: Basic $(echo -n 'diego.caro999@gmail.com:YOUR_API_TOKEN_HERE' | base64)"
 ```
 
-> Reemplazá `TU_API_TOKEN_AQUI` con el token que copiaste en el paso anterior.
+> Replace `YOUR_API_TOKEN_HERE` with the token you copied in the previous step.
 
-Verificá que quedó configurado:
+Verify it's configured:
 ```bash
 claude mcp list
-# Deberías ver "jira" en la lista
+# You should see "jira" in the list
 ```
 
 ---
 
-## Paso 4 — Arrancar Claude Code en el proyecto
+## Step 4 — Start Claude Code in the Project
 
 ```bash
 cd /Users/diegocaro/Projects/data-viewer
 claude
 ```
 
-Claude Code lee automáticamente el `CLAUDE.md` y carga las reglas del proyecto.
-Vas a ver algo como:
+Claude Code automatically reads `CLAUDE.md` and loads the project rules.
+You'll see something like:
 ```
 ✓ Loaded CLAUDE.md
 ✓ Found 7 custom commands
@@ -125,146 +125,146 @@ Vas a ver algo como:
 
 ---
 
-## Paso 5 — El flujo de trabajo
+## Step 5 — The Workflow
 
-### 5a — Dar una idea y generar el ticket
+### 5a — Give an Idea and Generate the Ticket
 
-Escribí tu idea en lenguaje natural. No necesita ser perfecta:
+Write your idea in natural language. It doesn't need to be perfect:
 
 ```
-/enrich quiero mostrar los datos que vienen de la API de forma de tabla con filtros
+/enrich I want to display the data from the API in a table with filters
 ```
 
-O si ya tenés un ticket en Jira:
+Or if you already have a ticket in Jira:
 ```
 /enrich SCRUM-1
 ```
 
-**Qué pasa:**
-- El agente BA te va a hacer 2-3 preguntas para entender mejor
-- Respondé lo que puedas — con poca info también funciona
-- Claude propone un draft del ticket
-- Repetís hasta que estés conforme (máximo 3 rondas)
+**What happens:**
+- The BA agent will ask you 2-3 questions to better understand
+- Answer what you can — it also works with little info
+- Claude proposes a draft ticket
+- You iterate until you're satisfied (max 3 rounds)
 
-**Ejemplo de interacción:**
+**Example interaction:**
 ```
-Vos: /enrich quiero mostrar datos de una API en una tabla
+You: /enrich I want to display API data in a table
 
-Claude (BA): Entendido. Tengo algunas preguntas:
-  1. ¿Qué tipo de datos muestra la tabla? (ej: usuarios, productos, etc.)
-  2. ¿Los filtros son por columna o hay una búsqueda global?
-  3. ¿Necesitás paginación o carga infinita?
+Claude (BA): Got it. I have some questions:
+  1. What type of data does the table show? (e.g., users, products, etc.)
+  2. Are the filters per column or is there a global search?
+  3. Do you need pagination or infinite scroll?
 
-Vos: son registros de ventas, filtros por fecha y vendedor, paginación de 20 por página
+You: they're sales records, filters by date and seller, pagination of 20 per page
 
-Claude: [propone el ticket con criterios de aceptación]
+Claude: [proposes the ticket with acceptance criteria]
 
-Vos: se ve bien, aprobado
+You: looks good, approved
 ```
 
-**Resultado:** ticket actualizado en Jira, status → "Ready for Dev"
+**Result:** ticket updated in Jira, status → "Ready for Dev"
 
 ---
 
-### 5b — Revisar el ticket (tu decisión)
+### 5b — Review the Ticket (Your Decision)
 
-Antes de proceder, revisá el ticket en Jira:
+Before proceeding, review the ticket in Jira:
 https://petreles.atlassian.net/jira/software/projects/SCRUM/boards/1
 
-Si necesitás otra iteración:
+If you need another iteration:
 ```
-necesito que también incluya exportar a CSV
+I need it to also include export to CSV
 ```
 
-Claude actualiza el ticket y te muestra la nueva versión.
+Claude updates the ticket and shows you the new version.
 
-Si está bien:
+If it looks good:
 ```
-está bien, comenzar desarrollo
+looks good, start development
 ```
 
 ---
 
-### 5c — Iniciar el desarrollo
+### 5c — Start Development
 
 ```
 /develop SCRUM-1
 ```
 
-**Qué pasa automáticamente:**
-1. Backend Dev implementa la API route + unit tests
-2. Frontend Dev implementa el componente + component tests
-3. QA audita coverage (si hay gaps, los cierra)
-4. QA escribe E2E tests con Cypress
-5. Reviewer hace code review
-6. Si hay issues críticos → vuelve al dev correspondiente
-7. Docs se actualizan automáticamente
+**What happens automatically:**
+1. Backend Dev implements the API route + unit tests
+2. Frontend Dev implements the component + component tests
+3. QA audits coverage (fills gaps if needed)
+4. QA writes E2E tests with Cypress
+5. Reviewer does code review
+6. If there are critical issues → goes back to the relevant dev
+7. Docs are updated automatically
 
-**Vos solo intervenís si el Reviewer pide tu aprobación final.**
+**You only intervene if the Reviewer asks for your final approval.**
 
 ---
 
-### 5d — Hacer el commit y el PR
+### 5d — Make the Commit and PR
 
-Después del review aprobado, Claude te pregunta:
+After the review is approved, Claude asks:
 ```
-Ticket SCRUM-1 aprobado y docs actualizados. ¿Hago el commit y PR?
-```
-
-Respondés:
-```
-sí
+Ticket SCRUM-1 approved and docs updated. Should I commit and create the PR?
 ```
 
-O podés lanzarlo manualmente:
+You respond:
+```
+yes
+```
+
+Or you can launch it manually:
 ```
 /commit SCRUM-1
 ```
 
-**Resultado:**
-- Commit con mensaje convencional
-- Branch pushed a GitHub
-- PR creado con link al ticket de Jira
-- Ticket movido a "Done" en Jira
+**Result:**
+- Commit with conventional message
+- Branch pushed to GitHub
+- PR created with link to the Jira ticket
+- Ticket moved to "Done" in Jira
 
 ---
 
-## Referencia rápida de comandos
+## Quick Command Reference
 
-| Comando | Cuándo usarlo |
-|---------|--------------|
-| `/enrich [idea o SCRUM-N]` | Tenés una idea vaga y querés convertirla en ticket |
-| `/develop SCRUM-N` | El ticket está aprobado y querés arrancar el desarrollo |
-| `/qa SCRUM-N` | Querés correr QA manualmente |
-| `/review SCRUM-N` | Querés pedir review manualmente |
-| `/verify SCRUM-N` | Verificar que el código cumple los criterios del ticket |
-| `/update-docs SCRUM-N` | Actualizar la documentación manualmente |
-| `/commit SCRUM-N` | Hacer commit + PR para ese ticket |
+| Command | When to Use |
+|---------|------------|
+| `/enrich [idea or SCRUM-N]` | You have a vague idea and want to turn it into a ticket |
+| `/develop SCRUM-N` | The ticket is approved and you want to start development |
+| `/qa SCRUM-N` | You want to run QA manually |
+| `/review SCRUM-N` | You want to request a review manually |
+| `/verify SCRUM-N` | Verify that the code meets the ticket criteria |
+| `/update-docs SCRUM-N` | Update documentation manually |
+| `/commit SCRUM-N` | Make a commit + PR for that ticket |
 
 ---
 
-## Estructura del proyecto (para referencia)
+## Project Structure (for Reference)
 
 ```
 data-viewer/
-├── CLAUDE.md                    ← reglas del proyecto (Claude las lee automáticamente)
+├── CLAUDE.md                    ← project rules (Claude reads them automatically)
 ├── .claude/
-│   └── commands/                ← slash commands disponibles en Claude Code
+│   └── commands/                ← slash commands available in Claude Code
 ├── docs/
-│   ├── base-standards.md        ← estándares de código
+│   ├── base-standards.md        ← code standards
 │   ├── documentation-standards.md
-│   ├── development-guide.md     ← guía técnica (se actualiza automáticamente)
-│   ├── data-model.md            ← modelo de datos (actualizar cuando tengas el endpoint)
-│   └── api-spec.yml             ← spec del endpoint (actualizar cuando lo tengas)
+│   ├── development-guide.md     ← technical guide (updated automatically)
+│   ├── data-model.md            ← data model (update when you have the endpoint)
+│   └── api-spec.yml             ← endpoint spec (update when you have it)
 └── ai-specs/
-    ├── agents/                  ← definición de cada rol
+    ├── agents/                  ← role definitions
     │   ├── pm.md
     │   ├── ba.md
     │   ├── backend-developer.md
     │   ├── frontend-developer.md
     │   ├── qa-automation.md
     │   └── reviewer.md
-    └── skills/                  ← flujos de trabajo
+    └── skills/                  ← workflows
         ├── enrich/
         ├── develop/
         ├── qa/
@@ -276,33 +276,33 @@ data-viewer/
 
 ---
 
-## Próximos pasos cuando tengas el endpoint
+## Next Steps When You Have the Endpoint
 
-Cuando conozcas la URL de la API que vas a consumir, actualizá estos dos archivos:
+When you know the URL of the API you'll consume, update these two files:
 
-1. **`docs/api-spec.yml`** — documentá el endpoint, los parámetros y la respuesta
-2. **`docs/data-model.md`** — documentá la forma de los datos que devuelve
+1. **`docs/api-spec.yml`** — document the endpoint, parameters, and response
+2. **`docs/data-model.md`** — document the shape of the data it returns
 
-Podés pedirle a Claude que lo haga por vos:
+You can ask Claude to do it for you:
 ```
-tengo el endpoint: https://api.ejemplo.com/ventas — devuelve un array de { id, fecha, vendedor, monto }. Actualizá la spec y el data model.
+I have the endpoint: https://api.example.com/sales — it returns an array of { id, date, seller, amount }. Update the spec and data model.
 ```
 
 ---
 
-## Troubleshooting frecuente
+## Common Troubleshooting
 
-**Claude no reconoce el comando `/enrich`**
-→ Asegurate de estar en la carpeta del proyecto cuando corrés `claude`
-→ Verificá que existe `.claude/commands/enrich.md`
+**Claude doesn't recognize the `/enrich` command**
+→ Make sure you're in the project folder when you run `claude`
+→ Verify that `.claude/commands/enrich.md` exists
 
-**Jira MCP no funciona**
-→ Verificá el token: `claude mcp list`
-→ Regenerá el token en https://id.atlassian.com/manage-profile/security/api-tokens
+**Jira MCP doesn't work**
+→ Verify the token: `claude mcp list`
+→ Regenerate the token at https://id.atlassian.com/manage-profile/security/api-tokens
 
-**Coverage por debajo de 70%**
-→ Normal al principio. Claude QA lo detecta y agrega los tests faltantes automáticamente.
-→ Si el QA no puede llegar al 70% con tests, te va a avisar que hay un gap de lógica.
+**Coverage below 70%**
+→ Normal at the beginning. Claude QA detects it and automatically adds the missing tests.
+→ If QA can't reach 70% with tests, it will let you know there's a logic gap.
 
-**Git push rechazado**
-→ No hacer force push. Correr `git pull --rebase origin main` y luego volver a pushear.
+**Git push rejected**
+→ Don't force push. Run `git pull --rebase origin main` and then push again.
