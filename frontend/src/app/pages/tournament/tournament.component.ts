@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { FixtureService } from '../../services/fixture.service';
 import { FixtureMatch, FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
+import { environment } from '../../../environments/environment';
 
 type ActiveTab = 'fixture' | 'standings';
 
@@ -40,13 +42,11 @@ export class TournamentComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (divisions) => {
-          this.divisions = divisions;
-          this.loadingDivisions = false;
-          if (divisions.length > 0) {
-            this.selectedDivisionId.set(divisions[0].id);
-            this.loadFixtureData(divisions[0].id);
-            this.loadStandings(divisions[0].id);
+          if (divisions.length === 0) {
+            this.loadingDivisions = false;
+            return;
           }
+          this.loadCategories(divisions);
         },
         error: () => {
           this.error = this.translate.instant('FIXTURE.ERROR_DIVISIONS');
@@ -138,5 +138,38 @@ export class TournamentComponent implements OnInit {
     return Array.from(roundMap.entries())
       .sort(([a], [b]) => a - b)
       .map(([number, roundMatches]) => ({ number, matches: roundMatches }));
+  }
+
+  private loadCategories(divisions: FixtureDivision[]): void {
+    const standingsRequests = divisions.map((division) =>
+      this.fixtureService.getStandings(division.id).pipe(
+        map((standings) => ({ division, standings })),
+        catchError(() => of({ division, standings: [] as StandingsEntry[] }))
+      )
+    );
+
+    forkJoin(standingsRequests)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (results) => {
+          this.divisions = results
+            .filter(({ standings }) =>
+              standings.some((entry) => entry.clubName.includes(environment.clubName))
+            )
+            .map(({ division }) => division);
+
+          this.loadingDivisions = false;
+
+          if (this.divisions.length > 0) {
+            this.selectedDivisionId.set(this.divisions[0].id);
+            this.loadFixtureData(this.divisions[0].id);
+            this.loadStandings(this.divisions[0].id);
+          }
+        },
+        error: () => {
+          this.error = this.translate.instant('FIXTURE.ERROR_DIVISIONS');
+          this.loadingDivisions = false;
+        },
+      });
   }
 }

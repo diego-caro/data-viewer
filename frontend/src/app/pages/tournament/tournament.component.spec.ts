@@ -43,9 +43,9 @@ const MOCK_CLUBS: FixtureClub[] = [
 const MOCK_STANDINGS: StandingsEntry[] = [
   {
     position: 1,
-    clubId: 1,
-    clubName: 'Patoruzú Rugby Club',
-    clubLogo: 'base64logo1',
+    clubId: 5,
+    clubName: 'Club Empleados de Comercio',
+    clubLogo: 'base64logo5',
     points: 9,
     played: 3,
     won: 3,
@@ -159,6 +159,27 @@ describe('TournamentComponent', () => {
       expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206754);
       expect(fixtureServiceMock.getClubs).toHaveBeenCalledWith(206754);
       expect(fixtureServiceMock.getStandings).toHaveBeenCalledWith(206754);
+    });
+
+    it('should filter divisions to only those where the club plays', () => {
+      const standingsWithoutClub: StandingsEntry[] = [
+        { position: 1, clubId: 99, clubName: 'Other Club', clubLogo: null, points: 3, played: 1, won: 1, drawn: 0, lost: 0, goalsFor: 2, goalsAgainst: 0, goalDifference: 2 },
+      ];
+      fixtureServiceMock.getStandings.mockImplementation((id: number) =>
+        id === 206752 ? of(MOCK_STANDINGS) : of(standingsWithoutClub)
+      );
+      fixture.detectChanges();
+      expect(component.divisions).toHaveLength(1);
+      expect(component.divisions[0].id).toBe(206752);
+    });
+
+    it('should handle individual standings request failure gracefully', () => {
+      fixtureServiceMock.getStandings.mockImplementation((id: number) =>
+        id === 206752 ? of(MOCK_STANDINGS) : throwError(() => new Error('fail'))
+      );
+      fixture.detectChanges();
+      expect(component.divisions).toHaveLength(1);
+      expect(component.divisions[0].id).toBe(206752);
     });
 
     it('should show error when divisions fail to load', () => {
@@ -302,7 +323,7 @@ describe('TournamentComponent', () => {
       const rows = el.querySelectorAll('[data-testid="standings-row"]');
       const firstRow = rows[0];
       expect(firstRow.textContent).toContain('1');
-      expect(firstRow.textContent).toContain('Patoruzú Rugby Club');
+      expect(firstRow.textContent).toContain('Club Empleados de Comercio');
       expect(firstRow.textContent).toContain('9');
     });
 
