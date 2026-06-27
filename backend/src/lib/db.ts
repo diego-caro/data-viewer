@@ -82,8 +82,23 @@ export async function initDatabase(): Promise<void> {
       week_start_date DATE NOT NULL,
       created_by UUID NOT NULL REFERENCES users(id),
       created_at TIMESTAMPTZ DEFAULT NOW(),
-      UNIQUE(category_id, week_start_date)
+      type VARCHAR(10) NOT NULL DEFAULT 'fee' CHECK (type IN ('fee', 'travel')),
+      UNIQUE(category_id, week_start_date, type)
     )
+  `);
+
+  await query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'category_fees' AND column_name = 'type'
+      ) THEN
+        ALTER TABLE category_fees ADD COLUMN type VARCHAR(10) NOT NULL DEFAULT 'fee' CHECK (type IN ('fee', 'travel'));
+        ALTER TABLE category_fees DROP CONSTRAINT IF EXISTS category_fees_category_id_week_start_date_key;
+        ALTER TABLE category_fees ADD CONSTRAINT category_fees_category_id_week_start_date_type_key UNIQUE (category_id, week_start_date, type);
+      END IF;
+    END $$
   `);
 
   await query(`

@@ -3,11 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { FeeService } from '../../../services/fee.service';
 import { PlayerService } from '../../../services/player.service';
-import { CategoryFee } from '../../../models/fee.model';
+import { FixtureService } from '../../../services/fixture.service';
+import { CategoryFee, FeeType } from '../../../models/fee.model';
+import { FixtureMatch } from '../../../models/fixture.model';
 import { Category } from '../../../models/player.model';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-fees',
@@ -18,6 +22,7 @@ import { Category } from '../../../models/player.model';
 export class AdminFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
   private readonly playerService = inject(PlayerService);
+  private readonly fixtureService = inject(FixtureService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -25,6 +30,8 @@ export class AdminFeesComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   error: string | null = null;
+  activeTab: FeeType = 'fee';
+  isAway = false;
 
   showForm = signal(false);
   formLoading = signal(false);
@@ -36,8 +43,12 @@ export class AdminFeesComponent implements OnInit {
     availablePlayers: 0,
   };
 
+  get filteredFees(): CategoryFee[] {
+    return this.fees.filter((f) => (f.type ?? 'fee') === this.activeTab);
+  }
+
   get unconfiguredCategories(): Category[] {
-    const configuredIds = new Set(this.fees.map((f) => f.categoryId));
+    const configuredIds = new Set(this.filteredFees.map((f) => f.categoryId));
     return this.categories.filter((c) => !configuredIds.has(c.id));
   }
 
@@ -62,10 +73,35 @@ export class AdminFeesComponent implements OnInit {
           this.loading = false;
         },
       });
+
+    this.fixtureService
+      .getDivisions()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((divisions) =>
+          divisions.length > 0
+            ? this.fixtureService.getMatches(divisions[0].id)
+            : of([] as FixtureMatch[]),
+        ),
+        catchError(() => of([] as FixtureMatch[])),
+      )
+      .subscribe((matches) => {
+        const now = new Date();
+        const upcoming = matches
+          .filter((m) => m.status === 'pending' && new Date(m.date) > now)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        if (upcoming.length > 0) {
+          this.isAway = upcoming[0].awayTeam.clubName.includes(environment.clubName);
+        }
+      });
+  }
+
+  setTab(tab: FeeType): void {
+    this.activeTab = tab;
   }
 
   openConfigForm(categoryId: string): void {
-    const existing = this.fees.find((f) => f.categoryId === categoryId);
+    const existing = this.filteredFees.find((f) => f.categoryId === categoryId);
     this.formData = {
       categoryId,
       totalAmount: existing?.totalAmount ?? 0,
@@ -89,6 +125,7 @@ export class AdminFeesComponent implements OnInit {
         categoryId: this.formData.categoryId,
         totalAmount: this.formData.totalAmount,
         availablePlayers: this.formData.availablePlayers,
+        type: this.activeTab,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

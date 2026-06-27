@@ -1,4 +1,5 @@
 export type FeeStatus = 'pending' | 'paid';
+export type FeeType = 'fee' | 'travel';
 
 export interface CategoryFee {
   id: string;
@@ -10,6 +11,7 @@ export interface CategoryFee {
   weekStartDate: string;
   createdBy: string;
   createdAt: string;
+  type: FeeType;
 }
 
 export interface PlayerFee {
@@ -31,6 +33,7 @@ export interface CreateCategoryFeeRequest {
   categoryId: string;
   totalAmount: number;
   availablePlayers: number;
+  type?: FeeType;
 }
 
 export interface PaymentPreferenceResult {

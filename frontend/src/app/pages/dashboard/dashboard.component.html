@@ -15,10 +15,38 @@
     <div *ngIf="playStatus === 'enabled'" data-testid="play-status-enabled"
       class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
       <p class="font-medium">{{ 'DASHBOARD.PLAY_ENABLED' | translate }}</p>
+      <div *ngIf="feeStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
+        <span *ngIf="feeStatus" data-testid="fee-pill"
+          [class]="feeStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (feeStatus === 'paid' ? 'DASHBOARD.FEE_PAID' : 'DASHBOARD.FEE_PENDING') | translate }}
+        </span>
+        <span *ngIf="travelStatus" data-testid="travel-pill"
+          [class]="travelStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (travelStatus === 'paid' ? 'DASHBOARD.TRAVEL_PAID' : 'DASHBOARD.TRAVEL_PENDING') | translate }}
+        </span>
+      </div>
     </div>
     <div *ngIf="playStatus === 'not-enabled'" data-testid="play-status-not-enabled"
       class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-700">
       <p class="font-medium">{{ 'DASHBOARD.PLAY_NOT_ENABLED' | translate }}</p>
+      <div *ngIf="feeStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
+        <span *ngIf="feeStatus" data-testid="fee-pill"
+          [class]="feeStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (feeStatus === 'paid' ? 'DASHBOARD.FEE_PAID' : 'DASHBOARD.FEE_PENDING') | translate }}
+        </span>
+        <span *ngIf="travelStatus" data-testid="travel-pill"
+          [class]="travelStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (travelStatus === 'paid' ? 'DASHBOARD.TRAVEL_PAID' : 'DASHBOARD.TRAVEL_PENDING') | translate }}
+        </span>
+      </div>
       <a routerLink="/fees"
         class="mt-2 inline-block text-sm font-medium text-yellow-800 underline hover:text-yellow-900">
         {{ 'DASHBOARD.PLAY_GO_TO_FEES' | translate }}

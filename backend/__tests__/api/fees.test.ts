@@ -136,29 +136,29 @@ describe('GET /api/fees', () => {
     expect(mockedFeeService.getCurrentFees).toHaveBeenCalled();
   });
 
-  it('should return category-filtered fee for captain', async () => {
+  it('should return category-filtered fees for captain', async () => {
     mockedUserService.verifyToken.mockReturnValue(captainPayload);
     mockedUserService.getProfile.mockResolvedValue({
       id: 'captain-1', email: 'cap@cec.com', role: 'captain',
       firstName: 'Cap', lastName: 'One', categoryId: 'cat-1',
     });
-    mockedFeeService.getCurrentFeesByCategory.mockResolvedValue(mockFee);
+    mockedFeeService.getAllCurrentFeesByCategory.mockResolvedValue([mockFee]);
 
     const response = await GET(createGetRequest('Bearer captain-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.data).toHaveLength(1);
-    expect(mockedFeeService.getCurrentFeesByCategory).toHaveBeenCalledWith('cat-1');
+    expect(mockedFeeService.getAllCurrentFeesByCategory).toHaveBeenCalledWith('cat-1');
   });
 
-  it('should return category-filtered fee for player', async () => {
+  it('should return empty array for player with no fees', async () => {
     mockedUserService.verifyToken.mockReturnValue(playerPayload);
     mockedUserService.getProfile.mockResolvedValue({
       id: 'player-1', email: 'p@cec.com', role: 'player',
       firstName: 'P', lastName: 'One', categoryId: 'cat-2',
     });
-    mockedFeeService.getCurrentFeesByCategory.mockResolvedValue(null);
+    mockedFeeService.getAllCurrentFeesByCategory.mockResolvedValue([]);
 
     const response = await GET(createGetRequest('Bearer player-token'));
     const body = await response.json();

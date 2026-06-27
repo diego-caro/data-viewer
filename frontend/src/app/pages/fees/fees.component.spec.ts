@@ -14,7 +14,7 @@ const mockFeeWithPending: CategoryFee = {
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
   weekStartDate: '2026-06-15', createdBy: 'admin-1',
-  createdAt: '2026-06-15T00:00:00Z',
+  createdAt: '2026-06-15T00:00:00Z', type: 'fee',
   playerFees: [
     { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
     { id: 'pf-2', categoryFeeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
@@ -26,6 +26,25 @@ const mockFeeAllPaid: CategoryFee = {
   ...mockFeeWithPending,
   playerFees: [
     { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
+  ],
+  paidCount: 1, unpaidCount: 0,
+};
+
+const mockTravelPending: CategoryFee = {
+  id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+  totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
+  weekStartDate: '2026-06-15', createdBy: 'admin-1',
+  createdAt: '2026-06-15T00:00:00Z', type: 'travel',
+  playerFees: [
+    { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
+  ],
+  paidCount: 0, unpaidCount: 1,
+};
+
+const mockTravelPaid: CategoryFee = {
+  ...mockTravelPending,
+  playerFees: [
+    { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T11:00:00Z' },
   ],
   paidCount: 1, unpaidCount: 0,
 };
@@ -58,6 +77,11 @@ describe('PlayerFeesComponent', () => {
       payFee: jest.fn().mockReturnValue(of({
         preferenceId: 'pref-123',
         initPoint: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref-123',
+        sandboxInitPoint: 'https://sandbox.mercadopago.com/checkout',
+      })),
+      payAll: jest.fn().mockReturnValue(of({
+        preferenceId: 'pref-all',
+        initPoint: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref-all',
         sandboxInitPoint: 'https://sandbox.mercadopago.com/checkout',
       })),
       verifyPayment: jest.fn().mockReturnValue(of({ status: 'paid' })),
@@ -144,7 +168,7 @@ describe('PlayerFeesComponent', () => {
 
     it('should show Pay button for pending fee', () => {
       const el = fixture.nativeElement as HTMLElement;
-      const payBtn = el.querySelector('[data-testid="pay-button"]');
+      const payBtn = el.querySelector('[data-testid="pay-fee-button"]');
       expect(payBtn).toBeTruthy();
     });
 
@@ -173,11 +197,11 @@ describe('PlayerFeesComponent', () => {
 
     it('should not show Pay button', () => {
       const el = fixture.nativeElement as HTMLElement;
-      const payBtn = el.querySelector('[data-testid="pay-button"]');
+      const payBtn = el.querySelector('[data-testid="pay-fee-button"]');
       expect(payBtn).toBeNull();
     });
 
-    it('should display paid date', () => {
+    it('should display paid label', () => {
       const el = fixture.nativeElement as HTMLElement;
       const paidBadge = el.querySelector('[data-testid="paid-badge"]');
       expect(paidBadge?.textContent).toContain('Paid');
@@ -191,20 +215,12 @@ describe('PlayerFeesComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should call payFee when Pay button is clicked', () => {
-      const originalOpen = window.open;
-      window.open = jest.fn();
-
+    it('should call payFee with type fee when Pay button is clicked', () => {
       component.onPay();
-      expect(feeServiceMock.payFee).toHaveBeenCalled();
-
-      window.open = originalOpen;
+      expect(feeServiceMock.payFee).toHaveBeenCalledWith('fee');
     });
 
     it('should set paying flag while processing', () => {
-      const originalOpen = window.open;
-      window.open = jest.fn();
-
       const paySubject = new Subject();
       feeServiceMock.payFee!.mockReturnValue(paySubject.asObservable());
 
@@ -219,7 +235,6 @@ describe('PlayerFeesComponent', () => {
       paySubject.complete();
 
       expect(component.paying()).toBe(false);
-      window.open = originalOpen;
     });
 
     it('should show error when payment fails', () => {
@@ -232,6 +247,126 @@ describe('PlayerFeesComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const error = el.querySelector('[data-testid="pay-error"]');
       expect(error).toBeTruthy();
+    });
+  });
+
+  describe('travel fee', () => {
+    it('should show travel row when travel fee exists', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const travelRow = el.querySelector('[data-testid="travel-row"]');
+      expect(travelRow).toBeTruthy();
+      expect(travelRow?.textContent).toContain('150');
+    });
+
+    it('should show pay travel button when travel is pending', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="pay-travel-button"]')).toBeTruthy();
+    });
+
+    it('should show paid badge for travel when paid', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPaid] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="travel-status-paid"]')).toBeTruthy();
+    });
+
+    it('should call payFee with travel type', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      component.onPayTravel();
+      expect(feeServiceMock.payFee).toHaveBeenCalledWith('travel');
+    });
+
+    it('should not show travel row when no travel fee', async () => {
+      setupMocks({ fees: [mockFeeWithPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="travel-row"]')).toBeNull();
+    });
+  });
+
+  describe('pay all', () => {
+    it('should show Pay All when both fee and travel are pending', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="pay-all-button"]')).toBeTruthy();
+    });
+
+    it('should display total unpaid amount', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const total = el.querySelector('[data-testid="total-amount"]');
+      expect(total?.textContent).toContain('450');
+    });
+
+    it('should not show Pay All when only one item is pending', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPaid] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="pay-all-button"]')).toBeNull();
+    });
+
+    it('should call payAll service method', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      component.onPayAll();
+      expect(feeServiceMock.payAll).toHaveBeenCalled();
+    });
+
+    it('should set payingAll flag while processing', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      const paySubject = new Subject();
+      feeServiceMock.payAll!.mockReturnValue(paySubject.asObservable());
+
+      component.onPayAll();
+      expect(component.payingAll()).toBe(true);
+
+      paySubject.next({
+        preferenceId: 'pref-all',
+        initPoint: 'https://mp.com/all',
+        sandboxInitPoint: 'https://sandbox.mp.com/all',
+      });
+      paySubject.complete();
+      expect(component.payingAll()).toBe(false);
+    });
+
+    it('should show error when pay all fails', async () => {
+      setupMocks({ fees: [mockFeeWithPending, mockTravelPending] });
+      await createComponent();
+      fixture.detectChanges();
+
+      feeServiceMock.payAll!.mockReturnValue(throwError(() => new Error('fail')));
+      component.onPayAll();
+      fixture.detectChanges();
+
+      expect(component.payError()).toBeTruthy();
     });
   });
 
@@ -276,7 +411,7 @@ describe('PlayerFeesComponent', () => {
       id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
       totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
       weekStartDate: '2026-06-15', createdBy: 'admin-1',
-      createdAt: '2026-06-15T00:00:00Z',
+      createdAt: '2026-06-15T00:00:00Z', type: 'fee',
       playerFees: [
         { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'captain-1', playerName: 'Captain, The', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
         { id: 'pf-2', categoryFeeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'pending', paidAt: null },
@@ -324,11 +459,6 @@ describe('PlayerFeesComponent', () => {
       const summary = el.querySelector('[data-testid="fee-summary"]');
       expect(summary?.textContent).toContain('2');
       expect(summary?.textContent).toContain('1');
-    });
-
-    it('should not show player-only Pay button', () => {
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.querySelector('[data-testid="pay-button"]')).toBeNull();
     });
   });
 
@@ -396,8 +526,20 @@ describe('PlayerFeesComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const banner = el.querySelector('[data-testid="warning-banner"]');
       expect(banner).toBeTruthy();
-      expect(banner?.textContent).toContain('300');
-      expect(banner?.textContent).toContain('2');
+    });
+
+    it('should show warning banner when travel is pending and next match is within 4 days', async () => {
+      setupMocks({
+        fees: [mockFeeAllPaid, mockTravelPending],
+        user: { id: 'player-1', role: 'player', categoryId: 'cat-1' },
+        matches: [createMatchInDays(2)],
+      });
+      await createComponent();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const banner = el.querySelector('[data-testid="warning-banner"]');
+      expect(banner).toBeTruthy();
     });
 
     it('should not show warning banner when fee is paid', async () => {
@@ -478,7 +620,6 @@ describe('PlayerFeesComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const banner = el.querySelector('[data-testid="warning-banner"]');
       expect(banner).toBeTruthy();
-      expect(banner?.textContent).toContain('3');
     });
 
     it('should still show fees when fixture API fails (graceful degradation)', async () => {

@@ -50,6 +50,8 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   categoryCharts: CategoryChartData[] = [];
   feeCharts: FeeChartData[] = [];
   playStatus: 'enabled' | 'not-enabled' | 'no-fee' | null = null;
+  feeStatus: 'paid' | 'pending' | null = null;
+  travelStatus: 'paid' | 'pending' | null = null;
   loading = true;
   error: string | null = null;
 
@@ -111,16 +113,30 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (fees) => {
-            if (fees.length === 0) {
+            const regularFees = fees.filter((f) => (f.type ?? 'fee') === 'fee');
+            const travelFees = fees.filter((f) => f.type === 'travel');
+
+            if (regularFees.length === 0) {
               this.playStatus = 'no-fee';
+              this.loading = false;
               return;
             }
-            const playerFee = fees[0]?.playerFees.find(pf => pf.userId === user.id);
-            if (!playerFee) {
+
+            const myFee = regularFees[0]?.playerFees.find((pf) => pf.userId === user.id);
+            if (!myFee) {
               this.playStatus = 'no-fee';
+              this.loading = false;
               return;
             }
-            this.playStatus = playerFee.status === 'paid' ? 'enabled' : 'not-enabled';
+
+            this.feeStatus = myFee.status;
+
+            const myTravel = travelFees[0]?.playerFees.find((pf) => pf.userId === user.id);
+            this.travelStatus = myTravel?.status ?? null;
+
+            const feePaid = myFee.status === 'paid';
+            const travelPaid = !myTravel || myTravel.status === 'paid';
+            this.playStatus = feePaid && travelPaid ? 'enabled' : 'not-enabled';
             this.loading = false;
           },
         });

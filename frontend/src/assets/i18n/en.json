@@ -23,6 +23,10 @@
     "PLAY_NOT_ENABLED": "Fee pending — you're not enabled to play this weekend",
     "PLAY_GO_TO_FEES": "Go to My Fees to pay and play this weekend",
     "PLAY_NO_FEE": "No fee configured for this week yet",
+    "FEE_PAID": "Fee: Paid",
+    "FEE_PENDING": "Fee: Pending",
+    "TRAVEL_PAID": "Travel: Paid",
+    "TRAVEL_PENDING": "Travel: Pending",
     "TITLE": "Signing",
     "NO_PLAYERS": "No players",
     "ACTIVE": "Active",
@@ -87,7 +91,12 @@
     "FLASH_FAILURE": "Payment failed. Please try again.",
     "FLASH_PENDING": "Payment is being processed. It may take a few minutes.",
     "ERROR_LOAD": "Unable to load fee data. Please try again later.",
-    "ERROR_PAY": "Payment could not be initiated. Please try again."
+    "ERROR_PAY": "Payment could not be initiated. Please try again.",
+    "WEEKLY_FEE": "Weekly Fee",
+    "TRAVEL": "Travel (Away)",
+    "TOTAL": "Total",
+    "PAY_ALL": "Pay All",
+    "PAY": "Pay"
   },
   "ADMIN_FEES": {
     "TITLE": "Fees",
@@ -107,6 +116,11 @@
     "COL_ACTION": "Action",
     "MARK_PAID": "Mark Paid",
     "UNCONFIGURED": "Unconfigured Categories",
+    "TAB_FEE": "Fee",
+    "TAB_TRAVEL": "Travel",
+    "BADGE_AWAY": "Away",
+    "BADGE_LOCAL": "Local",
+    "CONFIGURE_TRAVEL": "Configure Travel — {{category}}",
     "ERROR_LOAD": "Unable to load fees data. Please try again later.",
     "ERROR_SAVE": "Failed to save fee configuration."
   },

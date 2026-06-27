@@ -270,10 +270,11 @@ interface UpdateUserRequest {
 
 ### CategoryFee
 
-Represents the fee configuration for a category in a given week. Per-player amount is auto-calculated from `totalAmount / availablePlayers`.
+Represents the fee configuration for a category in a given week. Per-player amount is auto-calculated from `totalAmount / availablePlayers`. The `type` field discriminates between weekly fees and travel fees for away matches.
 
 ```typescript
 type FeeStatus = 'pending' | 'paid';
+type FeeType = 'fee' | 'travel';
 
 interface CategoryFee {
   id: string;            // UUID
@@ -285,10 +286,11 @@ interface CategoryFee {
   weekStartDate: string;  // Monday of the week (YYYY-MM-DD)
   createdBy: string;      // admin user UUID
   createdAt: string;
+  type: FeeType;          // 'fee' for weekly fee, 'travel' for away match travel
 }
 ```
 
-- **Source**: PostgreSQL `category_fees` table (UNIQUE on `category_id` + `week_start_date`)
+- **Source**: PostgreSQL `category_fees` table (UNIQUE on `category_id` + `week_start_date` + `type`)
 - **Backend type**: `backend/src/lib/types/fee.ts`
 - **Frontend type**: `frontend/src/app/models/fee.model.ts`
 

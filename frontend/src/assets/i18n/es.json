@@ -23,6 +23,10 @@
     "PLAY_NOT_ENABLED": "Cuota pendiente — no estás habilitado para jugar este fin de semana",
     "PLAY_GO_TO_FEES": "Ir a Mis Cuotas para pagar y jugar este fin de semana",
     "PLAY_NO_FEE": "No hay cuota configurada para esta semana todavía",
+    "FEE_PAID": "Cuota: Pagada",
+    "FEE_PENDING": "Cuota: Pendiente",
+    "TRAVEL_PAID": "Viaje: Pagado",
+    "TRAVEL_PENDING": "Viaje: Pendiente",
     "TITLE": "Fichaje",
     "NO_PLAYERS": "Sin jugadores",
     "ACTIVE": "Activos",
@@ -87,7 +91,12 @@
     "FLASH_FAILURE": "Pago fallido. Intente nuevamente.",
     "FLASH_PENDING": "El pago está siendo procesado. Puede demorar unos minutos.",
     "ERROR_LOAD": "No se pudieron cargar los datos de cuotas. Intente nuevamente más tarde.",
-    "ERROR_PAY": "No se pudo iniciar el pago. Intente nuevamente."
+    "ERROR_PAY": "No se pudo iniciar el pago. Intente nuevamente.",
+    "WEEKLY_FEE": "Cuota Semanal",
+    "TRAVEL": "Viaje (Visitante)",
+    "TOTAL": "Total",
+    "PAY_ALL": "Pagar Todo",
+    "PAY": "Pagar"
   },
   "ADMIN_FEES": {
     "TITLE": "Cuotas",
@@ -107,6 +116,11 @@
     "COL_ACTION": "Acción",
     "MARK_PAID": "Marcar Pagado",
     "UNCONFIGURED": "Categorías Sin Configurar",
+    "TAB_FEE": "Cuota",
+    "TAB_TRAVEL": "Viaje",
+    "BADGE_AWAY": "Visitante",
+    "BADGE_LOCAL": "Local",
+    "CONFIGURE_TRAVEL": "Configurar Viaje — {{category}}",
     "ERROR_LOAD": "No se pudieron cargar los datos de cuotas. Intente nuevamente más tarde.",
     "ERROR_SAVE": "Error al guardar la configuración de cuota."
   },
