@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-35 — Add i18n with auto browser language detection (ES/EN)
+> Last updated: SCRUM-38 — Travel fee for away matches with auto-detect, admin tabs, player breakdown, dashboard pills
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -158,6 +158,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-33 | Angular proxy for external access — relative API URLs + dev server proxy so app works via ngrok with a single tunnel | Done |
 | SCRUM-32 | Deploy to Vercel + Supabase — monorepo config, Angular build into Next.js public/, SPA rewrites, dynamic CORS, production env | Done |
 | SCRUM-35 | Internationalization (i18n) — auto-detect browser language (ES/EN), all UI text translated via @ngx-translate, Spanish fallback for unsupported languages, database content untranslated | Done |
+| SCRUM-38 | Travel fee for away matches — auto-detect away via fixture data, admin Fee/Travel tabs with Away/Local badge, player fee breakdown with individual Pay + Pay All, dashboard status pills for fee + travel eligibility | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -279,3 +280,9 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Database-driven content (category names, player names, club names, division names) remains untranslated — only UI chrome is translated (SCRUM-35)
 - Test helper `frontend/src/app/testing/translate-testing.ts` provides `provideTranslateTesting()` and `setupTestTranslations()` — loads English translations in test environment so text assertions match (SCRUM-35)
 - Fixture component date formatting uses locale based on current language: `es` → `es-AR`, `en` → `en-GB` (SCRUM-35)
+- `FeeType = 'fee' | 'travel'` discriminator on `category_fees` table — UNIQUE constraint updated to `(category_id, week_start_date, type)` so each category can have one weekly fee and one travel fee per week (SCRUM-38)
+- Away match detection uses `match.awayTeam.clubName.includes(environment.clubName)` from fixture data — `environment.clubName = 'Club Empleados de Comercio'` (SCRUM-38)
+- Admin fees page uses page-level tabs (`Fee` / `Travel`) to switch between fee types — simpler than per-card tabs, travel tab shows Away/Local badge based on fixture data (SCRUM-38)
+- Player fees page shows a breakdown card: fee row + travel row (when applicable) + individual Pay buttons per type + "Pay All" button for combined unpaid amount — Pay All creates a single MP preference with combined amount and comma-separated playerFeeIds in external_reference (SCRUM-38)
+- Dashboard play eligibility requires both fee AND travel (when travel exists) to be paid — status pills (`Fee: Paid/Pending`, `Travel: Paid/Pending`) shown inside the play status card (SCRUM-38)
+- `GET /api/fees` for non-admin users returns all fee types via `getAllCurrentFeesByCategory` — frontend separates them by `type` field client-side (SCRUM-38)

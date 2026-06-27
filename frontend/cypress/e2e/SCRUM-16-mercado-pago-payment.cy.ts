@@ -61,7 +61,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
     });
 
     it('should show Pay button for pending fee', () => {
-      cy.get('[data-testid="pay-button"]')
+      cy.get('[data-testid="pay-fee-button"]')
         .should('be.visible')
         .and('contain.text', 'Pay with Mercado Pago');
     });
@@ -80,7 +80,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
         cy.stub(win, 'open').as('windowOpen');
       });
 
-      cy.get('[data-testid="pay-button"]').click();
+      cy.get('[data-testid="pay-fee-button"]').click();
       cy.wait('@payFee');
 
       cy.get('@windowOpen').should('have.been.calledWith', mockPaymentPreference.initPoint, '_blank');
@@ -97,8 +97,8 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
         cy.stub(win, 'open');
       });
 
-      cy.get('[data-testid="pay-button"]').click();
-      cy.get('[data-testid="pay-button"]')
+      cy.get('[data-testid="pay-fee-button"]').click();
+      cy.get('[data-testid="pay-fee-button"]')
         .should('contain.text', 'Processing...')
         .and('be.disabled');
     });
@@ -109,7 +109,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
         body: { error: 'Payment configuration not available' },
       }).as('payFeeFail');
 
-      cy.get('[data-testid="pay-button"]').click();
+      cy.get('[data-testid="pay-fee-button"]').click();
       cy.wait('@payFeeFail');
 
       cy.get('[data-testid="pay-error"]')
@@ -130,7 +130,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
       cy.get('[data-testid="paid-badge"]')
         .should('be.visible')
         .and('contain.text', 'Paid');
-      cy.get('[data-testid="pay-button"]').should('not.exist');
+      cy.get('[data-testid="pay-fee-button"]').should('not.exist');
     });
   });
 

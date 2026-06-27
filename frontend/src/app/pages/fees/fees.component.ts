@@ -27,17 +27,41 @@ export class PlayerFeesComponent implements OnInit {
 
   categoryFee: CategoryFee | null = null;
   myFee: PlayerFee | null = null;
+  travelFee: CategoryFee | null = null;
+  myTravelFee: PlayerFee | null = null;
   loading = true;
   error: string | null = null;
   isCaptain = false;
   daysUntilMatch: number | null = null;
 
   paying = signal(false);
+  payingTravel = signal(false);
+  payingAll = signal(false);
   payError = signal<string | null>(null);
   paymentFlash = signal<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
 
   get showWarningBanner(): boolean {
-    return this.myFee?.status === 'pending' && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+    const hasPendingFee = this.myFee?.status === 'pending';
+    const hasPendingTravel = this.myTravelFee?.status === 'pending';
+    return (hasPendingFee || hasPendingTravel) && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+  }
+
+  get totalUnpaidAmount(): number {
+    let total = 0;
+    if (this.myFee?.status === 'pending' && this.categoryFee) total += this.categoryFee.perPlayerAmount;
+    if (this.myTravelFee?.status === 'pending' && this.travelFee) total += this.travelFee.perPlayerAmount;
+    return total;
+  }
+
+  get unpaidCount(): number {
+    let count = 0;
+    if (this.myFee?.status === 'pending') count++;
+    if (this.myTravelFee?.status === 'pending') count++;
+    return count;
+  }
+
+  get hasFeeData(): boolean {
+    return this.categoryFee !== null || this.travelFee !== null;
   }
 
   ngOnInit(): void {
@@ -55,6 +79,9 @@ export class PlayerFeesComponent implements OnInit {
             if (result.status === 'paid' || result.status === 'already_paid') {
               if (this.myFee) {
                 this.myFee = { ...this.myFee, status: 'paid', paidAt: new Date().toISOString() };
+              }
+              if (this.myTravelFee) {
+                this.myTravelFee = { ...this.myTravelFee, status: 'paid', paidAt: new Date().toISOString() };
               }
             }
           });
@@ -78,9 +105,18 @@ export class PlayerFeesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([fees, matches]) => {
-          if (fees.length > 0 && user) {
-            this.categoryFee = fees[0];
-            this.myFee = fees[0].playerFees.find((pf) => pf.userId === user.id) ?? null;
+          if (user) {
+            const regularFee = fees.find((f) => (f.type ?? 'fee') === 'fee');
+            const travel = fees.find((f) => f.type === 'travel');
+
+            if (regularFee) {
+              this.categoryFee = regularFee;
+              this.myFee = regularFee.playerFees.find((pf) => pf.userId === user.id) ?? null;
+            }
+            if (travel) {
+              this.travelFee = travel;
+              this.myTravelFee = travel.playerFees.find((pf) => pf.userId === user.id) ?? null;
+            }
           }
 
           const now = new Date();
@@ -107,7 +143,7 @@ export class PlayerFeesComponent implements OnInit {
     this.payError.set(null);
 
     this.feeService
-      .payFee()
+      .payFee('fee')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -116,6 +152,44 @@ export class PlayerFeesComponent implements OnInit {
         },
         error: () => {
           this.paying.set(false);
+          this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
+        },
+      });
+  }
+
+  onPayTravel(): void {
+    this.payingTravel.set(true);
+    this.payError.set(null);
+
+    this.feeService
+      .payFee('travel')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.payingTravel.set(false);
+          window.location.href = result.initPoint;
+        },
+        error: () => {
+          this.payingTravel.set(false);
+          this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
+        },
+      });
+  }
+
+  onPayAll(): void {
+    this.payingAll.set(true);
+    this.payError.set(null);
+
+    this.feeService
+      .payAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.payingAll.set(false);
+          window.location.href = result.initPoint;
+        },
+        error: () => {
+          this.payingAll.set(false);
           this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
         },
       });

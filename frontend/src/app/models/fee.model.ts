@@ -1,4 +1,5 @@
 export type FeeStatus = 'pending' | 'paid';
+export type FeeType = 'fee' | 'travel';
 
 export interface PlayerFee {
   id: string;
@@ -19,6 +20,7 @@ export interface CategoryFee {
   weekStartDate: string;
   createdBy: string;
   createdAt: string;
+  type: FeeType;
   playerFees: PlayerFee[];
   paidCount: number;
   unpaidCount: number;
@@ -28,6 +30,7 @@ export interface CreateFeeRequest {
   categoryId: string;
   totalAmount: number;
   availablePlayers: number;
+  type?: FeeType;
 }
 
 export interface PaymentPreferenceResult {

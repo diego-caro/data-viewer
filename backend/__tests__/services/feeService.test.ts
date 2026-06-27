@@ -193,6 +193,110 @@ describe('feeService', () => {
     });
   });
 
+  describe('getAllCurrentFeesByCategory', () => {
+    it('should return all fee types for a category', async () => {
+      const rows = [
+        {
+          id: 'fee-1', category_id: 'cat-1', total_amount: '3000',
+          available_players: 10, per_player_amount: '300',
+          week_start_date: '2026-06-15', created_by: 'admin-1',
+          created_at: '2026-06-15T00:00:00Z', type: 'fee',
+        },
+        {
+          id: 'travel-1', category_id: 'cat-1', total_amount: '1500',
+          available_players: 10, per_player_amount: '150',
+          week_start_date: '2026-06-15', created_by: 'admin-1',
+          created_at: '2026-06-15T00:00:00Z', type: 'travel',
+        },
+      ];
+      mockedQuery.mockResolvedValueOnce(rows);
+      mockedQuery.mockResolvedValueOnce([]);
+      mockedQuery.mockResolvedValueOnce([]);
+
+      const result = await feeService.getAllCurrentFeesByCategory('cat-1');
+
+      expect(result).toHaveLength(2);
+      expect(result[0].type).toBe('fee');
+      expect(result[1].type).toBe('travel');
+    });
+
+    it('should return empty array when no fees exist', async () => {
+      mockedQuery.mockResolvedValueOnce([]);
+
+      const result = await feeService.getAllCurrentFeesByCategory('cat-99');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAllPlayerFeesForUser', () => {
+    it('should return fee and travel player fees', async () => {
+      const rows = [
+        {
+          id: 'pf-1', category_fee_id: 'fee-1', user_id: 'u1',
+          status: 'pending', paid_at: null,
+          first_name: 'Player', last_name: 'One', fee_type: 'fee',
+        },
+        {
+          id: 'tpf-1', category_fee_id: 'travel-1', user_id: 'u1',
+          status: 'paid', paid_at: '2026-06-16T10:00:00Z',
+          first_name: 'Player', last_name: 'One', fee_type: 'travel',
+        },
+      ];
+      mockedQuery.mockResolvedValueOnce(rows);
+
+      const result = await feeService.getAllPlayerFeesForUser('u1', 'cat-1');
+
+      expect(result.fee).not.toBeNull();
+      expect(result.fee!.id).toBe('pf-1');
+      expect(result.fee!.status).toBe('pending');
+      expect(result.travel).not.toBeNull();
+      expect(result.travel!.id).toBe('tpf-1');
+      expect(result.travel!.status).toBe('paid');
+    });
+
+    it('should return null for missing fee types', async () => {
+      const rows = [
+        {
+          id: 'pf-1', category_fee_id: 'fee-1', user_id: 'u1',
+          status: 'pending', paid_at: null,
+          first_name: 'Player', last_name: 'One', fee_type: 'fee',
+        },
+      ];
+      mockedQuery.mockResolvedValueOnce(rows);
+
+      const result = await feeService.getAllPlayerFeesForUser('u1', 'cat-1');
+
+      expect(result.fee).not.toBeNull();
+      expect(result.travel).toBeNull();
+    });
+
+    it('should return both null when no fees exist', async () => {
+      mockedQuery.mockResolvedValueOnce([]);
+
+      const result = await feeService.getAllPlayerFeesForUser('u99', 'cat-1');
+
+      expect(result.fee).toBeNull();
+      expect(result.travel).toBeNull();
+    });
+  });
+
+  describe('getPlayerFeeForUser with type', () => {
+    it('should filter by travel type', async () => {
+      const row = {
+        id: 'tpf-1', category_fee_id: 'travel-1', user_id: 'u1',
+        status: 'pending', paid_at: null,
+        first_name: 'Player', last_name: 'One',
+      };
+      mockedQueryOne.mockResolvedValue(row);
+
+      const result = await feeService.getPlayerFeeForUser('u1', 'cat-1', 'travel');
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe('tpf-1');
+    });
+  });
+
   describe('resetWeeklyFees', () => {
     it('should copy last week fees and create new pending player_fees', async () => {
       const lastWeekFees = [

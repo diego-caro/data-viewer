@@ -4,7 +4,7 @@ info:
   description: >
     Internal API served by the Next.js backend.
     Source API spec will be added once the external endpoint is defined.
-  version: 0.7.0
+  version: 0.8.0
 
 paths:
   /api/auth/login:
@@ -459,7 +459,8 @@ paths:
     get:
       summary: Get current week's fees (role-filtered)
       description: >
-        Admin sees all categories. Captain and player see only their assigned category.
+        Admin sees all categories (all types). Captain and player see all fee
+        types (fee + travel) for their assigned category.
       security:
         - bearerAuth: []
       responses:
@@ -575,10 +576,27 @@ paths:
       summary: Generate a Mercado Pago payment preference (player or captain)
       description: >
         Creates a Checkout Pro payment preference linked to the captain's MP
-        account for the authenticated player's current week fee. Returns an
-        init_point URL to redirect the player to MP checkout.
+        account. Supports individual payment by type (fee or travel) and
+        combined "pay all" mode for unpaid fees. Returns an init_point URL
+        to redirect the player to MP checkout.
       security:
         - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [fee, travel]
+                  default: fee
+                  description: Fee type to pay (ignored when payAll is true)
+                payAll:
+                  type: boolean
+                  default: false
+                  description: When true, creates a single preference for all unpaid fees (fee + travel combined)
       responses:
         '200':
           description: Payment preference created
@@ -587,7 +605,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentPreferenceResult'
         '400':
-          description: Player not in a category, or fee already paid
+          description: Player not in a category, or all fees already paid
           content:
             application/json:
               schema:
@@ -606,6 +624,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: No fee found for current week, fee config not found, or payments not yet configured for category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to create payment preference with Mercado Pago
           content:
             application/json:
               schema:
@@ -1216,6 +1240,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          type: string
+          enum: [fee, travel]
+          default: fee
+          description: Discriminator — 'fee' for weekly fee, 'travel' for away match travel fee
         playerFees:
           type: array
           items:
@@ -1224,7 +1253,7 @@ components:
           type: integer
         unpaidCount:
           type: integer
-      required: [id, categoryId, categoryName, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy, createdAt, playerFees, paidCount, unpaidCount]
+      required: [id, categoryId, categoryName, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy, createdAt, type, playerFees, paidCount, unpaidCount]
 
     PlayerFee:
       type: object
@@ -1260,6 +1289,11 @@ components:
         availablePlayers:
           type: integer
           minimum: 1
+        type:
+          type: string
+          enum: [fee, travel]
+          default: fee
+          description: Fee type — 'travel' for away match travel fees
       required: [categoryId, totalAmount, availablePlayers]
 
     PaymentPreferenceResult:

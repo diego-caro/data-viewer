@@ -83,7 +83,7 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
     });
 
     it('should not show Pay button (captain sees overview, not payment)', () => {
-      cy.get('[data-testid="pay-button"]').should('not.exist');
+      cy.get('[data-testid="pay-fee-button"]').should('not.exist');
     });
   });
 

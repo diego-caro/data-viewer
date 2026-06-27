@@ -8,14 +8,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ fee: Ca
   const auth = requireRole(request, 'admin');
   if (auth instanceof NextResponse) return auth;
 
-  let body: { categoryId?: string; totalAmount?: number; availablePlayers?: number };
+  let body: { categoryId?: string; totalAmount?: number; availablePlayers?: number; type?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { categoryId, totalAmount, availablePlayers } = body;
+  const { categoryId, totalAmount, availablePlayers, type } = body;
 
   if (!categoryId || totalAmount === undefined || availablePlayers === undefined) {
     return NextResponse.json(
@@ -31,8 +31,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ fee: Ca
     );
   }
 
+  const feeType = type === 'travel' ? 'travel' : 'fee';
+
   const fee = await feeService.createCategoryFee(
-    categoryId, totalAmount, availablePlayers, auth.userId
+    categoryId, totalAmount, availablePlayers, auth.userId, feeType
   );
 
   return NextResponse.json({ fee }, { status: 201 });
@@ -52,6 +54,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<{ data: Ca
     return NextResponse.json({ data: [] });
   }
 
-  const fee = await feeService.getCurrentFeesByCategory(profile.categoryId);
-  return NextResponse.json({ data: fee ? [fee] : [] });
+  const fees = await feeService.getAllCurrentFeesByCategory(profile.categoryId);
+  return NextResponse.json({ data: fees });
 }

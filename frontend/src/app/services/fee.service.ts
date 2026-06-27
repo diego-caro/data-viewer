@@ -31,8 +31,14 @@ export class FeeService {
     );
   }
 
-  payFee(): Observable<PaymentPreferenceResult> {
-    return this.http.post<PaymentPreferenceResult>(`${this.apiUrl}/fees/pay`, {}).pipe(
+  payFee(type: 'fee' | 'travel' = 'fee'): Observable<PaymentPreferenceResult> {
+    return this.http.post<PaymentPreferenceResult>(`${this.apiUrl}/fees/pay`, { type }).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => error)),
+    );
+  }
+
+  payAll(): Observable<PaymentPreferenceResult> {
+    return this.http.post<PaymentPreferenceResult>(`${this.apiUrl}/fees/pay`, { payAll: true }).pipe(
       catchError((error: HttpErrorResponse) => throwError(() => error)),
     );
   }

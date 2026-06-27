@@ -42,13 +42,13 @@ const mockFees: CategoryFee[] = [
     id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
     weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-    playerFees: [], paidCount: 7, unpaidCount: 3,
+    type: 'fee', playerFees: [], paidCount: 7, unpaidCount: 3,
   },
   {
     id: 'fee-2', categoryId: 'cat-2', categoryName: 'Sub 16',
     totalAmount: 4000, availablePlayers: 8, perPlayerAmount: 500,
     weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-    playerFees: [], paidCount: 5, unpaidCount: 3,
+    type: 'fee', playerFees: [], paidCount: 5, unpaidCount: 3,
   },
 ];
 
@@ -66,15 +66,30 @@ const mockFeesWithPaidPlayer: CategoryFee[] = [{
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
   weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-  playerFees: [mockPlayerFeePaid], paidCount: 1, unpaidCount: 0,
+  type: 'fee', playerFees: [mockPlayerFeePaid], paidCount: 1, unpaidCount: 0,
 }];
 
 const mockFeesWithPendingPlayer: CategoryFee[] = [{
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
   weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-  playerFees: [mockPlayerFeePending], paidCount: 0, unpaidCount: 1,
+  type: 'fee', playerFees: [mockPlayerFeePending], paidCount: 0, unpaidCount: 1,
 }];
+
+const mockTravelPaid: CategoryFee = {
+  id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+  totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
+  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  type: 'travel',
+  playerFees: [{ id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'paid', paidAt: '2026-06-16T11:00:00Z' }],
+  paidCount: 1, unpaidCount: 0,
+};
+
+const mockTravelPending: CategoryFee = {
+  ...mockTravelPaid,
+  playerFees: [{ id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'pending', paidAt: null }],
+  paidCount: 0, unpaidCount: 1,
+};
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
@@ -509,6 +524,150 @@ describe('DashboardComponent', () => {
 
       expect(component.playStatus).toBeNull();
       expect(component.error).toBeNull();
+    });
+  });
+
+  describe('travel fee eligibility', () => {
+    it('should show enabled when fee is paid and no travel exists', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('enabled');
+      expect(component.feeStatus).toBe('paid');
+      expect(component.travelStatus).toBeNull();
+    });
+
+    it('should show enabled when both fee and travel are paid', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPaidPlayer, mockTravelPaid]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('enabled');
+      expect(component.feeStatus).toBe('paid');
+      expect(component.travelStatus).toBe('paid');
+    });
+
+    it('should show not-enabled when fee is paid but travel is pending', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPaidPlayer, mockTravelPending]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('not-enabled');
+      expect(component.feeStatus).toBe('paid');
+      expect(component.travelStatus).toBe('pending');
+    });
+
+    it('should show not-enabled when fee is pending and travel is paid', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPendingPlayer, mockTravelPaid]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('not-enabled');
+      expect(component.feeStatus).toBe('pending');
+      expect(component.travelStatus).toBe('paid');
+    });
+
+    it('should show not-enabled when both fee and travel are pending', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPendingPlayer, mockTravelPending]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.playStatus).toBe('not-enabled');
+      expect(component.feeStatus).toBe('pending');
+      expect(component.travelStatus).toBe('pending');
+    });
+  });
+
+  describe('status pills', () => {
+    it('should show fee pill when player has fee status', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const feePill = compiled.querySelector('[data-testid="fee-pill"]');
+      expect(feePill).toBeTruthy();
+      expect(feePill?.textContent?.trim()).toBe('Fee: Paid');
+    });
+
+    it('should show pending fee pill', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPendingPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const feePill = compiled.querySelector('[data-testid="fee-pill"]');
+      expect(feePill).toBeTruthy();
+      expect(feePill?.textContent?.trim()).toBe('Fee: Pending');
+    });
+
+    it('should show travel pill when travel fee exists', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPaidPlayer, mockTravelPaid]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const travelPill = compiled.querySelector('[data-testid="travel-pill"]');
+      expect(travelPill).toBeTruthy();
+      expect(travelPill?.textContent?.trim()).toBe('Travel: Paid');
+    });
+
+    it('should show pending travel pill', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([...mockFeesWithPaidPlayer, mockTravelPending]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const travelPill = compiled.querySelector('[data-testid="travel-pill"]');
+      expect(travelPill).toBeTruthy();
+      expect(travelPill?.textContent?.trim()).toBe('Travel: Pending');
+    });
+
+    it('should not show travel pill when no travel fee exists', async () => {
+      TestBed.resetTestingModule();
+      await createTestBed('player');
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="travel-pill"]')).toBeNull();
+    });
+
+    it('should not show pills for admin', () => {
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="status-pills"]')).toBeNull();
     });
   });
 });
