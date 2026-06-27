@@ -23,7 +23,7 @@ export class AppComponent {
 
   commonLinks: NavLink[] = [
     { labelKey: 'NAV.DASHBOARD', path: '/dashboard' },
-    { labelKey: 'NAV.TOURNAMENT', path: '/fixture' },
+    { labelKey: 'NAV.TOURNAMENT', path: '/tournament' },
   ];
 
   nonAdminLinks: NavLink[] = [{ labelKey: 'NAV.MY_FEES', path: '/fees' }];
