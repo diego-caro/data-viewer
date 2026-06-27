@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { of, throwError, NEVER } from 'rxjs';
 import { FixtureComponent } from './fixture.component';
 import { FixtureService } from '../../services/fixture.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
 import {
   FixtureMatch,
   FixtureClub,
@@ -96,9 +98,13 @@ describe('FixtureComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [FixtureComponent],
-      providers: [{ provide: FixtureService, useValue: fixtureServiceMock }],
+      providers: [
+        { provide: FixtureService, useValue: fixtureServiceMock },
+        ...provideTranslateTesting(),
+      ],
     }).compileComponents();
 
+    setupTestTranslations(TestBed.inject(TranslateService));
     fixture = TestBed.createComponent(FixtureComponent);
     component = fixture.componentInstance;
   });

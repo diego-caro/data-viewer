@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-2xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ isCaptain ? 'Category Fees' : 'My Fees' }}</h1>
+    <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ (isCaptain ? 'FEES.TITLE_CAPTAIN' : 'FEES.TITLE_PLAYER') | translate }}</h1>
 
     <!-- Payment Flash Message -->
     <div
@@ -21,7 +21,7 @@
       data-testid="warning-banner"
       class="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800"
     >
-      <p class="font-semibold">Your arbitration fee of ${{ categoryFee!.perPlayerAmount | number:'1.2-2' }} is due in {{ daysUntilMatch }} days</p>
+      <p class="font-semibold">{{ 'FEES.WARNING' | translate:{ amount: (categoryFee!.perPlayerAmount | number:'1.2-2'), days: daysUntilMatch } }}</p>
     </div>
 
     <!-- Loading State -->
@@ -48,7 +48,7 @@
       data-testid="empty-state"
       class="rounded-lg border border-gray-200 bg-white p-8 text-center"
     >
-      <p class="text-gray-500">No fees configured for your category this week.</p>
+      <p class="text-gray-500">{{ 'FEES.EMPTY' | translate }}</p>
     </div>
 
     <!-- Fee Card -->
@@ -63,14 +63,14 @@
 
       <div class="mb-6 grid grid-cols-2 gap-4">
         <div>
-          <p class="text-xs text-gray-500">Fee Amount</p>
+          <p class="text-xs text-gray-500">{{ 'FEES.FEE_AMOUNT' | translate }}</p>
           <p
             data-testid="fee-amount"
             class="text-2xl font-bold text-gray-900"
           >${{ categoryFee.perPlayerAmount | number:'1.2-2' }}</p>
         </div>
         <div>
-          <p class="text-xs text-gray-500">Week</p>
+          <p class="text-xs text-gray-500">{{ 'FEES.WEEK' | translate }}</p>
           <p class="text-sm font-medium text-gray-700">{{ categoryFee.weekStartDate }}</p>
         </div>
       </div>
@@ -83,11 +83,11 @@
         >
           <span class="flex items-center gap-1">
             <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
-            Paid: {{ categoryFee.paidCount }}
+            {{ 'FEES.PAID' | translate }}: {{ categoryFee.paidCount }}
           </span>
           <span class="flex items-center gap-1">
             <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
-            Unpaid: {{ categoryFee.unpaidCount }}
+            {{ 'FEES.UNPAID' | translate }}: {{ categoryFee.unpaidCount }}
           </span>
         </div>
 
@@ -102,12 +102,12 @@
               *ngIf="pf.status === 'paid'"
               data-testid="player-status-paid"
               class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
-            >Paid</span>
+            >{{ 'FEES.PAID' | translate }}</span>
             <span
               *ngIf="pf.status === 'pending'"
               data-testid="player-status-pending"
               class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800"
-            >Unpaid</span>
+            >{{ 'FEES.UNPAID' | translate }}</span>
           </li>
         </ul>
       </ng-container>
@@ -123,9 +123,9 @@
             class="w-full rounded-lg bg-blue-600 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             @if (paying()) {
-              Processing...
+              {{ 'FEES.PROCESSING' | translate }}
             } @else {
-              Pay with Mercado Pago
+              {{ 'FEES.PAY_MP' | translate }}
             }
           </button>
 
@@ -150,14 +150,14 @@
             </svg>
           </span>
           <div>
-            <p class="font-semibold text-green-800">Paid</p>
+            <p class="font-semibold text-green-800">{{ 'FEES.PAID_LABEL' | translate }}</p>
             <p *ngIf="myFee.paidAt" class="text-xs text-green-600">{{ myFee.paidAt | date:'medium' }}</p>
           </div>
         </div>
 
         <!-- No player fee record -->
         <div *ngIf="!myFee" class="text-sm text-gray-500">
-          You are not assigned to this week's fee.
+          {{ 'FEES.NOT_ASSIGNED' | translate }}
         </div>
       </ng-container>
     </div>

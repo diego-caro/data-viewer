@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
@@ -13,13 +14,14 @@ import { FixtureMatch } from '../../models/fixture.model';
 @Component({
   selector: 'app-player-fees',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './fees.component.html',
 })
 export class PlayerFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
   private readonly authService = inject(AuthService);
   private readonly fixtureService = inject(FixtureService);
+  private readonly translate = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -44,7 +46,7 @@ export class PlayerFeesComponent implements OnInit {
     const externalRef = this.route.snapshot.queryParamMap.get('external_reference');
 
     if (paymentParam === 'success') {
-      this.paymentFlash.set({ type: 'success', message: 'Payment completed successfully!' });
+      this.paymentFlash.set({ type: 'success', message: this.translate.instant('FEES.FLASH_SUCCESS') });
       if (paymentId && externalRef) {
         this.feeService
           .verifyPayment(paymentId, externalRef)
@@ -58,9 +60,9 @@ export class PlayerFeesComponent implements OnInit {
           });
       }
     } else if (paymentParam === 'failure') {
-      this.paymentFlash.set({ type: 'error', message: 'Payment failed. Please try again.' });
+      this.paymentFlash.set({ type: 'error', message: this.translate.instant('FEES.FLASH_FAILURE') });
     } else if (paymentParam === 'pending') {
-      this.paymentFlash.set({ type: 'pending', message: 'Payment is being processed. It may take a few minutes.' });
+      this.paymentFlash.set({ type: 'pending', message: this.translate.instant('FEES.FLASH_PENDING') });
     }
 
     const user = this.authService.user();
@@ -94,7 +96,7 @@ export class PlayerFeesComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.error = 'Unable to load fee data. Please try again later.';
+          this.error = this.translate.instant('FEES.ERROR_LOAD');
           this.loading = false;
         },
       });
@@ -114,7 +116,7 @@ export class PlayerFeesComponent implements OnInit {
         },
         error: () => {
           this.paying.set(false);
-          this.payError.set('Payment could not be initiated. Please try again.');
+          this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
         },
       });
   }

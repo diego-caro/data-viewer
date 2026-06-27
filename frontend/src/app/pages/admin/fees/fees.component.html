@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-5xl px-4 py-8">
     <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900">Fees</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{{ 'ADMIN_FEES.TITLE' | translate }}</h1>
     </div>
 
     <!-- Loading State -->
@@ -29,7 +29,7 @@
         class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
       >
         <h2 class="mb-4 text-lg font-semibold text-gray-900">
-          Configure Fee — {{ getCategoryName(formData.categoryId) }}
+          {{ 'ADMIN_FEES.CONFIGURE_FEE' | translate:{ category: getCategoryName(formData.categoryId) } }}
         </h2>
 
         <div
@@ -43,7 +43,7 @@
         <form (ngSubmit)="onSubmit()" data-testid="fee-config-form">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label for="totalAmount" class="mb-1 block text-sm font-medium text-gray-700">Total Amount ($)</label>
+              <label for="totalAmount" class="mb-1 block text-sm font-medium text-gray-700">{{ 'ADMIN_FEES.TOTAL_AMOUNT' | translate }}</label>
               <input
                 id="totalAmount"
                 type="number"
@@ -56,7 +56,7 @@
               />
             </div>
             <div>
-              <label for="availablePlayers" class="mb-1 block text-sm font-medium text-gray-700">Available Players</label>
+              <label for="availablePlayers" class="mb-1 block text-sm font-medium text-gray-700">{{ 'ADMIN_FEES.AVAILABLE_PLAYERS' | translate }}</label>
               <input
                 id="availablePlayers"
                 type="number"
@@ -69,7 +69,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Per Player</label>
+              <label class="mb-1 block text-sm font-medium text-gray-700">{{ 'ADMIN_FEES.PER_PLAYER' | translate }}</label>
               <div data-testid="per-player-preview" class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
                 {{ formData.availablePlayers > 0 ? (formData.totalAmount / formData.availablePlayers | number:'1.2-2') : '0.00' }}
               </div>
@@ -84,9 +84,9 @@
               class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               @if (formLoading()) {
-                Saving...
+                {{ 'ADMIN_FEES.SAVING' | translate }}
               } @else {
-                Save
+                {{ 'ADMIN_FEES.SAVE' | translate }}
               }
             </button>
             <button
@@ -95,7 +95,7 @@
               (click)="closeForm()"
               class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              Cancel
+              {{ 'ADMIN_FEES.CANCEL' | translate }}
             </button>
           </div>
         </form>
@@ -116,25 +116,25 @@
               (click)="openConfigForm(fee.categoryId)"
               class="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
-              Edit
+              {{ 'ADMIN_FEES.EDIT' | translate }}
             </button>
           </div>
 
           <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <p class="text-xs text-gray-500">Total</p>
+              <p class="text-xs text-gray-500">{{ 'ADMIN_FEES.TOTAL' | translate }}</p>
               <p class="text-lg font-semibold text-gray-900">${{ fee.totalAmount | number:'1.0-0' }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500">Players</p>
+              <p class="text-xs text-gray-500">{{ 'ADMIN_FEES.PLAYERS' | translate }}</p>
               <p class="text-lg font-semibold text-gray-900">{{ fee.availablePlayers }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500">Per Player</p>
+              <p class="text-xs text-gray-500">{{ 'ADMIN_FEES.PER_PLAYER' | translate }}</p>
               <p class="text-lg font-semibold text-gray-900">${{ fee.perPlayerAmount | number:'1.2-2' }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500">Status</p>
+              <p class="text-xs text-gray-500">{{ 'ADMIN_FEES.STATUS' | translate }}</p>
               <p class="text-lg font-semibold">
                 <span class="text-green-600">{{ fee.paidCount }}</span>
                 <span class="text-gray-400">/</span>
@@ -148,9 +148,9 @@
               <table class="w-full">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Player</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Action</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ 'ADMIN_FEES.COL_PLAYER' | translate }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ 'ADMIN_FEES.COL_STATUS' | translate }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ 'ADMIN_FEES.COL_ACTION' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -165,7 +165,7 @@
                             'bg-yellow-100 text-yellow-700': pf.status === 'pending'
                           }"
                         >
-                          {{ pf.status }}
+                          {{ (pf.status === 'paid' ? 'COMMON.PAID' : 'COMMON.PENDING') | translate }}
                         </span>
                       </td>
                       <td class="px-3 py-2">
@@ -175,10 +175,10 @@
                             (click)="onMarkPaid(pf.id)"
                             class="rounded bg-green-500 px-2 py-1 text-xs font-medium text-white hover:bg-green-600"
                           >
-                            Mark Paid
+                            {{ 'ADMIN_FEES.MARK_PAID' | translate }}
                           </button>
                         } @else {
-                          <span class="text-xs text-gray-400">Paid</span>
+                          <span class="text-xs text-gray-400">{{ 'COMMON.PAID' | translate }}</span>
                         }
                       </td>
                     </tr>
@@ -193,7 +193,7 @@
       <!-- Unconfigured Categories -->
       @if (unconfiguredCategories.length > 0) {
         <div class="rounded-lg border border-dashed border-gray-300 bg-white p-6">
-          <h3 class="mb-3 text-sm font-medium text-gray-500">Unconfigured Categories</h3>
+          <h3 class="mb-3 text-sm font-medium text-gray-500">{{ 'ADMIN_FEES.UNCONFIGURED' | translate }}</h3>
           <div class="flex flex-wrap gap-2">
             @for (cat of unconfiguredCategories; track cat.id) {
               <button

@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { AdminFeesComponent } from './fees.component';
 import { FeeService } from '../../../services/fee.service';
 import { PlayerService } from '../../../services/player.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../../testing/translate-testing';
 import { of, throwError } from 'rxjs';
 import { CategoryFee } from '../../../models/fee.model';
 import { Category } from '../../../models/player.model';
@@ -60,9 +62,11 @@ describe('AdminFeesComponent', () => {
       providers: [
         { provide: FeeService, useValue: feeServiceMock },
         { provide: PlayerService, useValue: playerServiceMock },
+        ...provideTranslateTesting(),
       ],
     }).compileComponents();
 
+    setupTestTranslations(TestBed.inject(TranslateService));
     fixture = TestBed.createComponent(AdminFeesComponent);
     component = fixture.componentInstance;
     feeService = TestBed.inject(FeeService) as jest.Mocked<FeeService>;

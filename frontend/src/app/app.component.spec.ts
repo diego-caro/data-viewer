@@ -2,8 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { AppComponent } from './app.component';
 import { AuthService } from './services/auth.service';
+import { provideTranslateTesting, setupTestTranslations } from './testing/translate-testing';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -28,9 +30,11 @@ describe('AppComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthService, useValue: authServiceMock },
+        ...provideTranslateTesting(),
       ],
     }).compileComponents();
 
+    setupTestTranslations(TestBed.inject(TranslateService));
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

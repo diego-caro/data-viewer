@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UserService, CreateUserRequest, UpdateUserRequest } from '../../../services/user.service';
 import { PlayerService } from '../../../services/player.service';
@@ -11,12 +12,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './users.component.html',
 })
 export class AdminUsersComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly playerService = inject(PlayerService);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
   users: UserProfile[] = [];
@@ -54,7 +56,7 @@ export class AdminUsersComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.error = 'Unable to load users. Please try again later.';
+          this.error = this.translate.instant('ADMIN_USERS.ERROR_LOAD');
           this.loading = false;
         },
       });
@@ -194,11 +196,11 @@ export class AdminUsersComponent implements OnInit {
   private handleFormError(err: HttpErrorResponse): void {
     const message = err.error?.error;
     if (err.status === 409) {
-      this.formError.set('Email already exists');
+      this.formError.set(this.translate.instant('ADMIN_USERS.ERROR_EMAIL_EXISTS'));
     } else if (message) {
       this.formError.set(message);
     } else {
-      this.formError.set('Failed to save user. Please try again.');
+      this.formError.set(this.translate.instant('ADMIN_USERS.ERROR_SAVE'));
     }
   }
 

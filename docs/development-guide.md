@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-32 — Deploy app to Vercel + Supabase for public access
+> Last updated: SCRUM-35 — Add i18n with auto browser language detection (ES/EN)
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -117,6 +117,8 @@ frontend/                       → Angular 18 (UI client)
   src/app/interceptors/         → HTTP interceptors (auth token)
   src/app/guards/               → Route guards (auth, admin)
   src/app/components/           → Reusable UI components
+  src/app/testing/              → Test helpers (translate-testing.ts)
+  src/assets/i18n/              → Translation files (es.json, en.json)
   cypress/e2e/                  → Cypress E2E tests
 
 docs/                           → Project documentation
@@ -155,6 +157,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-30 | Dashboard play eligibility status card — players/captains see fee-based play status (enabled/pending/no-fee) with link to fees page | Done |
 | SCRUM-33 | Angular proxy for external access — relative API URLs + dev server proxy so app works via ngrok with a single tunnel | Done |
 | SCRUM-32 | Deploy to Vercel + Supabase — monorepo config, Angular build into Next.js public/, SPA rewrites, dynamic CORS, production env | Done |
+| SCRUM-35 | Internationalization (i18n) — auto-detect browser language (ES/EN), all UI text translated via @ngx-translate, Spanish fallback for unsupported languages, database content untranslated | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -268,3 +271,11 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - CORS middleware dynamically reads `FRONTEND_URL` env var — in production (same domain) CORS is not needed, but the env var supports custom domain setups (SCRUM-32)
 - Angular `fileReplacements` configured in `angular.json` — production build swaps `environment.ts` with `environment.prod.ts` (`production: true`) (SCRUM-32)
 - Supabase free tier (500MB, 2GB bandwidth) is sufficient for ~90 users — use pooled connection string (port 6543) to avoid exhausting serverless connection limits (SCRUM-32)
+- i18n uses `@ngx-translate/core` v18 + `@ngx-translate/http-loader` v18 — v18 uses standalone component APIs (`TranslatePipe`, `provideTranslateService`) not NgModule (`TranslateModule` was removed) (SCRUM-35)
+- Translation files at `frontend/src/assets/i18n/{es,en}.json` — 130 keys covering all 8 pages (login, dashboard, players, fixture, fees, admin fees, admin users, nav); loaded via HTTP at runtime (SCRUM-35)
+- Browser language auto-detected via `TranslateService.getBrowserLang()` in `AppComponent` constructor — matches against `es|en`, falls back to `'es'` for unsupported languages (SCRUM-35)
+- Default and fallback language is Spanish (`es`) — configured in `provideTranslateService({ lang: 'es', fallbackLang: 'es' })` in `app.config.ts` (SCRUM-35)
+- Error messages in components use `translate.instant('KEY')` for synchronous translation — UI text in templates uses `{{ 'KEY' | translate }}` pipe (SCRUM-35)
+- Database-driven content (category names, player names, club names, division names) remains untranslated — only UI chrome is translated (SCRUM-35)
+- Test helper `frontend/src/app/testing/translate-testing.ts` provides `provideTranslateTesting()` and `setupTestTranslations()` — loads English translations in test environment so text assertions match (SCRUM-35)
+- Fixture component date formatting uses locale based on current language: `es` → `es-AR`, `en` → `en-GB` (SCRUM-35)

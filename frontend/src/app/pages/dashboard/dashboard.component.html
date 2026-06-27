@@ -3,36 +3,36 @@
   <div *ngIf="loading" data-testid="loading-state" class="flex items-center justify-center py-12">
     <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
   </div>
-  
+
   <!-- Error State -->
   <div *ngIf="error" data-testid="error-state" class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-    <p>Unable to load signing data. Please try again later.</p>
+    <p>{{ error }}</p>
   </div>
-  
+
   <!-- Play Eligibility Status (player/captain only) -->
   <div *ngIf="!error && playStatus" data-testid="play-status-card"
     class="flex justify-center items-center min-h-screen">
     <div *ngIf="playStatus === 'enabled'" data-testid="play-status-enabled"
       class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
-      <p class="font-medium">You're enabled to play this weekend</p>
+      <p class="font-medium">{{ 'DASHBOARD.PLAY_ENABLED' | translate }}</p>
     </div>
     <div *ngIf="playStatus === 'not-enabled'" data-testid="play-status-not-enabled"
       class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-700">
-      <p class="font-medium">Fee pending — you're not enabled to play this weekend</p>
+      <p class="font-medium">{{ 'DASHBOARD.PLAY_NOT_ENABLED' | translate }}</p>
       <a routerLink="/fees"
         class="mt-2 inline-block text-sm font-medium text-yellow-800 underline hover:text-yellow-900">
-        Go to My Fees to pay and play this weekend
+        {{ 'DASHBOARD.PLAY_GO_TO_FEES' | translate }}
       </a>
     </div>
     <div *ngIf="playStatus === 'no-fee'" data-testid="play-status-no-fee"
       class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-gray-600">
-      <p class="font-medium">No fee configured for this week yet</p>
+      <p class="font-medium">{{ 'DASHBOARD.PLAY_NO_FEE' | translate }}</p>
     </div>
   </div>
 
   <div class="mx-auto max-w-5xl px-4 py-8">
     <div *ngIf="!loading && !error && categoryCharts.length > 0">
-      <h1 class="mb-6 text-2xl font-bold text-gray-900">Signing</h1>
+      <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ 'DASHBOARD.TITLE' | translate }}</h1>
 
       <!-- Charts Grid -->
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -44,7 +44,7 @@
 
           <!-- Empty State -->
           <div *ngIf="chart.isEmpty" data-testid="chart-empty"
-            class="flex h-48 items-center justify-center text-gray-400">No players</div>
+            class="flex h-48 items-center justify-center text-gray-400">{{ 'DASHBOARD.NO_PLAYERS' | translate }}</div>
 
           <!-- Chart -->
           <ng-container *ngIf="!chart.isEmpty">
@@ -54,11 +54,11 @@
             <div data-testid="chart-legend" class="mt-4 flex justify-center gap-4 text-sm">
               <span class="flex items-center gap-1">
                 <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
-                Active: {{ chart.activeCount }}
+                {{ 'DASHBOARD.ACTIVE' | translate }}: {{ chart.activeCount }}
               </span>
               <span class="flex items-center gap-1">
                 <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
-                Inactive: {{ chart.inactiveCount }}
+                {{ 'DASHBOARD.INACTIVE' | translate }}: {{ chart.inactiveCount }}
               </span>
             </div>
           </ng-container>
@@ -67,7 +67,7 @@
 
       <!-- Fee Collection Charts (admin only) -->
       <div *ngIf="!loading && !error && feeCharts.length > 0">
-        <h2 data-testid="fee-charts-title" class="mb-6 mt-10 text-xl font-bold text-gray-900">Fee Collection</h2>
+        <h2 data-testid="fee-charts-title" class="mb-6 mt-10 text-xl font-bold text-gray-900">{{ 'DASHBOARD.FEE_COLLECTION' | translate }}</h2>
 
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div *ngFor="let chart of feeCharts; let i = index" data-testid="fee-chart-card"
@@ -76,7 +76,7 @@
               chart.categoryName }}</h3>
 
             <div *ngIf="chart.isEmpty" data-testid="fee-chart-empty"
-              class="flex h-48 items-center justify-center text-gray-400">No fees</div>
+              class="flex h-48 items-center justify-center text-gray-400">{{ 'DASHBOARD.NO_FEES' | translate }}</div>
 
             <ng-container *ngIf="!chart.isEmpty">
               <div class="relative mx-auto h-48 w-48">
@@ -85,11 +85,11 @@
               <div data-testid="fee-chart-legend" class="mt-4 flex justify-center gap-4 text-sm">
                 <span class="flex items-center gap-1">
                   <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
-                  Paid: {{ chart.paidCount }}
+                  {{ 'DASHBOARD.PAID' | translate }}: {{ chart.paidCount }}
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
-                  Unpaid: {{ chart.unpaidCount }}
+                  {{ 'DASHBOARD.UNPAID' | translate }}: {{ chart.unpaidCount }}
                 </span>
               </div>
             </ng-container>

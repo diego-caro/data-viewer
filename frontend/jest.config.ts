@@ -8,7 +8,7 @@ const config: Config = {
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   transformIgnorePatterns: [
-    'node_modules/(?!(.pnpm|@angular|rxjs|tslib|chart.js|@kurkle)/)',
+    'node_modules/(?!(.pnpm|@angular|rxjs|tslib|chart.js|@kurkle|@ngx-translate)/)',
   ],
   coverageThreshold: {
     global: {

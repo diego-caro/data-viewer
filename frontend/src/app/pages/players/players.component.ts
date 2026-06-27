@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -12,13 +13,14 @@ import { Player, Category } from '../../models/player.model';
 @Component({
   selector: 'app-players',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './players.component.html',
 })
 export class PlayersComponent implements OnInit {
   private readonly playerService = inject(PlayerService);
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
   categories: Category[] = [];
@@ -64,8 +66,8 @@ export class PlayersComponent implements OnInit {
           }
           this.loading = false;
         },
-        error: (err: Error) => {
-          this.error = err.message || 'Failed to load data';
+        error: () => {
+          this.error = this.translate.instant('PLAYERS.ERROR_LOAD_DATA');
           this.loading = false;
         },
       });
@@ -83,8 +85,8 @@ export class PlayersComponent implements OnInit {
         next: (response) => {
           this.players = response.data;
         },
-        error: (err: Error) => {
-          this.error = err.message || 'Failed to load players';
+        error: () => {
+          this.error = this.translate.instant('PLAYERS.ERROR_LOAD_PLAYERS');
         },
       });
   }
@@ -100,7 +102,6 @@ export class PlayersComponent implements OnInit {
   }
 
   saveNumber(player: Player): void {
-    console.log('Saving number for player:', player);
     this.savingNumber.set(true);
     this.userService
       .updatePlayerNumber(player.id, this.editingNumber())

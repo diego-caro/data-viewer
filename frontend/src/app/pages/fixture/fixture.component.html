@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-50">
   <div class="mx-auto max-w-4xl px-4 py-8">
-    <h1 class="mb-6 text-3xl font-bold text-gray-900">Tournament</h1>
+    <h1 class="mb-6 text-3xl font-bold text-gray-900">{{ 'FIXTURE.TITLE' | translate }}</h1>
 
     <!-- Loading Divisions -->
     <div *ngIf="loadingDivisions" data-testid="loading-state" class="flex items-center justify-center py-16">
@@ -10,14 +10,14 @@
     <!-- Divisions load error -->
     <div *ngIf="!loadingDivisions && divisions.length === 0 && error" data-testid="error-state"
       class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-      <p>Unable to load tournament data. Please try again later.</p>
+      <p>{{ error }}</p>
     </div>
 
     <ng-container *ngIf="!loadingDivisions && divisions.length > 0">
       <!-- Category Dropdown -->
       <div class="mb-4">
         <label for="division-select" class="mb-2 block text-sm font-medium text-gray-700">
-          Category
+          {{ 'FIXTURE.CATEGORY' | translate }}
         </label>
         <select
           id="division-select"
@@ -43,7 +43,7 @@
             'text-gray-500 hover:text-gray-700': activeTab() !== 'fixture'
           }"
         >
-          Fixture
+          {{ 'FIXTURE.TAB_FIXTURE' | translate }}
         </button>
         <button
           data-testid="tab-standings"
@@ -54,7 +54,7 @@
             'text-gray-500 hover:text-gray-700': activeTab() !== 'standings'
           }"
         >
-          Standings
+          {{ 'FIXTURE.TAB_STANDINGS' | translate }}
         </button>
       </div>
 
@@ -68,7 +68,7 @@
         <!-- Error -->
         <div *ngIf="!loadingContent && error" data-testid="fixture-error"
           class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          <p>Unable to load fixture. Please try again later.</p>
+          <p>{{ error }}</p>
         </div>
 
         <!-- Content -->
@@ -76,13 +76,13 @@
           <!-- Empty -->
           <div *ngIf="rounds.length === 0" data-testid="fixture-empty"
             class="rounded-lg border border-gray-200 bg-white py-12 text-center">
-            <p class="text-gray-500">No matches scheduled yet.</p>
+            <p class="text-gray-500">{{ 'FIXTURE.NO_MATCHES' | translate }}</p>
           </div>
 
           <!-- Rounds -->
           <div *ngFor="let round of rounds" class="mb-8">
             <div class="mb-4 flex items-center justify-between border-b border-gray-200 text-lg font-semibold text-gray-700">
-              <h2 data-testid="round-header">Fecha {{ round.number }}</h2>
+              <h2 data-testid="round-header">{{ 'FIXTURE.ROUND' | translate }} {{ round.number }}</h2>
               <span class="text-blue-600">{{ formatMatchDate(round.matches[0].date) }}</span>
             </div>
             <div class="space-y-3">
@@ -152,7 +152,7 @@
         <!-- Error -->
         <div *ngIf="!loadingStandings && standingsError" data-testid="standings-error"
           class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          <p>Unable to load standings. Please try again later.</p>
+          <p>{{ standingsError }}</p>
         </div>
 
         <!-- Content -->
@@ -160,7 +160,7 @@
           <!-- Empty -->
           <div *ngIf="standings.length === 0" data-testid="standings-empty"
             class="rounded-lg border border-gray-200 bg-white py-12 text-center">
-            <p class="text-gray-500">No standings data available.</p>
+            <p class="text-gray-500">{{ 'FIXTURE.NO_STANDINGS' | translate }}</p>
           </div>
 
           <!-- Standings Table -->
@@ -168,16 +168,16 @@
             <table data-testid="standings-table" class="w-full text-sm">
               <thead>
                 <tr class="bg-gray-700 text-white text-left">
-                  <th class="sticky left-0 z-10 bg-gray-700 px-3 py-3 w-10 text-center">#</th>
-                  <th class="sticky left-10 z-10 bg-gray-700 px-3 py-3 min-w-[180px]">Club</th>
-                  <th class="px-3 py-3 text-center w-12">PTS</th>
-                  <th class="px-3 py-3 text-center w-12">PJ</th>
-                  <th class="px-3 py-3 text-center w-12">PG</th>
-                  <th class="px-3 py-3 text-center w-12">PE</th>
-                  <th class="px-3 py-3 text-center w-12">PP</th>
-                  <th class="px-3 py-3 text-center w-12">GF</th>
-                  <th class="px-3 py-3 text-center w-12">GC</th>
-                  <th class="px-3 py-3 text-center w-12">DIF</th>
+                  <th class="sticky left-0 z-10 bg-gray-700 px-3 py-3 w-10 text-center">{{ 'FIXTURE.COL_POSITION' | translate }}</th>
+                  <th class="sticky left-10 z-10 bg-gray-700 px-3 py-3 min-w-[180px]">{{ 'FIXTURE.COL_CLUB' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_POINTS' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_PLAYED' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_WON' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_DRAWN' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_LOST' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_GF' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_GA' | translate }}</th>
+                  <th class="px-3 py-3 text-center w-12">{{ 'FIXTURE.COL_GD' | translate }}</th>
                 </tr>
               </thead>
               <tbody>

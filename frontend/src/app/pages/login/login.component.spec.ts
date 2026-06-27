@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../services/auth.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LoginResponse } from '../../models/user.model';
@@ -44,9 +46,11 @@ describe('LoginComponent', () => {
           { path: 'dashboard', component: LoginComponent },
           { path: 'login', component: LoginComponent },
         ]),
+        ...provideTranslateTesting(),
       ],
     }).compileComponents();
 
+    setupTestTranslations(TestBed.inject(TranslateService));
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as jest.Mocked<AuthService>;

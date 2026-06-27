@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -32,13 +33,14 @@ export interface FeeChartData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   private readonly playerService = inject(PlayerService);
   private readonly authService = inject(AuthService);
   private readonly feeService = inject(FeeService);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly el = inject(ElementRef);
   private readonly zone = inject(NgZone);
@@ -82,7 +84,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
             this.chartsRendered = false;
           },
           error: () => {
-            this.error = 'Unable to load dashboard data. Please try again later.';
+            this.error = this.translate.instant('DASHBOARD.ERROR');
             this.loading = false;
           },
         });
@@ -143,7 +145,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
         const chart = new Chart(canvas, {
           type: 'doughnut',
           data: {
-            labels: ['Active', 'Inactive'],
+            labels: [this.translate.instant('DASHBOARD.ACTIVE'), this.translate.instant('DASHBOARD.INACTIVE')],
             datasets: [{
               data: [chartData.activeCount, chartData.inactiveCount],
               backgroundColor: ['#22c55e', '#ef4444'],
@@ -165,7 +167,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
         const chart = new Chart(canvas, {
           type: 'doughnut',
           data: {
-            labels: ['Paid', 'Unpaid'],
+            labels: [this.translate.instant('DASHBOARD.PAID'), this.translate.instant('DASHBOARD.UNPAID')],
             datasets: [{
               data: [chartData.paidCount, chartData.unpaidCount],
               backgroundColor: ['#22c55e', '#ef4444'],

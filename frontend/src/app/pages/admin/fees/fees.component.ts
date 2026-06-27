@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { FeeService } from '../../../services/fee.service';
@@ -11,12 +12,13 @@ import { Category } from '../../../models/player.model';
 @Component({
   selector: 'app-admin-fees',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './fees.component.html',
 })
 export class AdminFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
   private readonly playerService = inject(PlayerService);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
   fees: CategoryFee[] = [];
@@ -56,7 +58,7 @@ export class AdminFeesComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.error = 'Unable to load fees data. Please try again later.';
+          this.error = this.translate.instant('ADMIN_FEES.ERROR_LOAD');
           this.loading = false;
         },
       });
@@ -97,7 +99,7 @@ export class AdminFeesComponent implements OnInit {
         },
         error: () => {
           this.formLoading.set(false);
-          this.formError.set('Failed to save fee configuration.');
+          this.formError.set(this.translate.instant('ADMIN_FEES.ERROR_SAVE'));
         },
       });
   }

@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { of, throwError, Subject } from 'rxjs';
 import { PlayersComponent } from './players.component';
 import { PlayerService } from '../../services/player.service';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
+import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
 import { Category, Player, PlayersResponse } from '../../models/player.model';
 
 const mockCategories: Category[] = [
@@ -50,8 +52,11 @@ describe('PlayersComponent', () => {
         { provide: PlayerService, useValue: playerServiceMock },
         { provide: UserService, useValue: userServiceMock },
         { provide: AuthService, useValue: authServiceMock },
+        ...provideTranslateTesting(),
       ],
-    }).compileComponents();
+    }).compileComponents().then(() => {
+      setupTestTranslations(TestBed.inject(TranslateService));
+    });
   }
 
   describe('basic functionality', () => {
@@ -451,7 +456,7 @@ describe('PlayersComponent', () => {
 
       component.onCategoryChange('cat-2');
 
-      expect(component.error).toBe('Category load error');
+      expect(component.error).toBe('Failed to load players');
       expect(component.loading).toBe(false);
     });
 
