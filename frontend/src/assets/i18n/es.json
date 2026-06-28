@@ -78,6 +78,7 @@
     "TITLE_CAPTAIN": "Pagos de Categoría",
     "TITLE_PLAYER": "Mis Pagos",
     "WARNING": "Tu pago de arbitraje de ${{amount}} vence en {{days}} días",
+    "WARNING_TRAVEL": "Tu pago de viaje de ${{amount}} vence en {{days}} días",
     "EMPTY": "No hay pagos configurados para tu categoría esta semana.",
     "FEE_AMOUNT": "Monto de Pago",
     "WEEK": "Semana",

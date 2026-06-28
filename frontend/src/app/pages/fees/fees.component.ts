@@ -42,8 +42,12 @@ export class PlayerFeesComponent implements OnInit {
 
   get showWarningBanner(): boolean {
     const hasPendingFee = this.myFee?.status === 'pending';
+    return hasPendingFee && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+  }
+
+  get showTravelWarning(): boolean {
     const hasPendingTravel = this.myTravelFee?.status === 'pending';
-    return (hasPendingFee || hasPendingTravel) && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+    return hasPendingTravel && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
   }
 
   get totalUnpaidAmount(): number {
