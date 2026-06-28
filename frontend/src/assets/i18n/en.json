@@ -78,6 +78,7 @@
     "TITLE_CAPTAIN": "Category Fees",
     "TITLE_PLAYER": "My Fees",
     "WARNING": "Your arbitration fee of ${{amount}} is due in {{days}} days",
+    "WARNING_TRAVEL": "Your travel fee of ${{amount}} is due in {{days}} days",
     "EMPTY": "No fees configured for your category this week.",
     "FEE_AMOUNT": "Fee Amount",
     "WEEK": "Week",
