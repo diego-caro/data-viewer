@@ -41,53 +41,53 @@ const mockFees: CategoryFee[] = [
   {
     id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-    weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-    type: 'fee', playerFees: [], paidCount: 7, unpaidCount: 3,
+    periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+    type: 'match', playerFees: [], paidCount: 7, unpaidCount: 3,
   },
   {
     id: 'fee-2', categoryId: 'cat-2', categoryName: 'Sub 16',
     totalAmount: 4000, availablePlayers: 8, perPlayerAmount: 500,
-    weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-    type: 'fee', playerFees: [], paidCount: 5, unpaidCount: 3,
+    periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+    type: 'match', playerFees: [], paidCount: 5, unpaidCount: 3,
   },
 ];
 
 const mockPlayerFeePaid: PlayerFee = {
-  id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-1',
+  id: 'pf-1', feeId: 'fee-1', userId: 'user-1',
   playerName: 'Mateo Alvarez', status: 'paid', paidAt: '2026-06-16T10:00:00Z',
 };
 
 const mockPlayerFeePending: PlayerFee = {
-  id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-1',
+  id: 'pf-1', feeId: 'fee-1', userId: 'user-1',
   playerName: 'Mateo Alvarez', status: 'pending', paidAt: null,
 };
 
 const mockFeesWithPaidPlayer: CategoryFee[] = [{
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-  type: 'fee', playerFees: [mockPlayerFeePaid], paidCount: 1, unpaidCount: 0,
+  periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  type: 'match', playerFees: [mockPlayerFeePaid], paidCount: 1, unpaidCount: 0,
 }];
 
 const mockFeesWithPendingPlayer: CategoryFee[] = [{
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
-  type: 'fee', playerFees: [mockPlayerFeePending], paidCount: 0, unpaidCount: 1,
+  periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  type: 'match', playerFees: [mockPlayerFeePending], paidCount: 0, unpaidCount: 1,
 }];
 
 const mockTravelPaid: CategoryFee = {
   id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
-  weekStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+  periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
   type: 'travel',
-  playerFees: [{ id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'paid', paidAt: '2026-06-16T11:00:00Z' }],
+  playerFees: [{ id: 'tpf-1', feeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'paid', paidAt: '2026-06-16T11:00:00Z' }],
   paidCount: 1, unpaidCount: 0,
 };
 
 const mockTravelPending: CategoryFee = {
   ...mockTravelPaid,
-  playerFees: [{ id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'pending', paidAt: null }],
+  playerFees: [{ id: 'tpf-1', feeId: 'travel-1', userId: 'user-1', playerName: 'Mateo Alvarez', status: 'pending', paidAt: null }],
   paidCount: 0, unpaidCount: 1,
 };
 
@@ -459,8 +459,8 @@ describe('DashboardComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const link = compiled.querySelector('[data-testid="play-status-not-enabled"] a');
       expect(link).toBeTruthy();
-      expect(link?.textContent).toContain('Go to My Fees to pay and play this weekend');
-      expect(link?.getAttribute('href')).toBe('/fees');
+      expect(link?.textContent).toContain('Go to My Payments to pay and play this weekend');
+      expect(link?.getAttribute('href')).toBe('/payments');
     });
 
     it('should show no-fee status when no fee configured for the week', async () => {
@@ -537,7 +537,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       expect(component.playStatus).toBe('enabled');
-      expect(component.feeStatus).toBe('paid');
+      expect(component.matchStatus).toBe('paid');
       expect(component.travelStatus).toBeNull();
     });
 
@@ -550,7 +550,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       expect(component.playStatus).toBe('enabled');
-      expect(component.feeStatus).toBe('paid');
+      expect(component.matchStatus).toBe('paid');
       expect(component.travelStatus).toBe('paid');
     });
 
@@ -563,7 +563,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       expect(component.playStatus).toBe('not-enabled');
-      expect(component.feeStatus).toBe('paid');
+      expect(component.matchStatus).toBe('paid');
       expect(component.travelStatus).toBe('pending');
     });
 
@@ -576,7 +576,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       expect(component.playStatus).toBe('not-enabled');
-      expect(component.feeStatus).toBe('pending');
+      expect(component.matchStatus).toBe('pending');
       expect(component.travelStatus).toBe('paid');
     });
 
@@ -589,13 +589,13 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       expect(component.playStatus).toBe('not-enabled');
-      expect(component.feeStatus).toBe('pending');
+      expect(component.matchStatus).toBe('pending');
       expect(component.travelStatus).toBe('pending');
     });
   });
 
   describe('status pills', () => {
-    it('should show fee pill when player has fee status', async () => {
+    it('should show match pill when player has match status', async () => {
       TestBed.resetTestingModule();
       await createTestBed('player');
       feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPaidPlayer));
@@ -604,12 +604,12 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const feePill = compiled.querySelector('[data-testid="fee-pill"]');
+      const feePill = compiled.querySelector('[data-testid="match-pill"]');
       expect(feePill).toBeTruthy();
-      expect(feePill?.textContent?.trim()).toBe('Fee: Paid');
+      expect(feePill?.textContent?.trim()).toBe('Match: Paid');
     });
 
-    it('should show pending fee pill', async () => {
+    it('should show pending match pill', async () => {
       TestBed.resetTestingModule();
       await createTestBed('player');
       feeServiceMock.getCurrentFees!.mockReturnValue(of(mockFeesWithPendingPlayer));
@@ -618,9 +618,9 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const feePill = compiled.querySelector('[data-testid="fee-pill"]');
+      const feePill = compiled.querySelector('[data-testid="match-pill"]');
       expect(feePill).toBeTruthy();
-      expect(feePill?.textContent?.trim()).toBe('Fee: Pending');
+      expect(feePill?.textContent?.trim()).toBe('Match: Pending');
     });
 
     it('should show travel pill when travel fee exists', async () => {

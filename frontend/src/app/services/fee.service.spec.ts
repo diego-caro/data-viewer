@@ -30,8 +30,8 @@ describe('FeeService', () => {
         {
           id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
           totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-          weekStartDate: '2026-06-15', createdBy: 'admin-1',
-          createdAt: '2026-06-15T00:00:00Z', playerFees: [],
+          periodStartDate: '2026-06-15', createdBy: 'admin-1',
+          createdAt: '2026-06-15T00:00:00Z', type: 'match', playerFees: [],
           paidCount: 0, unpaidCount: 0,
         },
       ];
@@ -40,7 +40,7 @@ describe('FeeService', () => {
         expect(fees).toEqual(mockFees);
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments`);
       expect(req.request.method).toBe('GET');
       req.flush({ data: mockFees });
     });
@@ -52,7 +52,7 @@ describe('FeeService', () => {
         },
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments`);
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
@@ -62,8 +62,8 @@ describe('FeeService', () => {
       const mockFee: CategoryFee = {
         id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
         totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-        weekStartDate: '2026-06-15', createdBy: 'admin-1',
-        createdAt: '2026-06-15T00:00:00Z', playerFees: [],
+        periodStartDate: '2026-06-15', createdBy: 'admin-1',
+        createdAt: '2026-06-15T00:00:00Z', type: 'match', playerFees: [],
         paidCount: 0, unpaidCount: 0,
       };
 
@@ -71,7 +71,7 @@ describe('FeeService', () => {
         expect(fee).toEqual(mockFee);
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ categoryId: 'cat-1', totalAmount: 3000, availablePlayers: 10 });
       req.flush({ fee: mockFee });
@@ -81,7 +81,7 @@ describe('FeeService', () => {
   describe('markPlayerPaid', () => {
     it('should mark a player fee as paid', () => {
       const mockPlayerFee: PlayerFee = {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
         playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z',
       };
 
@@ -89,7 +89,7 @@ describe('FeeService', () => {
         expect(result).toEqual(mockPlayerFee);
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees/mark-paid`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments/mark-paid`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ playerFeeId: 'pf-1' });
       req.flush({ playerFee: mockPlayerFee });
@@ -97,7 +97,7 @@ describe('FeeService', () => {
   });
 
   describe('payFee', () => {
-    it('should create a payment preference', () => {
+    it('should create a payment preference for match fee by default', () => {
       const mockResult: PaymentPreferenceResult = {
         preferenceId: 'pref-123',
         initPoint: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref-123',
@@ -108,8 +108,9 @@ describe('FeeService', () => {
         expect(result).toEqual(mockResult);
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees/pay`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments/pay`);
       expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ type: 'match' });
       req.flush(mockResult);
     });
 
@@ -120,7 +121,7 @@ describe('FeeService', () => {
         },
       });
 
-      const req = httpMock.expectOne(`${environment.apiBaseUrl}/fees/pay`);
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/payments/pay`);
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });

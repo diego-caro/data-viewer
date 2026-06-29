@@ -15,12 +15,18 @@
     <div *ngIf="playStatus === 'enabled'" data-testid="play-status-enabled"
       class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
       <p class="font-medium">{{ 'DASHBOARD.PLAY_ENABLED' | translate }}</p>
-      <div *ngIf="feeStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
-        <span *ngIf="feeStatus" data-testid="fee-pill"
-          [class]="feeStatus === 'paid'
+      <div *ngIf="matchStatus || leagueStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
+        <span *ngIf="matchStatus" data-testid="match-pill"
+          [class]="matchStatus === 'paid'
             ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
             : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
-          {{ (feeStatus === 'paid' ? 'DASHBOARD.FEE_PAID' : 'DASHBOARD.FEE_PENDING') | translate }}
+          {{ (matchStatus === 'paid' ? 'DASHBOARD.MATCH_PAID' : 'DASHBOARD.MATCH_PENDING') | translate }}
+        </span>
+        <span *ngIf="leagueStatus" data-testid="league-pill"
+          [class]="leagueStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (leagueStatus === 'paid' ? 'DASHBOARD.LEAGUE_PAID' : 'DASHBOARD.LEAGUE_PENDING') | translate }}
         </span>
         <span *ngIf="travelStatus" data-testid="travel-pill"
           [class]="travelStatus === 'paid'
@@ -33,12 +39,18 @@
     <div *ngIf="playStatus === 'not-enabled'" data-testid="play-status-not-enabled"
       class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-700">
       <p class="font-medium">{{ 'DASHBOARD.PLAY_NOT_ENABLED' | translate }}</p>
-      <div *ngIf="feeStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
-        <span *ngIf="feeStatus" data-testid="fee-pill"
-          [class]="feeStatus === 'paid'
+      <div *ngIf="matchStatus || leagueStatus || travelStatus" data-testid="status-pills" class="mt-2 flex gap-2">
+        <span *ngIf="matchStatus" data-testid="match-pill"
+          [class]="matchStatus === 'paid'
             ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
             : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
-          {{ (feeStatus === 'paid' ? 'DASHBOARD.FEE_PAID' : 'DASHBOARD.FEE_PENDING') | translate }}
+          {{ (matchStatus === 'paid' ? 'DASHBOARD.MATCH_PAID' : 'DASHBOARD.MATCH_PENDING') | translate }}
+        </span>
+        <span *ngIf="leagueStatus" data-testid="league-pill"
+          [class]="leagueStatus === 'paid'
+            ? 'rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+            : 'rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'">
+          {{ (leagueStatus === 'paid' ? 'DASHBOARD.LEAGUE_PAID' : 'DASHBOARD.LEAGUE_PENDING') | translate }}
         </span>
         <span *ngIf="travelStatus" data-testid="travel-pill"
           [class]="travelStatus === 'paid'
@@ -47,9 +59,9 @@
           {{ (travelStatus === 'paid' ? 'DASHBOARD.TRAVEL_PAID' : 'DASHBOARD.TRAVEL_PENDING') | translate }}
         </span>
       </div>
-      <a routerLink="/fees"
+      <a routerLink="/payments"
         class="mt-2 inline-block text-sm font-medium text-yellow-800 underline hover:text-yellow-900">
-        {{ 'DASHBOARD.PLAY_GO_TO_FEES' | translate }}
+        {{ 'DASHBOARD.PLAY_GO_TO_PAYMENTS' | translate }}
       </a>
     </div>
     <div *ngIf="playStatus === 'no-fee'" data-testid="play-status-no-fee"

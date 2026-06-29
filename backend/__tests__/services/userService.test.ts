@@ -342,16 +342,26 @@ describe('userService', () => {
   });
 
   describe('deleteUser', () => {
-    it('should delete dependent player_fees and the user', async () => {
+    it('should delete dependent player fees and the user', async () => {
       mockedDb.query
-        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockResolvedValueOnce([]) // DELETE match_player_fees
+        .mockResolvedValueOnce([]) // DELETE league_player_fees
+        .mockResolvedValueOnce([]) // DELETE travel_player_fees
         .mockResolvedValueOnce([{ id: 'user-1' }]); // DELETE user RETURNING id
 
       const result = await userService.deleteUser('user-1');
 
       expect(result).toBe(true);
       expect(mockedDb.query).toHaveBeenCalledWith(
-        expect.stringContaining('DELETE FROM player_fees'),
+        expect.stringContaining('DELETE FROM match_player_fees'),
+        ['user-1']
+      );
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM league_player_fees'),
+        ['user-1']
+      );
+      expect(mockedDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM travel_player_fees'),
         ['user-1']
       );
       expect(mockedDb.query).toHaveBeenCalledWith(
@@ -362,7 +372,9 @@ describe('userService', () => {
 
     it('should return false when user not found', async () => {
       mockedDb.query
-        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockResolvedValueOnce([]) // DELETE match_player_fees
+        .mockResolvedValueOnce([]) // DELETE league_player_fees
+        .mockResolvedValueOnce([]) // DELETE travel_player_fees
         .mockResolvedValueOnce([]); // DELETE user returns nothing
 
       const result = await userService.deleteUser('nonexistent');
@@ -374,7 +386,9 @@ describe('userService', () => {
       const fkError = new Error('FK violation') as Error & { code: string };
       fkError.code = '23503';
       mockedDb.query
-        .mockResolvedValueOnce([]) // DELETE player_fees
+        .mockResolvedValueOnce([]) // DELETE match_player_fees
+        .mockResolvedValueOnce([]) // DELETE league_player_fees
+        .mockResolvedValueOnce([]) // DELETE travel_player_fees
         .mockRejectedValueOnce(fkError); // DELETE user FK error
 
       await expect(userService.deleteUser('user-1'))

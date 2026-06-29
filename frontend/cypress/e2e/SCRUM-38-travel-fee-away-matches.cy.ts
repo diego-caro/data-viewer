@@ -33,10 +33,10 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
   const mockFee = {
     id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-    weekStartDate: '2026-06-22', createdBy: 'admin-1', createdAt: '2026-06-22T00:00:00Z',
-    type: 'fee',
+    periodStartDate: '2026-06-22', createdBy: 'admin-1', createdAt: '2026-06-22T00:00:00Z',
+    type: 'match',
     playerFees: [
-      { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-2', playerName: 'One, Player', status: 'pending', paidAt: null },
+      { id: 'pf-1', feeId: 'fee-1', userId: 'user-2', playerName: 'One, Player', status: 'pending', paidAt: null },
     ],
     paidCount: 0, unpaidCount: 1,
   };
@@ -44,10 +44,10 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
   const mockTravel = {
     id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
-    weekStartDate: '2026-06-22', createdBy: 'admin-1', createdAt: '2026-06-22T00:00:00Z',
+    periodStartDate: '2026-06-22', createdBy: 'admin-1', createdAt: '2026-06-22T00:00:00Z',
     type: 'travel',
     playerFees: [
-      { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-2', playerName: 'One, Player', status: 'pending', paidAt: null },
+      { id: 'tpf-1', feeId: 'travel-1', userId: 'user-2', playerName: 'One, Player', status: 'pending', paidAt: null },
     ],
     paidCount: 0, unpaidCount: 1,
   };
@@ -55,7 +55,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
   const mockFeePaid = {
     ...mockFee,
     playerFees: [
-      { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'user-2', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-23T10:00:00Z' },
+      { id: 'pf-1', feeId: 'fee-1', userId: 'user-2', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-23T10:00:00Z' },
     ],
     paidCount: 1, unpaidCount: 0,
   };
@@ -63,7 +63,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
   const mockTravelPaid = {
     ...mockTravel,
     playerFees: [
-      { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'user-2', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-23T11:00:00Z' },
+      { id: 'tpf-1', feeId: 'travel-1', userId: 'user-2', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-23T11:00:00Z' },
     ],
     paidCount: 1, unpaidCount: 0,
   };
@@ -78,14 +78,14 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
   describe('Admin Fees Page — tabs and away badge', () => {
     beforeEach(() => {
       cy.loginAsAdmin();
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFee, mockTravel] } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFee, mockTravel] } }).as('getFees');
       cy.intercept('GET', '**/api/fixture/matches*', { statusCode: 200, body: { data: [createAwayMatch()] } });
-      cy.visit('/admin/fees');
+      cy.visit('/admin/payments');
       cy.wait('@getFees');
     });
 
     it('should show Fee and Travel tabs', () => {
-      cy.get('[data-testid="tab-fee"]').should('be.visible');
+      cy.get('[data-testid="tab-match"]').should('be.visible');
       cy.get('[data-testid="tab-travel"]').should('be.visible');
     });
 
@@ -104,7 +104,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
 
     it('should show local badge when match is home', () => {
       cy.intercept('GET', '**/api/fixture/matches*', { statusCode: 200, body: { data: [createLocalMatch()] } });
-      cy.visit('/admin/fees');
+      cy.visit('/admin/payments');
       cy.wait('@getFees');
 
       cy.get('[data-testid="tab-travel"]').click();
@@ -122,9 +122,9 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('fee + travel both pending', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFee, mockTravel] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFee, mockTravel] } }).as('getFees');
         cy.intercept('GET', '**/api/fixture/matches*', { statusCode: 200, body: { data: [createAwayMatch()] } });
-        cy.visit('/fees');
+        cy.visit('/payments');
         cy.wait('@getFees');
       });
 
@@ -150,9 +150,9 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('fee pending, travel paid', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFee, mockTravelPaid] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFee, mockTravelPaid] } }).as('getFees');
         cy.intercept('GET', '**/api/fixture/matches*', { statusCode: 200, body: { data: [] } });
-        cy.visit('/fees');
+        cy.visit('/payments');
         cy.wait('@getFees');
       });
 
@@ -169,9 +169,9 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('only fee (no travel — home match)', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFee] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFee] } }).as('getFees');
         cy.intercept('GET', '**/api/fixture/matches*', { statusCode: 200, body: { data: [] } });
-        cy.visit('/fees');
+        cy.visit('/payments');
         cy.wait('@getFees');
       });
 
@@ -190,7 +190,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('both fee and travel paid', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFeePaid, mockTravelPaid] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFeePaid, mockTravelPaid] } }).as('getFees');
         cy.visit('/dashboard');
         cy.wait('@getFees');
       });
@@ -202,7 +202,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
       });
 
       it('should show fee paid pill and travel paid pill', () => {
-        cy.get('[data-testid="fee-pill"]').should('contain.text', 'Fee: Paid');
+        cy.get('[data-testid="match-pill"]').should('contain.text', 'Match: Paid');
         cy.get('[data-testid="travel-pill"]').should('contain.text', 'Travel: Paid');
       });
     });
@@ -210,7 +210,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('fee paid, travel pending', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFeePaid, mockTravel] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFeePaid, mockTravel] } }).as('getFees');
         cy.visit('/dashboard');
         cy.wait('@getFees');
       });
@@ -222,7 +222,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
       });
 
       it('should show fee paid pill and travel pending pill', () => {
-        cy.get('[data-testid="fee-pill"]').should('contain.text', 'Fee: Paid');
+        cy.get('[data-testid="match-pill"]').should('contain.text', 'Match: Paid');
         cy.get('[data-testid="travel-pill"]').should('contain.text', 'Travel: Pending');
       });
     });
@@ -230,13 +230,13 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('only fee (home match — no travel)', () => {
       beforeEach(() => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [mockFeePaid] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [mockFeePaid] } }).as('getFees');
         cy.visit('/dashboard');
         cy.wait('@getFees');
       });
 
       it('should show only fee pill, no travel pill', () => {
-        cy.get('[data-testid="fee-pill"]').should('contain.text', 'Fee: Paid');
+        cy.get('[data-testid="match-pill"]').should('contain.text', 'Match: Paid');
         cy.get('[data-testid="travel-pill"]').should('not.exist');
       });
 
@@ -248,7 +248,7 @@ describe('SCRUM-38 Travel Fee for Away Matches', () => {
     describe('no fees configured', () => {
       it('should show no-fee status without pills', () => {
         cy.loginAsPlayer('cat-1');
-        cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [] } }).as('getFees');
+        cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [] } }).as('getFees');
         cy.visit('/dashboard');
         cy.wait('@getFees');
 

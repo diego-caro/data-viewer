@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requireRole } from '@/lib/middleware/auth';
-import { feeService } from '@/lib/services/feeService';
+import { paymentService } from '@/lib/services/paymentService';
 import { userService } from '@/lib/services/userService';
-import { CategoryFeeWithPlayers } from '@/lib/types/fee';
+import { PaymentFeeWithPlayers, PaymentType } from '@/lib/types/payment';
 
-export async function POST(request: NextRequest): Promise<NextResponse<{ fee: CategoryFeeWithPlayers } | { error: string }>> {
+const VALID_TYPES: PaymentType[] = ['match', 'league', 'travel'];
+
+export async function POST(request: NextRequest): Promise<NextResponse<{ fee: PaymentFeeWithPlayers } | { error: string }>> {
   const auth = requireRole(request, 'admin');
   if (auth instanceof NextResponse) return auth;
 
@@ -20,32 +22,30 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ fee: Ca
   if (!categoryId || totalAmount === undefined || availablePlayers === undefined) {
     return NextResponse.json(
       { error: 'Fields categoryId, totalAmount, and availablePlayers are required' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (totalAmount <= 0 || availablePlayers <= 0) {
     return NextResponse.json(
       { error: 'totalAmount and availablePlayers must be positive numbers' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const feeType = type === 'travel' ? 'travel' : 'fee';
+  const paymentType: PaymentType = VALID_TYPES.includes(type as PaymentType) ? (type as PaymentType) : 'match';
 
-  const fee = await feeService.createCategoryFee(
-    categoryId, totalAmount, availablePlayers, auth.userId, feeType
-  );
+  const fee = await paymentService.createFee(categoryId, totalAmount, availablePlayers, auth.userId, paymentType);
 
   return NextResponse.json({ fee }, { status: 201 });
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse<{ data: CategoryFeeWithPlayers[] } | { error: string }>> {
+export async function GET(request: NextRequest): Promise<NextResponse<{ data: PaymentFeeWithPlayers[] } | { error: string }>> {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   if (auth.role === 'admin') {
-    const fees = await feeService.getCurrentFees();
+    const fees = await paymentService.getCurrentFees();
     return NextResponse.json({ data: fees });
   }
 
@@ -54,6 +54,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<{ data: Ca
     return NextResponse.json({ data: [] });
   }
 
-  const fees = await feeService.getAllCurrentFeesByCategory(profile.categoryId);
+  const fees = await paymentService.getAllCurrentFeesByCategory(profile.categoryId);
   return NextResponse.json({ data: fees });
 }

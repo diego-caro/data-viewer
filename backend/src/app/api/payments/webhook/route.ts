@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WebhookSignatureValidator, InvalidWebhookSignatureError } from 'mercadopago';
-import { feeService } from '@/lib/services/feeService';
+import { paymentService } from '@/lib/services/paymentService';
 import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
 
 interface WebhookBody {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing playerFeeId query parameter' }, { status: 400 });
   }
 
-  const feeWithCategory = await feeService.getPlayerFeeWithCategory(playerFeeId);
+  const feeWithCategory = await paymentService.getPlayerFeeWithCategory(playerFeeId);
   if (!feeWithCategory) {
     return NextResponse.json({ error: 'Player fee not found' }, { status: 404 });
   }
@@ -66,6 +66,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ status: 'not_approved' });
   }
 
-  const result = await feeService.markPlayerPaid(feeWithCategory.playerFee.id);
-  return NextResponse.json({ status: 'paid', playerFee: result });
+  const result = await paymentService.markPlayerPaid(feeWithCategory.playerFee.id);
+  return NextResponse.json({ status: 'paid', playerFee: result?.playerFee });
 }

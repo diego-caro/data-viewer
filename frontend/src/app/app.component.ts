@@ -26,11 +26,11 @@ export class AppComponent {
     { labelKey: 'NAV.TOURNAMENT', path: '/tournament' },
   ];
 
-  nonAdminLinks: NavLink[] = [{ labelKey: 'NAV.MY_FEES', path: '/fees' }];
+  nonAdminLinks: NavLink[] = [{ labelKey: 'NAV.MY_PAYMENTS', path: '/payments' }];
 
   adminLinks: NavLink[] = [
     { labelKey: 'NAV.PLAYERS', path: '/players' },
-    { labelKey: 'NAV.FEES', path: '/admin/fees' },
+    { labelKey: 'NAV.PAYMENTS', path: '/admin/payments' },
     { labelKey: 'NAV.USERS', path: '/admin/users' },
   ];
 

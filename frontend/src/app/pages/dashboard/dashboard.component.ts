@@ -50,7 +50,8 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
   categoryCharts: CategoryChartData[] = [];
   feeCharts: FeeChartData[] = [];
   playStatus: 'enabled' | 'not-enabled' | 'no-fee' | null = null;
-  feeStatus: 'paid' | 'pending' | null = null;
+  matchStatus: 'paid' | 'pending' | null = null;
+  leagueStatus: 'paid' | 'pending' | null = null;
   travelStatus: 'paid' | 'pending' | null = null;
   loading = true;
   error: string | null = null;
@@ -113,30 +114,35 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (fees) => {
-            const regularFees = fees.filter((f) => (f.type ?? 'fee') === 'fee');
+            const matchFees = fees.filter((f) => f.type === 'match');
+            const leagueFees = fees.filter((f) => f.type === 'league');
             const travelFees = fees.filter((f) => f.type === 'travel');
 
-            if (regularFees.length === 0) {
+            if (matchFees.length === 0) {
               this.playStatus = 'no-fee';
               this.loading = false;
               return;
             }
 
-            const myFee = regularFees[0]?.playerFees.find((pf) => pf.userId === user.id);
+            const myFee = matchFees[0]?.playerFees.find((pf) => pf.userId === user.id);
             if (!myFee) {
               this.playStatus = 'no-fee';
               this.loading = false;
               return;
             }
 
-            this.feeStatus = myFee.status;
+            this.matchStatus = myFee.status;
+
+            const myLeague = leagueFees[0]?.playerFees.find((pf) => pf.userId === user.id);
+            this.leagueStatus = myLeague?.status ?? null;
 
             const myTravel = travelFees[0]?.playerFees.find((pf) => pf.userId === user.id);
             this.travelStatus = myTravel?.status ?? null;
 
             const feePaid = myFee.status === 'paid';
+            const leaguePaid = !myLeague || myLeague.status === 'paid';
             const travelPaid = !myTravel || myTravel.status === 'paid';
-            this.playStatus = feePaid && travelPaid ? 'enabled' : 'not-enabled';
+            this.playStatus = feePaid && leaguePaid && travelPaid ? 'enabled' : 'not-enabled';
             this.loading = false;
           },
         });
