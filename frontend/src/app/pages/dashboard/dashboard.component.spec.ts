@@ -37,7 +37,7 @@ const mockPlayersCat4: Player[] = [
 const mockPlayersCat5: Player[] = [];
 const mockPlayersCat6: Player[] = [];
 
-const mockFees: CategoryFee[] = [
+const mockMatchFees: CategoryFee[] = [
   {
     id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
@@ -51,6 +51,26 @@ const mockFees: CategoryFee[] = [
     type: 'match', playerFees: [], paidCount: 5, unpaidCount: 3,
   },
 ];
+
+const mockLeagueFees: CategoryFee[] = [
+  {
+    id: 'league-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+    totalAmount: 2000, availablePlayers: 10, perPlayerAmount: 200,
+    periodStartDate: '2026-06-01', createdBy: 'admin-1', createdAt: '2026-06-01T00:00:00Z',
+    type: 'league', playerFees: [], paidCount: 8, unpaidCount: 2,
+  },
+];
+
+const mockTravelFeeAdmin: CategoryFee[] = [
+  {
+    id: 'travel-admin-1', categoryId: 'cat-1', categoryName: 'Sub 14',
+    totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
+    periodStartDate: '2026-06-15', createdBy: 'admin-1', createdAt: '2026-06-15T00:00:00Z',
+    type: 'travel', playerFees: [], paidCount: 4, unpaidCount: 6,
+  },
+];
+
+const mockAllFees: CategoryFee[] = [...mockMatchFees, ...mockLeagueFees, ...mockTravelFeeAdmin];
 
 const mockPlayerFeePaid: PlayerFee = {
   id: 'pf-1', feeId: 'fee-1', userId: 'user-1',
@@ -117,7 +137,7 @@ describe('DashboardComponent', () => {
     } as unknown as jest.Mocked<PlayerService>;
 
     feeServiceMock = {
-      getCurrentFees: jest.fn().mockReturnValue(of(mockFees)),
+      getCurrentFees: jest.fn().mockReturnValue(of(mockAllFees)),
     };
 
     const authServiceMock = {
@@ -350,9 +370,10 @@ describe('DashboardComponent', () => {
       expect(feeServiceMock.getCurrentFees).toHaveBeenCalled();
     });
 
-    it('should create fee chart data for each category with fees', () => {
+    it('should create fee chart data only for active tab (match by default)', () => {
       fixture.detectChanges();
       expect(component.feeCharts.length).toBe(2);
+      expect(component.feeCharts.every((c) => c.type === 'match')).toBe(true);
     });
 
     it('should compute correct paid/unpaid counts', () => {
@@ -363,7 +384,7 @@ describe('DashboardComponent', () => {
       expect(chart!.unpaidCount).toBe(3);
     });
 
-    it('should render fee chart cards in template', () => {
+    it('should render fee chart cards in template for active tab', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
@@ -391,6 +412,98 @@ describe('DashboardComponent', () => {
       feeServiceMock.getCurrentFees!.mockReturnValue(of([]));
       fixture.detectChanges();
       expect(component.feeCharts.length).toBe(0);
+    });
+  });
+
+  describe('fee chart tabs', () => {
+    it('should render 3 tab buttons', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="fee-tab-match"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="fee-tab-league"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="fee-tab-travel"]')).toBeTruthy();
+    });
+
+    it('should default to match tab', () => {
+      fixture.detectChanges();
+      expect(component.feeActiveTab).toBe('match');
+    });
+
+    it('should show only match fees on match tab', () => {
+      fixture.detectChanges();
+      expect(component.feeCharts.length).toBe(2);
+      expect(component.feeCharts.every((c) => c.type === 'match')).toBe(true);
+    });
+
+    it('should show only league fees when league tab is clicked', () => {
+      fixture.detectChanges();
+      component.setFeeTab('league');
+      fixture.detectChanges();
+
+      expect(component.feeActiveTab).toBe('league');
+      expect(component.feeCharts.length).toBe(1);
+      expect(component.feeCharts[0].categoryName).toBe('Sub 14');
+      expect(component.feeCharts[0].type).toBe('league');
+    });
+
+    it('should show only travel fees when travel tab is clicked', () => {
+      fixture.detectChanges();
+      component.setFeeTab('travel');
+      fixture.detectChanges();
+
+      expect(component.feeActiveTab).toBe('travel');
+      expect(component.feeCharts.length).toBe(1);
+      expect(component.feeCharts[0].paidCount).toBe(4);
+      expect(component.feeCharts[0].unpaidCount).toBe(6);
+    });
+
+    it('should show empty state when tab has no configured fees', () => {
+      fixture.detectChanges();
+      feeServiceMock.getCurrentFees!.mockReturnValue(of(mockMatchFees));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      component.setFeeTab('league');
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const emptyState = compiled.querySelector('[data-testid="fee-tab-empty"]');
+      expect(emptyState).toBeTruthy();
+      expect(emptyState?.textContent).toContain('No fees configured for this type');
+    });
+
+    it('should update chart cards when switching tabs', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      let feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
+      expect(feeCards.length).toBe(2);
+
+      component.setFeeTab('league');
+      fixture.detectChanges();
+      feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
+      expect(feeCards.length).toBe(1);
+    });
+
+    it('should not show tabs when no fees exist at all', () => {
+      feeServiceMock.getCurrentFees!.mockReturnValue(of([]));
+      fixture = TestBed.createComponent(DashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="fee-tab-match"]')).toBeNull();
+    });
+
+    it('should re-render charts when switching tabs', () => {
+      fixture.detectChanges();
+      expect(component.feeCharts.length).toBe(2);
+
+      component.setFeeTab('travel');
+      fixture.detectChanges();
+      expect(component.feeCharts.length).toBe(1);
+      expect(component.feeCharts[0].paidCount).toBe(4);
     });
   });
 

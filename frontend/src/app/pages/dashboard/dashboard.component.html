@@ -106,10 +106,44 @@
       </div>
 
       <!-- Fee Collection Charts (admin only) -->
-      <div *ngIf="!loading && !error && feeCharts.length > 0">
+      <div *ngIf="!loading && !error && allFees.length > 0">
         <h2 data-testid="fee-charts-title" class="mb-6 mt-10 text-xl font-bold text-gray-900">{{ 'DASHBOARD.FEE_COLLECTION' | translate }}</h2>
 
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Fee Type Tabs -->
+        <div class="mb-6 flex gap-2">
+          <button
+            data-testid="fee-tab-match"
+            (click)="setFeeTab('match')"
+            [class]="feeActiveTab === 'match'
+              ? 'rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white'
+              : 'rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'">
+            {{ 'DASHBOARD.TAB_MATCH' | translate }}
+          </button>
+          <button
+            data-testid="fee-tab-league"
+            (click)="setFeeTab('league')"
+            [class]="feeActiveTab === 'league'
+              ? 'rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white'
+              : 'rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'">
+            {{ 'DASHBOARD.TAB_LEAGUE' | translate }}
+          </button>
+          <button
+            data-testid="fee-tab-travel"
+            (click)="setFeeTab('travel')"
+            [class]="feeActiveTab === 'travel'
+              ? 'rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white'
+              : 'rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'">
+            {{ 'DASHBOARD.TAB_TRAVEL' | translate }}
+          </button>
+        </div>
+
+        <!-- Empty Tab State -->
+        <div *ngIf="feeCharts.length === 0" data-testid="fee-tab-empty"
+          class="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-400">
+          {{ 'DASHBOARD.NO_FEES_TAB' | translate }}
+        </div>
+
+        <div *ngIf="feeCharts.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div *ngFor="let chart of feeCharts; let i = index" data-testid="fee-chart-card"
             class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h3 data-testid="fee-chart-title" class="mb-4 text-center text-lg font-semibold text-gray-900">{{
