@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAnyRole } from '@/lib/middleware/auth';
-import { feeService } from '@/lib/services/feeService';
-import { PlayerFee } from '@/lib/types/fee';
+import { paymentService } from '@/lib/services/paymentService';
+import { PlayerPaymentFee } from '@/lib/types/payment';
 
-export async function POST(request: NextRequest): Promise<NextResponse<{ playerFee: PlayerFee } | { error: string }>> {
+export async function POST(request: NextRequest): Promise<NextResponse<{ playerFee: PlayerPaymentFee } | { error: string }>> {
   const auth = requireAnyRole(request, ['admin', 'captain']);
   if (auth instanceof NextResponse) return auth;
 
@@ -18,10 +18,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ playerF
     return NextResponse.json({ error: 'playerFeeId is required' }, { status: 400 });
   }
 
-  const result = await feeService.markPlayerPaid(body.playerFeeId);
+  const result = await paymentService.markPlayerPaid(body.playerFeeId);
   if (!result) {
     return NextResponse.json({ error: 'Player fee not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ playerFee: result });
+  return NextResponse.json({ playerFee: result.playerFee });
 }

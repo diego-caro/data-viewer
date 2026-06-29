@@ -207,7 +207,7 @@ paths:
     delete:
       summary: Delete a user (admin only)
       description: >
-        Hard-deletes a user and cascades deletion to player_fees records.
+        Hard-deletes a user and cascades deletion to player fee records across all payment tables.
         Returns 400 if the admin attempts to delete themselves.
         Returns 409 if the user has associated records that prevent deletion.
       security:
@@ -455,17 +455,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/fees:
+  /api/payments:
     get:
-      summary: Get current week's fees (role-filtered)
+      summary: Get current period's payments (role-filtered)
       description: >
-        Admin sees all categories (all types). Captain and player see all fee
-        types (fee + travel) for their assigned category.
+        Admin sees all categories (all types). Captain and player see all
+        payment types (match + league + travel) for their assigned category.
+        Match and travel use weekly periods; league uses monthly periods.
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Fee configurations for the current week
+          description: Payment configurations for the current period
           content:
             application/json:
               schema:
@@ -474,7 +475,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CategoryFeeWithPlayers'
+                      $ref: '#/components/schemas/PaymentFeeWithPlayers'
         '401':
           description: Missing or invalid token
           content:
@@ -482,7 +483,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
-      summary: Create or update fee configuration for a category (admin only)
+      summary: Create or update payment configuration for a category (admin only)
       security:
         - bearerAuth: []
       requestBody:
@@ -490,17 +491,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCategoryFeeRequest'
+              $ref: '#/components/schemas/CreatePaymentFeeRequest'
       responses:
         '201':
-          description: Fee configuration created or updated
+          description: Payment configuration created or updated
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   fee:
-                    $ref: '#/components/schemas/CategoryFeeWithPlayers'
+                    $ref: '#/components/schemas/PaymentFeeWithPlayers'
         '400':
           description: Missing required fields or non-positive values
           content:
@@ -520,9 +521,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/fees/mark-paid:
+  /api/payments/mark-paid:
     post:
       summary: Mark a player's fee as paid (admin or captain)
+      description: >
+        Searches across all three player fee tables (match, league, travel)
+        to find the record by ID.
       security:
         - bearerAuth: []
       requestBody:
@@ -571,14 +575,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/fees/pay:
+  /api/payments/pay:
     post:
       summary: Generate a Mercado Pago payment preference (player or captain)
       description: >
         Creates a Checkout Pro payment preference linked to the captain's MP
-        account. Supports individual payment by type (fee or travel) and
-        combined "pay all" mode for unpaid fees. Returns an init_point URL
-        to redirect the player to MP checkout.
+        account. Supports individual payment by type (match, league, or travel)
+        and combined "pay all" mode for all unpaid fees. Returns an init_point
+        URL to redirect the player to MP checkout.
       security:
         - bearerAuth: []
       requestBody:
@@ -590,13 +594,13 @@ paths:
               properties:
                 type:
                   type: string
-                  enum: [fee, travel]
-                  default: fee
-                  description: Fee type to pay (ignored when payAll is true)
+                  enum: [match, league, travel]
+                  default: match
+                  description: Payment type to pay (ignored when payAll is true)
                 payAll:
                   type: boolean
                   default: false
-                  description: When true, creates a single preference for all unpaid fees (fee + travel combined)
+                  description: When true, creates a single preference for all unpaid fees (match + league + travel combined)
       responses:
         '200':
           description: Payment preference created
@@ -623,7 +627,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: No fee found for current week, fee config not found, or payments not yet configured for category
+          description: No fee found for current period, fee config not found, or payments not yet configured for category
           content:
             application/json:
               schema:
@@ -754,14 +758,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/fees/webhook:
+  /api/payments/webhook:
     post:
       summary: Mercado Pago webhook — marks player fee as paid (public, no JWT)
       description: >
         Receives IPN/webhook notifications from Mercado Pago. Validates the
         signature (when MP_WEBHOOK_SECRET is configured), verifies the payment
         status via the MP API, checks that external_reference matches the
-        playerFeeId, and marks the player fee as paid if approved.
+        playerFeeId, and marks the player fee as paid if approved. Searches
+        across all three player fee tables to find the record.
       parameters:
         - name: playerFeeId
           in: query
@@ -1215,7 +1220,7 @@ components:
           $ref: '#/components/schemas/UserProfile'
       required: [token, user]
 
-    CategoryFeeWithPlayers:
+    PaymentFeeWithPlayers:
       type: object
       properties:
         id:
@@ -1231,9 +1236,10 @@ components:
           type: integer
         perPlayerAmount:
           type: number
-        weekStartDate:
+        periodStartDate:
           type: string
           format: date
+          description: Monday of the week for match/travel, 1st of the month for league
         createdBy:
           type: string
           format: uuid
@@ -1242,9 +1248,8 @@ components:
           format: date-time
         type:
           type: string
-          enum: [fee, travel]
-          default: fee
-          description: Discriminator — 'fee' for weekly fee, 'travel' for away match travel fee
+          enum: [match, league, travel]
+          description: Payment type — stored in separate DB tables per type
         playerFees:
           type: array
           items:
@@ -1253,7 +1258,7 @@ components:
           type: integer
         unpaidCount:
           type: integer
-      required: [id, categoryId, categoryName, totalAmount, availablePlayers, perPlayerAmount, weekStartDate, createdBy, createdAt, type, playerFees, paidCount, unpaidCount]
+      required: [id, categoryId, categoryName, totalAmount, availablePlayers, perPlayerAmount, periodStartDate, createdBy, createdAt, type, playerFees, paidCount, unpaidCount]
 
     PlayerFee:
       type: object
@@ -1261,9 +1266,10 @@ components:
         id:
           type: string
           format: uuid
-        categoryFeeId:
+        feeId:
           type: string
           format: uuid
+          description: References the parent fee table (match_fees, league_fees, or travel_fees)
         userId:
           type: string
           format: uuid
@@ -1276,9 +1282,9 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, categoryFeeId, userId, playerName, status, paidAt]
+      required: [id, feeId, userId, playerName, status, paidAt]
 
-    CreateCategoryFeeRequest:
+    CreatePaymentFeeRequest:
       type: object
       properties:
         categoryId:
@@ -1291,9 +1297,9 @@ components:
           minimum: 1
         type:
           type: string
-          enum: [fee, travel]
-          default: fee
-          description: Fee type — 'travel' for away match travel fees
+          enum: [match, league, travel]
+          default: match
+          description: Payment type — determines which DB table to write to
       required: [categoryId, totalAmount, availablePlayers]
 
     PaymentPreferenceResult:

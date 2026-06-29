@@ -13,10 +13,12 @@
     </div>
 
     <!-- Warning Banner (player only, pending fee, match within 4 days) -->
-    <div *ngIf="showWarningBanner || showTravelWarning" data-testid="warning-banner"
+    <div *ngIf="showMatchWarning || showLeagueWarning || showTravelWarning" data-testid="warning-banner"
       class="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800">
-      <p *ngIf="showWarningBanner" class="font-semibold">{{ 'FEES.WARNING' | translate:{ amount: (totalUnpaidAmount |
+      <p *ngIf="showMatchWarning" class="font-semibold">{{ 'FEES.WARNING_MATCH' | translate:{ amount: (totalUnpaidAmount |
         number:'1.2-2'), days: daysUntilMatch } }}</p>
+      <p *ngIf="showLeagueWarning" class="font-semibold">{{ 'FEES.WARNING_LEAGUE' | translate:{ amount:
+        (totalUnpaidAmount | number:'1.2-2'), days: daysUntilMatch } }}</p>
       <p *ngIf="showTravelWarning" class="font-semibold">{{ 'FEES.WARNING_TRAVEL' | translate:{ amount:
         (totalUnpaidAmount | number:'1.2-2'), days: daysUntilMatch } }}</p>
     </div>
@@ -44,7 +46,7 @@
 
       <!-- Captain View: Player list with badges + summary -->
       <ng-container *ngIf="isCaptain && categoryFee">
-        <div class="mb-2 text-xs font-medium text-gray-500">{{ 'FEES.WEEK' | translate }}: {{ categoryFee.weekStartDate
+        <div class="mb-2 text-xs font-medium text-gray-500">{{ 'FEES.WEEK' | translate }}: {{ categoryFee.periodStartDate
           }}</div>
         <div data-testid="fee-summary" class="mb-4 flex gap-4 text-sm">
           <span class="flex items-center gap-1">
@@ -73,10 +75,10 @@
 
       <!-- Player View: Fee Breakdown -->
       <div class="space-y-3">
-        <!-- Weekly Fee Row -->
+        <!-- Match Fee Row -->
         <div *ngIf="categoryFee && myFee" data-testid="fee-row" class="flex items-center justify-between">
           <div>
-            <span class="text-sm text-gray-700">{{ 'FEES.WEEKLY_FEE' | translate }}</span>
+            <span class="text-sm text-gray-700">{{ 'FEES.MATCH_FEE' | translate }}</span>
             <span data-testid="fee-amount" class="ml-2 text-sm font-semibold text-gray-900">${{
               categoryFee.perPlayerAmount | number:'1.2-2' }}</span>
           </div>
@@ -88,6 +90,25 @@
               [disabled]="paying()"
               class="rounded-md bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 disabled:opacity-50">
               {{ paying() ? ('FEES.PROCESSING' | translate) : ('FEES.PAY' | translate) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- League Fee Row -->
+        <div *ngIf="leagueFee && myLeagueFee" data-testid="league-row" class="flex items-center justify-between">
+          <div>
+            <span class="text-sm text-gray-700">{{ 'FEES.LEAGUE_FEE' | translate }}</span>
+            <span data-testid="league-amount" class="ml-2 text-sm font-semibold text-gray-900">${{
+              leagueFee.perPlayerAmount | number:'1.2-2' }}</span>
+          </div>
+          <div>
+            <span *ngIf="myLeagueFee.status === 'paid'" data-testid="league-status-paid"
+              class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">{{
+              'COMMON.PAID' | translate }}</span>
+            <button *ngIf="myLeagueFee.status === 'pending'" data-testid="pay-league-button" (click)="onPayLeague()"
+              [disabled]="payingLeague()"
+              class="rounded-md bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 disabled:opacity-50">
+              {{ payingLeague() ? ('FEES.PROCESSING' | translate) : ('FEES.PAY' | translate) }}
             </button>
           </div>
         </div>
@@ -126,7 +147,7 @@
         </div>
 
         <!-- All paid state -->
-        <div *ngIf="myFee?.status === 'paid' && (!myTravelFee || myTravelFee.status === 'paid')"
+        <div *ngIf="myFee?.status === 'paid' && (!myLeagueFee || myLeagueFee.status === 'paid') && (!myTravelFee || myTravelFee.status === 'paid')"
           data-testid="paid-badge"
           class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 mt-3">
           <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white">
@@ -141,7 +162,7 @@
         </div>
 
         <!-- No player fee record -->
-        <div *ngIf="!myFee && !myTravelFee" class="text-sm text-gray-500">
+        <div *ngIf="!myFee && !myLeagueFee && !myTravelFee" class="text-sm text-gray-500">
           {{ 'FEES.NOT_ASSIGNED' | translate }}
         </div>
       </div>

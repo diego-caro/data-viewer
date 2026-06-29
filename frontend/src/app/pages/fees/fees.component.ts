@@ -27,6 +27,8 @@ export class PlayerFeesComponent implements OnInit {
 
   categoryFee: CategoryFee | null = null;
   myFee: PlayerFee | null = null;
+  leagueFee: CategoryFee | null = null;
+  myLeagueFee: PlayerFee | null = null;
   travelFee: CategoryFee | null = null;
   myTravelFee: PlayerFee | null = null;
   loading = true;
@@ -35,24 +37,28 @@ export class PlayerFeesComponent implements OnInit {
   daysUntilMatch: number | null = null;
 
   paying = signal(false);
+  payingLeague = signal(false);
   payingTravel = signal(false);
   payingAll = signal(false);
   payError = signal<string | null>(null);
   paymentFlash = signal<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
 
-  get showWarningBanner(): boolean {
-    const hasPendingFee = this.myFee?.status === 'pending';
-    return hasPendingFee && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+  get showMatchWarning(): boolean {
+    return this.myFee?.status === 'pending' && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+  }
+
+  get showLeagueWarning(): boolean {
+    return this.myLeagueFee?.status === 'pending' && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
   }
 
   get showTravelWarning(): boolean {
-    const hasPendingTravel = this.myTravelFee?.status === 'pending';
-    return hasPendingTravel && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
+    return this.myTravelFee?.status === 'pending' && this.daysUntilMatch !== null && this.daysUntilMatch <= 4;
   }
 
   get totalUnpaidAmount(): number {
     let total = 0;
     if (this.myFee?.status === 'pending' && this.categoryFee) total += this.categoryFee.perPlayerAmount;
+    if (this.myLeagueFee?.status === 'pending' && this.leagueFee) total += this.leagueFee.perPlayerAmount;
     if (this.myTravelFee?.status === 'pending' && this.travelFee) total += this.travelFee.perPlayerAmount;
     return total;
   }
@@ -60,12 +66,13 @@ export class PlayerFeesComponent implements OnInit {
   get unpaidCount(): number {
     let count = 0;
     if (this.myFee?.status === 'pending') count++;
+    if (this.myLeagueFee?.status === 'pending') count++;
     if (this.myTravelFee?.status === 'pending') count++;
     return count;
   }
 
   get hasFeeData(): boolean {
-    return this.categoryFee !== null || this.travelFee !== null;
+    return this.categoryFee !== null || this.leagueFee !== null || this.travelFee !== null;
   }
 
   ngOnInit(): void {
@@ -83,6 +90,9 @@ export class PlayerFeesComponent implements OnInit {
             if (result.status === 'paid' || result.status === 'already_paid') {
               if (this.myFee) {
                 this.myFee = { ...this.myFee, status: 'paid', paidAt: new Date().toISOString() };
+              }
+              if (this.myLeagueFee) {
+                this.myLeagueFee = { ...this.myLeagueFee, status: 'paid', paidAt: new Date().toISOString() };
               }
               if (this.myTravelFee) {
                 this.myTravelFee = { ...this.myTravelFee, status: 'paid', paidAt: new Date().toISOString() };
@@ -110,12 +120,17 @@ export class PlayerFeesComponent implements OnInit {
       .subscribe({
         next: ([fees, matches]) => {
           if (user) {
-            const regularFee = fees.find((f) => (f.type ?? 'fee') === 'fee');
+            const matchFee = fees.find((f) => f.type === 'match');
+            const league = fees.find((f) => f.type === 'league');
             const travel = fees.find((f) => f.type === 'travel');
 
-            if (regularFee) {
-              this.categoryFee = regularFee;
-              this.myFee = regularFee.playerFees.find((pf) => pf.userId === user.id) ?? null;
+            if (matchFee) {
+              this.categoryFee = matchFee;
+              this.myFee = matchFee.playerFees.find((pf) => pf.userId === user.id) ?? null;
+            }
+            if (league) {
+              this.leagueFee = league;
+              this.myLeagueFee = league.playerFees.find((pf) => pf.userId === user.id) ?? null;
             }
             if (travel) {
               this.travelFee = travel;
@@ -147,7 +162,7 @@ export class PlayerFeesComponent implements OnInit {
     this.payError.set(null);
 
     this.feeService
-      .payFee('fee')
+      .payFee('match')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -156,6 +171,25 @@ export class PlayerFeesComponent implements OnInit {
         },
         error: () => {
           this.paying.set(false);
+          this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
+        },
+      });
+  }
+
+  onPayLeague(): void {
+    this.payingLeague.set(true);
+    this.payError.set(null);
+
+    this.feeService
+      .payFee('league')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.payingLeague.set(false);
+          window.location.href = result.initPoint;
+        },
+        error: () => {
+          this.payingLeague.set(false);
           this.payError.set(this.translate.instant('FEES.ERROR_PAY'));
         },
       });

@@ -13,11 +13,11 @@ import { FixtureMatch, FixtureDivision } from '../../models/fixture.model';
 const mockFeeWithPending: CategoryFee = {
   id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-  weekStartDate: '2026-06-15', createdBy: 'admin-1',
-  createdAt: '2026-06-15T00:00:00Z', type: 'fee',
+  periodStartDate: '2026-06-15', createdBy: 'admin-1',
+  createdAt: '2026-06-15T00:00:00Z', type: 'match',
   playerFees: [
-    { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
-    { id: 'pf-2', categoryFeeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
+    { id: 'pf-1', feeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
+    { id: 'pf-2', feeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
   ],
   paidCount: 1, unpaidCount: 1,
 };
@@ -25,7 +25,7 @@ const mockFeeWithPending: CategoryFee = {
 const mockFeeAllPaid: CategoryFee = {
   ...mockFeeWithPending,
   playerFees: [
-    { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
+    { id: 'pf-1', feeId: 'fee-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
   ],
   paidCount: 1, unpaidCount: 0,
 };
@@ -33,10 +33,10 @@ const mockFeeAllPaid: CategoryFee = {
 const mockTravelPending: CategoryFee = {
   id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
   totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
-  weekStartDate: '2026-06-15', createdBy: 'admin-1',
+  periodStartDate: '2026-06-15', createdBy: 'admin-1',
   createdAt: '2026-06-15T00:00:00Z', type: 'travel',
   playerFees: [
-    { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
+    { id: 'tpf-1', feeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'pending', paidAt: null },
   ],
   paidCount: 0, unpaidCount: 1,
 };
@@ -44,7 +44,7 @@ const mockTravelPending: CategoryFee = {
 const mockTravelPaid: CategoryFee = {
   ...mockTravelPending,
   playerFees: [
-    { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T11:00:00Z' },
+    { id: 'tpf-1', feeId: 'travel-1', userId: 'player-1', playerName: 'One, Player', status: 'paid', paidAt: '2026-06-16T11:00:00Z' },
   ],
   paidCount: 1, unpaidCount: 0,
 };
@@ -215,9 +215,9 @@ describe('PlayerFeesComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should call payFee with type fee when Pay button is clicked', () => {
+    it('should call payFee with type match when Pay button is clicked', () => {
       component.onPay();
-      expect(feeServiceMock.payFee).toHaveBeenCalledWith('fee');
+      expect(feeServiceMock.payFee).toHaveBeenCalledWith('match');
     });
 
     it('should set paying flag while processing', () => {
@@ -410,12 +410,12 @@ describe('PlayerFeesComponent', () => {
     const captainFee: CategoryFee = {
       id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
       totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-      weekStartDate: '2026-06-15', createdBy: 'admin-1',
-      createdAt: '2026-06-15T00:00:00Z', type: 'fee',
+      periodStartDate: '2026-06-15', createdBy: 'admin-1',
+      createdAt: '2026-06-15T00:00:00Z', type: 'match',
       playerFees: [
-        { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'captain-1', playerName: 'Captain, The', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
-        { id: 'pf-2', categoryFeeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'pending', paidAt: null },
-        { id: 'pf-3', categoryFeeId: 'fee-1', userId: 'player-3', playerName: 'Three, Player', status: 'paid', paidAt: '2026-06-17T08:00:00Z' },
+        { id: 'pf-1', feeId: 'fee-1', userId: 'captain-1', playerName: 'Captain, The', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
+        { id: 'pf-2', feeId: 'fee-1', userId: 'player-2', playerName: 'Two, Player', status: 'pending', paidAt: null },
+        { id: 'pf-3', feeId: 'fee-1', userId: 'player-3', playerName: 'Three, Player', status: 'paid', paidAt: '2026-06-17T08:00:00Z' },
       ],
       paidCount: 2, unpaidCount: 1,
     };

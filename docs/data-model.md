@@ -161,7 +161,7 @@ interface CategoryChartData {
 
 ### FeeChartData
 
-View model for the admin dashboard fee collection donut charts — aggregated from `GET /api/fees` response.
+View model for the admin dashboard fee collection donut charts — aggregated from `GET /api/payments` response.
 
 ```typescript
 interface FeeChartData {
@@ -172,7 +172,7 @@ interface FeeChartData {
 }
 ```
 
-- **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/fees` (admin only)
+- **Source**: Computed in `frontend/src/app/pages/dashboard/dashboard.component.ts` from `GET /api/payments` (admin only)
 - **Frontend type**: `frontend/src/app/pages/dashboard/dashboard.component.ts`
 
 ### User
@@ -268,65 +268,80 @@ interface UpdateUserRequest {
 - **Backend validation**: `backend/src/app/api/users/[id]/route.ts` (manual field checks)
 - **Frontend type**: `frontend/src/app/services/user.service.ts`
 
-### CategoryFee
+### PaymentFee (CategoryFee)
 
-Represents the fee configuration for a category in a given week. Per-player amount is auto-calculated from `totalAmount / availablePlayers`. The `type` field discriminates between weekly fees and travel fees for away matches.
+Represents the fee configuration for a category in a given period. Per-player amount is auto-calculated from `totalAmount / availablePlayers`. Each payment type is stored in its own dedicated DB table.
 
 ```typescript
 type FeeStatus = 'pending' | 'paid';
-type FeeType = 'fee' | 'travel';
+type PaymentType = 'match' | 'league' | 'travel';
 
-interface CategoryFee {
-  id: string;            // UUID
+interface PaymentFee {
+  id: string;              // UUID
   categoryId: string;
-  categoryName: string;  // resolved from playerService
+  categoryName: string;    // resolved from playerService
   totalAmount: number;
   availablePlayers: number;
   perPlayerAmount: number; // auto-calculated
-  weekStartDate: string;  // Monday of the week (YYYY-MM-DD)
-  createdBy: string;      // admin user UUID
+  periodStartDate: string; // Monday of week (match/travel) or 1st of month (league), YYYY-MM-DD
+  createdBy: string;       // admin user UUID
   createdAt: string;
-  type: FeeType;          // 'fee' for weekly fee, 'travel' for away match travel
+  type: PaymentType;       // 'match' | 'league' | 'travel'
 }
 ```
 
-- **Source**: PostgreSQL `category_fees` table (UNIQUE on `category_id` + `week_start_date` + `type`)
-- **Backend type**: `backend/src/lib/types/fee.ts`
-- **Frontend type**: `frontend/src/app/models/fee.model.ts`
+- **Source**: PostgreSQL — 3 separate tables: `match_fees` (UNIQUE on `category_id` + `week_start_date`), `league_fees` (UNIQUE on `category_id` + `month_start_date`), `travel_fees` (UNIQUE on `category_id` + `week_start_date`)
+- **Backend type**: `backend/src/lib/types/payment.ts` (as `PaymentFee`)
+- **Frontend type**: `frontend/src/app/models/fee.model.ts` (as `CategoryFee`)
 
-### PlayerFee
+### PlayerFee (PlayerPaymentFee)
 
-Tracks individual player payment status for a given category fee period.
+Tracks individual player payment status for a given fee period.
 
 ```typescript
-interface PlayerFee {
-  id: string;            // UUID
-  categoryFeeId: string; // links to CategoryFee
-  userId: string;        // links to User
-  playerName: string;    // "LastName, FirstName" — joined from users table
-  status: FeeStatus;     // 'pending' | 'paid'
+interface PlayerPaymentFee {
+  id: string;         // UUID
+  feeId: string;      // links to parent fee table (match_fees, league_fees, or travel_fees)
+  userId: string;     // links to User
+  playerName: string; // "LastName, FirstName" — joined from users table
+  status: FeeStatus;  // 'pending' | 'paid'
   paidAt: string | null;
 }
 ```
 
-- **Source**: PostgreSQL `player_fees` table (UNIQUE on `category_fee_id` + `user_id`)
-- **Backend type**: `backend/src/lib/types/fee.ts`
-- **Frontend type**: `frontend/src/app/models/fee.model.ts`
+- **Source**: PostgreSQL — 3 separate tables: `match_player_fees` (UNIQUE on `match_fee_id` + `user_id`), `league_player_fees` (UNIQUE on `league_fee_id` + `user_id`), `travel_player_fees` (UNIQUE on `travel_fee_id` + `user_id`)
+- **Backend type**: `backend/src/lib/types/payment.ts` (as `PlayerPaymentFee`)
+- **Frontend type**: `frontend/src/app/models/fee.model.ts` (as `PlayerFee`)
 
-### CategoryFeeWithPlayers
+### PaymentFeeWithPlayers
 
 Extended fee view with player fee details and aggregate counts. Used in API responses.
 
 ```typescript
-interface CategoryFeeWithPlayers extends CategoryFee {
-  playerFees: PlayerFee[];
+interface PaymentFeeWithPlayers extends PaymentFee {
+  playerFees: PlayerPaymentFee[];
   paidCount: number;
   unpaidCount: number;
 }
 ```
 
-- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Backend type**: `backend/src/lib/types/payment.ts`
 - **Frontend type**: `frontend/src/app/models/fee.model.ts` (as `CategoryFee` — includes player fees)
+
+### PlayerFeeWithCategory
+
+Extended player fee with category context and payment type. Used internally by webhook and verify-payment routes.
+
+```typescript
+interface PlayerFeeWithCategory {
+  playerFee: PlayerPaymentFee;
+  categoryId: string;
+  perPlayerAmount: number;
+  paymentType: PaymentType;
+}
+```
+
+- **Backend type**: `backend/src/lib/types/payment.ts`
 
 ### CaptainMpConfig
 
@@ -342,11 +357,11 @@ interface CaptainMpConfig {
 ```
 
 - **Source**: PostgreSQL `captain_mp_config` table (UNIQUE on `category_id`)
-- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Backend type**: `backend/src/lib/types/payment.ts`
 
 ### PaymentPreferenceResult
 
-Returned by `POST /api/fees/pay` — contains Mercado Pago Checkout Pro URLs for the player to complete payment.
+Returned by `POST /api/payments/pay` — contains Mercado Pago Checkout Pro URLs for the player to complete payment.
 
 ```typescript
 interface PaymentPreferenceResult {
@@ -356,7 +371,7 @@ interface PaymentPreferenceResult {
 }
 ```
 
-- **Backend type**: `backend/src/lib/types/fee.ts`
+- **Backend type**: `backend/src/lib/types/payment.ts`
 - **Frontend type**: `frontend/src/app/models/fee.model.ts`
 
 ## API Response Wrappers

@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-38 — Travel fee for away matches with auto-detect, admin tabs, player breakdown, dashboard pills
+> Last updated: SCRUM-41 — Rename Fees to Payments, separate DB tables for match/league/travel fees, 3 admin tabs, league fee support, dashboard pills for all 3 types
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -97,9 +97,9 @@ backend/                        → Next.js 14 App Router (API server)
   src/app/api/users/[id]/number/ → PATCH: update jersey number — admin only
   src/app/api/categories/[id]/captain/ → PUT: change captain for a category — admin only
   src/app/api/fixture/           → Fixture proxy routes (divisions, matches, clubs, standings)
-  src/app/api/fees/             → Fee management routes (list, create, mark-paid, pay, webhook)
+  src/app/api/payments/          → Payment management routes (list, create, mark-paid, pay, webhook, verify-payment)
   src/app/api/mp/              → Mercado Pago OAuth routes (auth-url, callback, status)
-  src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, categories, category_fees, player_fees, captain_mp_config)
+  src/lib/db.ts                 → PostgreSQL connection pool + schema init (users, categories, match_fees, match_player_fees, league_fees, league_player_fees, travel_fees, travel_player_fees, captain_mp_config)
   src/lib/middleware/            → Auth middleware (extractAuth, requireAuth, requireRole, requireAnyRole)
   src/lib/services/             → Data layer (DB-backed queries)
   src/lib/types/                → Shared TypeScript interfaces
@@ -159,6 +159,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-32 | Deploy to Vercel + Supabase — monorepo config, Angular build into Next.js public/, SPA rewrites, dynamic CORS, production env | Done |
 | SCRUM-35 | Internationalization (i18n) — auto-detect browser language (ES/EN), all UI text translated via @ngx-translate, Spanish fallback for unsupported languages, database content untranslated | Done |
 | SCRUM-38 | Travel fee for away matches — auto-detect away via fixture data, admin Fee/Travel tabs with Away/Local badge, player fee breakdown with individual Pay + Pay All, dashboard status pills for fee + travel eligibility | Done |
+| SCRUM-41 | Rename Fees to Payments, separate DB tables for match/league/travel fees — 3 admin tabs (Match Fee, League Fee, Travel), league fee with monthly period, dashboard pills for all 3 types, play eligibility checks all fee types, API routes renamed to /api/payments/* | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -175,15 +176,16 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | GET | `/api/auth/me` | Get current user profile from JWT (requires `Authorization: Bearer <token>`) |
 | GET | `/api/users` | List all users — admin only (401/403 for non-admin) |
 | POST | `/api/users` | Create a user — admin only (validates role, categoryId for player/captain, duplicate email → 409) |
-| GET | `/api/fees` | Get current week's fees — admin sees all, captain/player sees own category only |
-| POST | `/api/fees` | Create/update fee config for a category — admin only (UPSERT by category + week) |
-| POST | `/api/fees/mark-paid` | Mark a player's fee as paid — admin or captain only |
-| POST | `/api/fees/pay` | Generate MP payment preference — player or captain only (returns checkout URL) |
-| POST | `/api/fees/webhook` | Mercado Pago webhook — marks player fee as paid (public, no JWT, signature-validated) |
+| GET | `/api/payments` | Get current period's payments — admin sees all, captain/player sees own category (match + league + travel) |
+| POST | `/api/payments` | Create/update payment config for a category — admin only (UPSERT by category + period + type) |
+| POST | `/api/payments/mark-paid` | Mark a player's fee as paid — admin or captain only (searches all 3 fee tables) |
+| POST | `/api/payments/pay` | Generate MP payment preference — player or captain (supports match/league/travel + payAll) |
+| POST | `/api/payments/webhook` | Mercado Pago webhook — marks player fee as paid (public, no JWT, signature-validated) |
+| POST | `/api/payments/verify-payment` | Verify payment status from MP return flow — player or captain only |
 | PATCH | `/api/users/:id/number` | Update a player's jersey number — admin only |
 | PUT | `/api/categories/:id/captain` | Change captain for a category — swaps roles, admin only |
 | PUT | `/api/users/:id` | Update user fields — admin only (password optional, duplicate email → 409, role admin clears categoryId) |
-| DELETE | `/api/users/:id` | Hard-delete user — admin only (self-delete → 400, cascades player_fees, FK violation → 409) |
+| DELETE | `/api/users/:id` | Hard-delete user — admin only (self-delete → 400, cascades player fees from all 3 tables, FK violation → 409) |
 | GET | `/api/mp/auth-url` | Generate MP OAuth authorization URL — captain only |
 | GET | `/api/mp/callback` | MP OAuth callback — exchanges code for access token, stores in captain_mp_config — captain only |
 | GET | `/api/mp/status` | Check MP connection status for captain's category — captain only |
@@ -280,9 +282,14 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - Database-driven content (category names, player names, club names, division names) remains untranslated — only UI chrome is translated (SCRUM-35)
 - Test helper `frontend/src/app/testing/translate-testing.ts` provides `provideTranslateTesting()` and `setupTestTranslations()` — loads English translations in test environment so text assertions match (SCRUM-35)
 - Fixture component date formatting uses locale based on current language: `es` → `es-AR`, `en` → `en-GB` (SCRUM-35)
-- `FeeType = 'fee' | 'travel'` discriminator on `category_fees` table — UNIQUE constraint updated to `(category_id, week_start_date, type)` so each category can have one weekly fee and one travel fee per week (SCRUM-38)
 - Away match detection uses `match.awayTeam.clubName.includes(environment.clubName)` from fixture data — `environment.clubName = 'Club Empleados de Comercio'` (SCRUM-38)
-- Admin fees page uses page-level tabs (`Fee` / `Travel`) to switch between fee types — simpler than per-card tabs, travel tab shows Away/Local badge based on fixture data (SCRUM-38)
-- Player fees page shows a breakdown card: fee row + travel row (when applicable) + individual Pay buttons per type + "Pay All" button for combined unpaid amount — Pay All creates a single MP preference with combined amount and comma-separated playerFeeIds in external_reference (SCRUM-38)
-- Dashboard play eligibility requires both fee AND travel (when travel exists) to be paid — status pills (`Fee: Paid/Pending`, `Travel: Paid/Pending`) shown inside the play status card (SCRUM-38)
-- `GET /api/fees` for non-admin users returns all fee types via `getAllCurrentFeesByCategory` — frontend separates them by `type` field client-side (SCRUM-38)
+- Admin fees page uses page-level tabs (`Match Fee` / `League Fee` / `Travel`) to switch between payment types — travel tab shows Away/Local badge based on fixture data (SCRUM-38, updated SCRUM-41)
+- Player fees page shows a breakdown card: match fee row + league fee row + travel row (when applicable) + individual Pay buttons per type + "Pay All" button for combined unpaid amount — Pay All creates a single MP preference with combined amount and comma-separated playerFeeIds in external_reference (SCRUM-38, updated SCRUM-41)
+- Dashboard play eligibility requires all configured fee types (match + league + travel when they exist) to be paid — status pills (`Match: Paid/Pending`, `League: Paid/Pending`, `Travel: Paid/Pending`) shown inside the play status card (SCRUM-38, updated SCRUM-41)
+- `GET /api/payments` for non-admin users returns all fee types via `getAllCurrentFeesByCategory` — frontend separates them by `type` field client-side (SCRUM-38, updated SCRUM-41)
+- `PaymentType = 'match' | 'league' | 'travel'` replaces old `FeeType = 'fee' | 'travel'` — each type stored in its own pair of DB tables (`match_fees` + `match_player_fees`, etc.) instead of a single `category_fees` table with type discriminator (SCRUM-41)
+- `TABLE_CONFIGS: Record<PaymentType, TableConfig>` pattern in `paymentService.ts` — all service functions are DRY across the 3 fee types using config-driven table/column names (SCRUM-41)
+- League fee uses monthly periods (`month_start_date`, 1st of month) vs weekly periods (`week_start_date`, Monday) for match and travel fees (SCRUM-41)
+- `resetWeeklyFees()` only resets match and travel types (weekly) — league fees are monthly and managed manually by admin (SCRUM-41)
+- API routes renamed from `/api/fees/*` to `/api/payments/*` — nav labels renamed from "Fees"/"My Fees" to "Payments"/"My Payments" (SCRUM-41)
+- Backend types moved from `backend/src/lib/types/fee.ts` to `backend/src/lib/types/payment.ts` — service renamed from `feeService` to `paymentService` (SCRUM-41)

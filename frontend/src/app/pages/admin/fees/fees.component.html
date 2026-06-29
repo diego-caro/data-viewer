@@ -7,13 +7,22 @@
     <!-- Tab Bar -->
     <div class="mb-6 flex items-center gap-2" data-testid="fee-tabs">
       <button
-        data-testid="tab-fee"
-        (click)="setTab('fee')"
-        [class]="activeTab === 'fee'
+        data-testid="tab-match"
+        (click)="setTab('match')"
+        [class]="activeTab === 'match'
           ? 'rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white'
           : 'rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'"
       >
-        {{ 'ADMIN_FEES.TAB_FEE' | translate }}
+        {{ 'ADMIN_FEES.TAB_MATCH' | translate }}
+      </button>
+      <button
+        data-testid="tab-league"
+        (click)="setTab('league')"
+        [class]="activeTab === 'league'
+          ? 'rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white'
+          : 'rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'"
+      >
+        {{ 'ADMIN_FEES.TAB_LEAGUE' | translate }}
       </button>
       <button
         data-testid="tab-travel"
@@ -60,7 +69,7 @@
         class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
       >
         <h2 class="mb-4 text-lg font-semibold text-gray-900">
-          {{ (activeTab === 'travel' ? 'ADMIN_FEES.CONFIGURE_TRAVEL' : 'ADMIN_FEES.CONFIGURE_FEE') | translate:{ category: getCategoryName(formData.categoryId) } }}
+          {{ ('ADMIN_FEES.CONFIGURE_' + activeTab.toUpperCase()) | translate:{ category: getCategoryName(formData.categoryId) } }}
         </h2>
 
         <div

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAnyRole } from '@/lib/middleware/auth';
-import { feeService } from '@/lib/services/feeService';
+import { paymentService } from '@/lib/services/paymentService';
 import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing paymentId or playerFeeId' }, { status: 400 });
   }
 
-  const feeWithCategory = await feeService.getPlayerFeeWithCategory(playerFeeId);
+  const feeWithCategory = await paymentService.getPlayerFeeWithCategory(playerFeeId);
   if (!feeWithCategory) {
     return NextResponse.json({ error: 'Player fee not found' }, { status: 404 });
   }
@@ -38,6 +38,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ status: payment.status });
   }
 
-  const result = await feeService.markPlayerPaid(playerFeeId);
-  return NextResponse.json({ status: 'paid', playerFee: result });
+  const result = await paymentService.markPlayerPaid(playerFeeId);
+  return NextResponse.json({ status: 'paid', playerFee: result?.playerFee });
 }

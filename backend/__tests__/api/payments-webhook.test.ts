@@ -1,9 +1,9 @@
-import { POST } from '@/app/api/fees/webhook/route';
-import { feeService } from '@/lib/services/feeService';
+import { POST } from '@/app/api/payments/webhook/route';
+import { paymentService } from '@/lib/services/paymentService';
 import { mercadoPagoService } from '@/lib/services/mercadoPagoService';
 import { NextRequest } from 'next/server';
 
-jest.mock('@/lib/services/feeService');
+jest.mock('@/lib/services/paymentService');
 jest.mock('@/lib/services/mercadoPagoService');
 jest.mock('mercadopago', () => ({
   WebhookSignatureValidator: {
@@ -18,13 +18,13 @@ jest.mock('mercadopago', () => ({
   },
 }));
 
-const mockedFeeService = feeService as jest.Mocked<typeof feeService>;
+const mockedPaymentService = paymentService as jest.Mocked<typeof paymentService>;
 const mockedMpService = mercadoPagoService as jest.Mocked<typeof mercadoPagoService>;
 
 function createWebhookRequest(body: unknown, query?: string): NextRequest {
   const url = query
-    ? `http://localhost:3000/api/fees/webhook?${query}`
-    : 'http://localhost:3000/api/fees/webhook';
+    ? `http://localhost:3000/api/payments/webhook?${query}`
+    : 'http://localhost:3000/api/payments/webhook';
   return new NextRequest(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -32,19 +32,20 @@ function createWebhookRequest(body: unknown, query?: string): NextRequest {
   });
 }
 
-describe('POST /api/fees/webhook', () => {
+describe('POST /api/payments/webhook', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should mark player as paid on approved payment notification', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+    mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue({
       playerFee: {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
         playerName: 'One, Player', status: 'pending', paidAt: null,
       },
       categoryId: 'cat-1',
       perPlayerAmount: 300,
+      paymentType: 'match',
     });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
@@ -52,9 +53,12 @@ describe('POST /api/fees/webhook', () => {
       externalReference: 'pf-1',
       transactionAmount: 300,
     });
-    mockedFeeService.markPlayerPaid.mockResolvedValue({
-      id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
-      playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+    mockedPaymentService.markPlayerPaid.mockResolvedValue({
+      playerFee: {
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
+        playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+      },
+      paymentType: 'match',
     });
 
     const response = await POST(createWebhookRequest(
@@ -65,9 +69,9 @@ describe('POST /api/fees/webhook', () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe('paid');
-    expect(mockedFeeService.getPlayerFeeWithCategory).toHaveBeenCalledWith('pf-1');
+    expect(mockedPaymentService.getPlayerFeeWithCategory).toHaveBeenCalledWith('pf-1');
     expect(mockedMpService.getPaymentStatus).toHaveBeenCalledWith('12345');
-    expect(mockedFeeService.markPlayerPaid).toHaveBeenCalledWith('pf-1');
+    expect(mockedPaymentService.markPlayerPaid).toHaveBeenCalledWith('pf-1');
   });
 
   it('should return 200 and skip non-payment notifications', async () => {
@@ -83,13 +87,14 @@ describe('POST /api/fees/webhook', () => {
   });
 
   it('should return 200 and skip non-approved payments', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+    mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue({
       playerFee: {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
         playerName: 'One, Player', status: 'pending', paidAt: null,
       },
       categoryId: 'cat-1',
       perPlayerAmount: 300,
+      paymentType: 'match',
     });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
@@ -106,7 +111,7 @@ describe('POST /api/fees/webhook', () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe('not_approved');
-    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+    expect(mockedPaymentService.markPlayerPaid).not.toHaveBeenCalled();
   });
 
   it('should return 400 when data.id is missing', async () => {
@@ -127,7 +132,7 @@ describe('POST /api/fees/webhook', () => {
   });
 
   it('should return 404 when player fee not found', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue(null);
+    mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue(null);
 
     const response = await POST(createWebhookRequest(
       { type: 'payment', data: { id: '12345' } },
@@ -138,13 +143,14 @@ describe('POST /api/fees/webhook', () => {
   });
 
   it('should return 200 with already_paid when fee is already paid', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+    mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue({
       playerFee: {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
         playerName: 'One, Player', status: 'paid', paidAt: '2026-06-18T10:00:00Z',
       },
       categoryId: 'cat-1',
       perPlayerAmount: 300,
+      paymentType: 'match',
     });
 
     const response = await POST(createWebhookRequest(
@@ -155,17 +161,18 @@ describe('POST /api/fees/webhook', () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe('already_paid');
-    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+    expect(mockedPaymentService.markPlayerPaid).not.toHaveBeenCalled();
   });
 
   it('should return 400 when payment external_reference does not match playerFeeId', async () => {
-    mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+    mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue({
       playerFee: {
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+        id: 'pf-1', feeId: 'mf-1', userId: 'u1',
         playerName: 'One, Player', status: 'pending', paidAt: null,
       },
       categoryId: 'cat-1',
       perPlayerAmount: 300,
+      paymentType: 'match',
     });
     mockedMpService.getPaymentStatus.mockResolvedValue({
       paymentId: '12345',
@@ -182,7 +189,7 @@ describe('POST /api/fees/webhook', () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body.error).toContain('mismatch');
-    expect(mockedFeeService.markPlayerPaid).not.toHaveBeenCalled();
+    expect(mockedPaymentService.markPlayerPaid).not.toHaveBeenCalled();
   });
 
   describe('webhook signature validation', () => {
@@ -216,13 +223,14 @@ describe('POST /api/fees/webhook', () => {
       const mp = jest.requireMock('mercadopago');
       mp.WebhookSignatureValidator.validate.mockImplementation(() => {});
 
-      mockedFeeService.getPlayerFeeWithCategory.mockResolvedValue({
+      mockedPaymentService.getPlayerFeeWithCategory.mockResolvedValue({
         playerFee: {
-          id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
+          id: 'pf-1', feeId: 'mf-1', userId: 'u1',
           playerName: 'One, Player', status: 'pending', paidAt: null,
         },
         categoryId: 'cat-1',
         perPlayerAmount: 300,
+        paymentType: 'match',
       });
       mockedMpService.getPaymentStatus.mockResolvedValue({
         paymentId: '12345',
@@ -230,9 +238,12 @@ describe('POST /api/fees/webhook', () => {
         externalReference: 'pf-1',
         transactionAmount: 300,
       });
-      mockedFeeService.markPlayerPaid.mockResolvedValue({
-        id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1',
-        playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+      mockedPaymentService.markPlayerPaid.mockResolvedValue({
+        playerFee: {
+          id: 'pf-1', feeId: 'mf-1', userId: 'u1',
+          playerName: 'One, Player', status: 'paid', paidAt: '2026-06-19T10:00:00Z',
+        },
+        paymentType: 'match',
       });
 
       const response = await POST(createWebhookRequest(

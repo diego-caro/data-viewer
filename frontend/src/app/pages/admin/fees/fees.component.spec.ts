@@ -6,7 +6,7 @@ import { PlayerService } from '../../../services/player.service';
 import { FixtureService } from '../../../services/fixture.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../../testing/translate-testing';
 import { of, throwError } from 'rxjs';
-import { CategoryFee } from '../../../models/fee.model';
+import { CategoryFee, PaymentType } from '../../../models/fee.model';
 import { Category } from '../../../models/player.model';
 import { FixtureDivision, FixtureMatch } from '../../../models/fixture.model';
 
@@ -23,19 +23,19 @@ const mockFees: CategoryFee[] = [
   {
     id: 'fee-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 3000, availablePlayers: 10, perPlayerAmount: 300,
-    weekStartDate: '2026-06-15', createdBy: 'admin-1',
-    createdAt: '2026-06-15T00:00:00Z', type: 'fee',
+    periodStartDate: '2026-06-15', createdBy: 'admin-1',
+    createdAt: '2026-06-15T00:00:00Z', type: 'match',
     playerFees: [
-      { id: 'pf-1', categoryFeeId: 'fee-1', userId: 'u1', playerName: 'Alvarez, Mateo', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
-      { id: 'pf-2', categoryFeeId: 'fee-1', userId: 'u2', playerName: 'Bravo, Valentina', status: 'pending', paidAt: null },
+      { id: 'pf-1', feeId: 'fee-1', userId: 'u1', playerName: 'Alvarez, Mateo', status: 'paid', paidAt: '2026-06-16T10:00:00Z' },
+      { id: 'pf-2', feeId: 'fee-1', userId: 'u2', playerName: 'Bravo, Valentina', status: 'pending', paidAt: null },
     ],
     paidCount: 1, unpaidCount: 1,
   },
   {
     id: 'fee-2', categoryId: 'cat-2', categoryName: 'Sub 16',
     totalAmount: 5000, availablePlayers: 15, perPlayerAmount: 333.33,
-    weekStartDate: '2026-06-15', createdBy: 'admin-1',
-    createdAt: '2026-06-15T00:00:00Z', type: 'fee',
+    periodStartDate: '2026-06-15', createdBy: 'admin-1',
+    createdAt: '2026-06-15T00:00:00Z', type: 'match',
     playerFees: [],
     paidCount: 0, unpaidCount: 0,
   },
@@ -45,10 +45,10 @@ const mockTravelFees: CategoryFee[] = [
   {
     id: 'travel-1', categoryId: 'cat-1', categoryName: 'Sub 14',
     totalAmount: 1500, availablePlayers: 10, perPlayerAmount: 150,
-    weekStartDate: '2026-06-15', createdBy: 'admin-1',
+    periodStartDate: '2026-06-15', createdBy: 'admin-1',
     createdAt: '2026-06-15T00:00:00Z', type: 'travel',
     playerFees: [
-      { id: 'tpf-1', categoryFeeId: 'travel-1', userId: 'u1', playerName: 'Alvarez, Mateo', status: 'pending', paidAt: null },
+      { id: 'tpf-1', feeId: 'travel-1', userId: 'u1', playerName: 'Alvarez, Mateo', status: 'pending', paidAt: null },
     ],
     paidCount: 0, unpaidCount: 1,
   },
@@ -124,11 +124,11 @@ describe('AdminFeesComponent', () => {
     expect(component.categories).toEqual(mockCategories);
   });
 
-  it('should default to fee tab', () => {
-    expect(component.activeTab).toBe('fee');
+  it('should default to match tab', () => {
+    expect(component.activeTab).toBe('match');
   });
 
-  it('should display only fee-type cards when fee tab is active', () => {
+  it('should display only match-type cards when match tab is active', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const cards = compiled.querySelectorAll('[data-testid="fee-card"]');
     expect(cards.length).toBe(2);
@@ -168,7 +168,8 @@ describe('AdminFeesComponent', () => {
   describe('tabs', () => {
     it('should render tab buttons', () => {
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="tab-fee"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="tab-match"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="tab-league"]')).toBeTruthy();
       expect(compiled.querySelector('[data-testid="tab-travel"]')).toBeTruthy();
     });
 
@@ -194,7 +195,7 @@ describe('AdminFeesComponent', () => {
       expect(badge?.textContent?.trim()).toBe('Away');
     });
 
-    it('should not show away badge on fee tab', () => {
+    it('should not show away badge on match tab', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.querySelector('[data-testid="away-badge"]')).toBeNull();
     });
@@ -236,8 +237,8 @@ describe('AdminFeesComponent', () => {
       const newFee: CategoryFee = {
         id: 'fee-3', categoryId: 'cat-3', categoryName: 'Sub 19',
         totalAmount: 2000, availablePlayers: 8, perPlayerAmount: 250,
-        weekStartDate: '2026-06-15', createdBy: 'admin-1',
-        createdAt: '2026-06-15T00:00:00Z', type: 'fee', playerFees: [],
+        periodStartDate: '2026-06-15', createdBy: 'admin-1',
+        createdAt: '2026-06-15T00:00:00Z', type: 'match', playerFees: [],
         paidCount: 0, unpaidCount: 0,
       };
       feeService.createFee.mockReturnValue(of(newFee));
@@ -254,7 +255,7 @@ describe('AdminFeesComponent', () => {
         categoryId: 'cat-3',
         totalAmount: 2000,
         availablePlayers: 8,
-        type: 'fee',
+        type: 'match',
       });
       expect(component.showForm()).toBe(false);
     }));
@@ -263,7 +264,7 @@ describe('AdminFeesComponent', () => {
       const newTravel: CategoryFee = {
         id: 'travel-2', categoryId: 'cat-2', categoryName: 'Sub 16',
         totalAmount: 1000, availablePlayers: 15, perPlayerAmount: 66.67,
-        weekStartDate: '2026-06-15', createdBy: 'admin-1',
+        periodStartDate: '2026-06-15', createdBy: 'admin-1',
         createdAt: '2026-06-15T00:00:00Z', type: 'travel', playerFees: [],
         paidCount: 0, unpaidCount: 0,
       };
@@ -299,7 +300,7 @@ describe('AdminFeesComponent', () => {
   describe('mark player paid', () => {
     it('should call markPlayerPaid and reload fees', fakeAsync(() => {
       const updatedPlayerFee = {
-        id: 'pf-2', categoryFeeId: 'fee-1', userId: 'u2',
+        id: 'pf-2', feeId: 'fee-1', userId: 'u2',
         playerName: 'Bravo, Valentina', status: 'paid' as const,
         paidAt: '2026-06-16T11:00:00Z',
       };

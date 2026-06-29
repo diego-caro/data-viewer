@@ -73,7 +73,7 @@ describe('AppComponent', () => {
       const adminLinks = compiled.querySelectorAll('[data-testid="admin-nav-link"]');
       const linkTexts = Array.from(adminLinks).map((l) => l.textContent?.trim());
       expect(linkTexts).toContain('Players');
-      expect(linkTexts).toContain('Fees');
+      expect(linkTexts).toContain('Payments');
       expect(linkTexts).toContain('Users');
     });
 
@@ -85,7 +85,7 @@ describe('AppComponent', () => {
 
       const nonAdminLinks = compiled.querySelectorAll('[data-testid="nonAdmin-nav-link"]');
       const linkTexts = Array.from(nonAdminLinks).map((l) => l.textContent?.trim());
-      expect(linkTexts).toContain('My Fees');
+      expect(linkTexts).toContain('My Payments');
     });
   });
 

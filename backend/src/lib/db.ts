@@ -73,7 +73,7 @@ export async function initDatabase(): Promise<void> {
   `);
 
   await query(`
-    CREATE TABLE IF NOT EXISTS category_fees (
+    CREATE TABLE IF NOT EXISTS match_fees (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       category_id VARCHAR(50) NOT NULL,
       total_amount NUMERIC(10,2) NOT NULL,
@@ -82,35 +82,106 @@ export async function initDatabase(): Promise<void> {
       week_start_date DATE NOT NULL,
       created_by UUID NOT NULL REFERENCES users(id),
       created_at TIMESTAMPTZ DEFAULT NOW(),
-      type VARCHAR(10) NOT NULL DEFAULT 'fee' CHECK (type IN ('fee', 'travel')),
-      UNIQUE(category_id, week_start_date, type)
+      UNIQUE(category_id, week_start_date)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS match_player_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      match_fee_id UUID NOT NULL REFERENCES match_fees(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(match_fee_id, user_id)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS league_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      category_id VARCHAR(50) NOT NULL,
+      total_amount NUMERIC(10,2) NOT NULL,
+      available_players INTEGER NOT NULL,
+      per_player_amount NUMERIC(10,2) NOT NULL,
+      month_start_date DATE NOT NULL,
+      created_by UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(category_id, month_start_date)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS league_player_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      league_fee_id UUID NOT NULL REFERENCES league_fees(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(league_fee_id, user_id)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS travel_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      category_id VARCHAR(50) NOT NULL,
+      total_amount NUMERIC(10,2) NOT NULL,
+      available_players INTEGER NOT NULL,
+      per_player_amount NUMERIC(10,2) NOT NULL,
+      week_start_date DATE NOT NULL,
+      created_by UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(category_id, week_start_date)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS travel_player_fees (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      travel_fee_id UUID NOT NULL REFERENCES travel_fees(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(travel_fee_id, user_id)
     )
   `);
 
   await query(`
     DO $$
     BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'category_fees' AND column_name = 'type'
-      ) THEN
-        ALTER TABLE category_fees ADD COLUMN type VARCHAR(10) NOT NULL DEFAULT 'fee' CHECK (type IN ('fee', 'travel'));
-        ALTER TABLE category_fees DROP CONSTRAINT IF EXISTS category_fees_category_id_week_start_date_key;
-        ALTER TABLE category_fees ADD CONSTRAINT category_fees_category_id_week_start_date_type_key UNIQUE (category_id, week_start_date, type);
+      IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'category_fees') THEN
+        INSERT INTO match_fees (id, category_id, total_amount, available_players, per_player_amount, week_start_date, created_by, created_at)
+          SELECT id, category_id, total_amount, available_players, per_player_amount, week_start_date, created_by, created_at
+          FROM category_fees WHERE type = 'fee'
+          ON CONFLICT DO NOTHING;
+
+        INSERT INTO match_player_fees (id, match_fee_id, user_id, status, paid_at, created_at)
+          SELECT pf.id, pf.category_fee_id, pf.user_id, pf.status, pf.paid_at, pf.created_at
+          FROM player_fees pf
+          JOIN category_fees cf ON cf.id = pf.category_fee_id
+          WHERE cf.type = 'fee'
+          ON CONFLICT DO NOTHING;
+
+        INSERT INTO travel_fees (id, category_id, total_amount, available_players, per_player_amount, week_start_date, created_by, created_at)
+          SELECT id, category_id, total_amount, available_players, per_player_amount, week_start_date, created_by, created_at
+          FROM category_fees WHERE type = 'travel'
+          ON CONFLICT DO NOTHING;
+
+        INSERT INTO travel_player_fees (id, travel_fee_id, user_id, status, paid_at, created_at)
+          SELECT pf.id, pf.category_fee_id, pf.user_id, pf.status, pf.paid_at, pf.created_at
+          FROM player_fees pf
+          JOIN category_fees cf ON cf.id = pf.category_fee_id
+          WHERE cf.type = 'travel'
+          ON CONFLICT DO NOTHING;
+
+        DROP TABLE IF EXISTS player_fees CASCADE;
+        DROP TABLE IF EXISTS category_fees CASCADE;
       END IF;
     END $$
-  `);
-
-  await query(`
-    CREATE TABLE IF NOT EXISTS player_fees (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      category_fee_id UUID NOT NULL REFERENCES category_fees(id) ON DELETE CASCADE,
-      user_id UUID NOT NULL REFERENCES users(id),
-      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
-      paid_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      UNIQUE(category_fee_id, user_id)
-    )
   `);
 
 

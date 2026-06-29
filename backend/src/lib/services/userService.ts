@@ -169,7 +169,9 @@ async function updateUser(
 }
 
 async function deleteUser(userId: string): Promise<boolean> {
-  await query('DELETE FROM player_fees WHERE user_id = $1', [userId]);
+  await query('DELETE FROM match_player_fees WHERE user_id = $1', [userId]);
+  await query('DELETE FROM league_player_fees WHERE user_id = $1', [userId]);
+  await query('DELETE FROM travel_player_fees WHERE user_id = $1', [userId]);
   try {
     const rows = await query<{ id: string }>('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
     return rows.length > 0;

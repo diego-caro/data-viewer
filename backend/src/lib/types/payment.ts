@@ -1,43 +1,50 @@
+export type PaymentType = 'match' | 'league' | 'travel';
 export type FeeStatus = 'pending' | 'paid';
-export type FeeType = 'fee' | 'travel';
 
-export interface CategoryFee {
+export interface PaymentFee {
   id: string;
   categoryId: string;
   categoryName: string;
   totalAmount: number;
   availablePlayers: number;
   perPlayerAmount: number;
-  weekStartDate: string;
+  periodStartDate: string;
   createdBy: string;
   createdAt: string;
-  type: FeeType;
+  type: PaymentType;
 }
 
-export interface PlayerFee {
+export interface PlayerPaymentFee {
   id: string;
-  categoryFeeId: string;
+  feeId: string;
   userId: string;
   playerName: string;
   status: FeeStatus;
   paidAt: string | null;
 }
 
-export interface CategoryFeeWithPlayers extends CategoryFee {
-  playerFees: PlayerFee[];
+export interface PaymentFeeWithPlayers extends PaymentFee {
+  playerFees: PlayerPaymentFee[];
   paidCount: number;
   unpaidCount: number;
 }
 
-export interface CreateCategoryFeeRequest {
+export interface CreatePaymentFeeRequest {
   categoryId: string;
   totalAmount: number;
   availablePlayers: number;
-  type?: FeeType;
+  type?: PaymentType;
 }
 
 export interface PaymentPreferenceResult {
   preferenceId: string;
   initPoint: string;
   sandboxInitPoint: string;
+}
+
+export interface PlayerFeeWithCategory {
+  playerFee: PlayerPaymentFee;
+  categoryId: string;
+  perPlayerAmount: number;
+  paymentType: PaymentType;
 }

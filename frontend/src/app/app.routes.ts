@@ -23,7 +23,7 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/tournament/tournament.component').then((m) => m.TournamentComponent),
   },
   {
-    path: 'fees',
+    path: 'payments',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/fees/fees.component').then((m) => m.PlayerFeesComponent),
   },
@@ -33,7 +33,7 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/users/users.component').then((m) => m.AdminUsersComponent),
   },
   {
-    path: 'admin/fees',
+    path: 'admin/payments',
     canActivate: [adminGuard],
     loadComponent: () => import('./pages/admin/fees/fees.component').then((m) => m.AdminFeesComponent),
   },

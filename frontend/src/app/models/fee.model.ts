@@ -1,9 +1,9 @@
 export type FeeStatus = 'pending' | 'paid';
-export type FeeType = 'fee' | 'travel';
+export type PaymentType = 'match' | 'league' | 'travel';
 
 export interface PlayerFee {
   id: string;
-  categoryFeeId: string;
+  feeId: string;
   userId: string;
   playerName: string;
   status: FeeStatus;
@@ -17,10 +17,10 @@ export interface CategoryFee {
   totalAmount: number;
   availablePlayers: number;
   perPlayerAmount: number;
-  weekStartDate: string;
+  periodStartDate: string;
   createdBy: string;
   createdAt: string;
-  type: FeeType;
+  type: PaymentType;
   playerFees: PlayerFee[];
   paidCount: number;
   unpaidCount: number;
@@ -30,7 +30,7 @@ export interface CreateFeeRequest {
   categoryId: string;
   totalAmount: number;
   availablePlayers: number;
-  type?: FeeType;
+  type?: PaymentType;
 }
 
 export interface PaymentPreferenceResult {

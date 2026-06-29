@@ -8,7 +8,7 @@ import { catchError, switchMap } from 'rxjs/operators';
 import { FeeService } from '../../../services/fee.service';
 import { PlayerService } from '../../../services/player.service';
 import { FixtureService } from '../../../services/fixture.service';
-import { CategoryFee, FeeType } from '../../../models/fee.model';
+import { CategoryFee, PaymentType } from '../../../models/fee.model';
 import { FixtureMatch } from '../../../models/fixture.model';
 import { Category } from '../../../models/player.model';
 import { environment } from '../../../../environments/environment';
@@ -30,7 +30,7 @@ export class AdminFeesComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   error: string | null = null;
-  activeTab: FeeType = 'fee';
+  activeTab: PaymentType = 'match';
   isAway = false;
 
   showForm = signal(false);
@@ -44,7 +44,7 @@ export class AdminFeesComponent implements OnInit {
   };
 
   get filteredFees(): CategoryFee[] {
-    return this.fees.filter((f) => (f.type ?? 'fee') === this.activeTab);
+    return this.fees.filter((f) => f.type === this.activeTab);
   }
 
   get unconfiguredCategories(): Category[] {
@@ -96,7 +96,7 @@ export class AdminFeesComponent implements OnInit {
       });
   }
 
-  setTab(tab: FeeType): void {
+  setTab(tab: PaymentType): void {
     this.activeTab = tab;
   }
 
