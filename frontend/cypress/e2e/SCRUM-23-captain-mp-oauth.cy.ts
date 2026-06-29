@@ -2,7 +2,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
   describe('Captain fees page — MP not connected', () => {
     beforeEach(() => {
       cy.loginAsCaptain();
-      cy.intercept('GET', '**/api/fees', {
+      cy.intercept('GET', '**/api/payments', {
         statusCode: 200,
         body: {
           data: [{
@@ -22,7 +22,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
         body: { connected: false },
       });
       cy.intercept('GET', '**/api/fixture/matches', { statusCode: 200, body: [] });
-      cy.visit('/fees');
+      cy.visit('/payments');
     });
 
     it('should show Connect Mercado Pago button', () => {
@@ -48,7 +48,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
   describe('Captain fees page — MP already connected', () => {
     beforeEach(() => {
       cy.loginAsCaptain();
-      cy.intercept('GET', '**/api/fees', {
+      cy.intercept('GET', '**/api/payments', {
         statusCode: 200,
         body: {
           data: [{
@@ -68,7 +68,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
         body: { connected: true, updatedAt: '2026-06-20T10:00:00Z' },
       });
       cy.intercept('GET', '**/api/fixture/matches', { statusCode: 200, body: [] });
-      cy.visit('/fees');
+      cy.visit('/payments');
     });
 
     it('should show Mercado Pago connected status', () => {
@@ -123,7 +123,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
   describe('Player fees page — payments not configured', () => {
     beforeEach(() => {
       cy.loginAsPlayer();
-      cy.intercept('GET', '**/api/fees', {
+      cy.intercept('GET', '**/api/payments', {
         statusCode: 200,
         body: {
           data: [{
@@ -139,7 +139,7 @@ describe('SCRUM-23: Captain MP OAuth flow', () => {
         },
       });
       cy.intercept('GET', '**/api/fixture/matches', { statusCode: 200, body: [] });
-      cy.visit('/fees');
+      cy.visit('/payments');
     });
 
     it('should not show MP connection UI for players', () => {

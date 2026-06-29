@@ -11,7 +11,7 @@ import { switchMap } from 'rxjs/operators';
 import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
-import { FeeService } from '../../services/fee.service';
+import { FeeService } from '../../services/payment.service';
 import { Category } from '../../models/player.model';
 
 Chart.register(DoughnutController, ArcElement, Tooltip);

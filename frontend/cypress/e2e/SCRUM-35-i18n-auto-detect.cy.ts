@@ -12,7 +12,7 @@ describe('SCRUM-35 Internationalization: auto-detect browser language', () => {
   function interceptCommonAPIs(): void {
     cy.intercept('GET', '**/api/categories', { statusCode: 200, body: { data: mockCategories } });
     cy.intercept('GET', '**/api/categories/*/players', { statusCode: 200, body: mockPlayers });
-    cy.intercept('GET', '**/api/fees/current', { statusCode: 200, body: mockFees });
+    cy.intercept('GET', '**/api/payments/current', { statusCode: 200, body: mockFees });
     cy.intercept('GET', '**/api/fixture/divisions', { statusCode: 200, body: mockDivisions });
     cy.intercept('GET', '**/api/fixture/*/matches', { statusCode: 200, body: [] });
     cy.intercept('GET', '**/api/fixture/*/clubs', { statusCode: 200, body: [] });

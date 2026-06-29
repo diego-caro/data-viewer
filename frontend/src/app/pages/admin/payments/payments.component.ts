@@ -5,10 +5,10 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { FeeService } from '../../../services/fee.service';
+import { FeeService } from '../../../services/payment.service';
 import { PlayerService } from '../../../services/player.service';
 import { FixtureService } from '../../../services/fixture.service';
-import { CategoryFee, PaymentType } from '../../../models/fee.model';
+import { CategoryFee, PaymentType } from '../../../models/payment.model';
 import { FixtureMatch } from '../../../models/fixture.model';
 import { Category } from '../../../models/player.model';
 import { environment } from '../../../../environments/environment';
@@ -17,7 +17,7 @@ import { environment } from '../../../../environments/environment';
   selector: 'app-admin-fees',
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe],
-  templateUrl: './fees.component.html',
+  templateUrl: './payments.component.html',
 })
 export class AdminFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);

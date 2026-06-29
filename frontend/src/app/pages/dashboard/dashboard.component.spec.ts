@@ -5,10 +5,10 @@ import { of, throwError, Subject } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
-import { FeeService } from '../../services/fee.service';
+import { FeeService } from '../../services/payment.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
 import { Category, Player } from '../../models/player.model';
-import { CategoryFee, PlayerFee } from '../../models/fee.model';
+import { CategoryFee, PlayerFee } from '../../models/payment.model';
 
 const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Sub 14' },

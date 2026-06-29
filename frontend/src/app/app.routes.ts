@@ -25,7 +25,7 @@ export const routes: Routes = [
   {
     path: 'payments',
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/fees/fees.component').then((m) => m.PlayerFeesComponent),
+    loadComponent: () => import('./pages/payments/payments.component').then((m) => m.PlayerFeesComponent),
   },
   {
     path: 'admin/users',
@@ -35,7 +35,7 @@ export const routes: Routes = [
   {
     path: 'admin/payments',
     canActivate: [adminGuard],
-    loadComponent: () => import('./pages/admin/fees/fees.component').then((m) => m.AdminFeesComponent),
+    loadComponent: () => import('./pages/admin/payments/payments.component').then((m) => m.AdminFeesComponent),
   },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

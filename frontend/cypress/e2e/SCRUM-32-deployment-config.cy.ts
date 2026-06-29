@@ -11,7 +11,7 @@ describe('SCRUM-32: Deployment configuration — app works with relative API URL
       statusCode: 200,
       body: [],
     });
-    cy.intercept('GET', '/api/fees', {
+    cy.intercept('GET', '/api/payments', {
       statusCode: 200,
       body: [],
     });
@@ -29,7 +29,7 @@ describe('SCRUM-32: Deployment configuration — app works with relative API URL
     cy.loginAsAdmin();
 
     cy.intercept('GET', '/api/players*', { body: [] });
-    cy.intercept('GET', '/api/fees', { body: [] });
+    cy.intercept('GET', '/api/payments', { body: [] });
     cy.intercept('GET', '/api/fixture/divisions', { body: [] });
 
     cy.visit('/dashboard');
@@ -42,7 +42,7 @@ describe('SCRUM-32: Deployment configuration — app works with relative API URL
   it('should intercept API calls using relative /api path (not absolute localhost)', () => {
     cy.loginAsPlayer();
 
-    cy.intercept('GET', '/api/fees', {
+    cy.intercept('GET', '/api/payments', {
       statusCode: 200,
       body: [],
     }).as('getFees');
@@ -50,9 +50,9 @@ describe('SCRUM-32: Deployment configuration — app works with relative API URL
     cy.intercept('GET', '/api/fixture/divisions', { body: [] });
     cy.intercept('GET', '/api/players*', { body: [] });
 
-    cy.visit('/fees');
+    cy.visit('/payments');
     cy.wait('@getFees').then((interception) => {
-      expect(interception.request.url).to.include('/api/fees');
+      expect(interception.request.url).to.include('/api/payments');
       expect(interception.request.url).to.not.include('localhost:3000');
     });
   });

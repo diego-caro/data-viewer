@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { FeeService } from './fee.service';
-import { CategoryFee, PaymentPreferenceResult, PlayerFee } from '../models/fee.model';
+import { FeeService } from './payment.service';
+import { CategoryFee, PaymentPreferenceResult, PlayerFee } from '../models/payment.model';
 import { environment } from '../../environments/environment';
 
 describe('FeeService', () => {

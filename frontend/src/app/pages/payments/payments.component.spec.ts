@@ -2,12 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError, Subject } from 'rxjs';
-import { PlayerFeesComponent } from './fees.component';
-import { FeeService } from '../../services/fee.service';
+import { PlayerFeesComponent } from './payments.component';
+import { FeeService } from '../../services/payment.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
-import { CategoryFee } from '../../models/fee.model';
+import { CategoryFee } from '../../models/payment.model';
 import { FixtureMatch, FixtureDivision } from '../../models/fixture.model';
 
 const mockFeeWithPending: CategoryFee = {

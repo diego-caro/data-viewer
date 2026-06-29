@@ -5,17 +5,17 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { FeeService } from '../../services/fee.service';
+import { FeeService } from '../../services/payment.service';
 import { AuthService } from '../../services/auth.service';
 import { FixtureService } from '../../services/fixture.service';
-import { CategoryFee, PlayerFee } from '../../models/fee.model';
+import { CategoryFee, PlayerFee } from '../../models/payment.model';
 import { FixtureMatch } from '../../models/fixture.model';
 
 @Component({
   selector: 'app-player-fees',
   standalone: true,
   imports: [CommonModule, TranslatePipe],
-  templateUrl: './fees.component.html',
+  templateUrl: './payments.component.html',
 })
 export class PlayerFeesComponent implements OnInit {
   private readonly feeService = inject(FeeService);
