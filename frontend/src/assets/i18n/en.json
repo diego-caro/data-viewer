@@ -34,7 +34,11 @@
     "ACTIVE": "Active",
     "INACTIVE": "Inactive",
     "FEE_COLLECTION": "Fee Collection",
+    "TAB_MATCH": "Match Fee",
+    "TAB_LEAGUE": "League Fee",
+    "TAB_TRAVEL": "Travel",
     "NO_FEES": "No fees",
+    "NO_FEES_TAB": "No fees configured for this type",
     "PAID": "Paid",
     "UNPAID": "Unpaid"
   },

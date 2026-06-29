@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-42 — Rename frontend fee files/folders to payments for naming consistency
+> Last updated: SCRUM-43 — Dashboard fee collection charts with tabs by payment type
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -161,6 +161,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-38 | Travel fee for away matches — auto-detect away via fixture data, admin Fee/Travel tabs with Away/Local badge, player fee breakdown with individual Pay + Pay All, dashboard status pills for fee + travel eligibility | Done |
 | SCRUM-41 | Rename Fees to Payments, separate DB tables for match/league/travel fees — 3 admin tabs (Match Fee, League Fee, Travel), league fee with monthly period, dashboard pills for all 3 types, play eligibility checks all fee types, API routes renamed to /api/payments/* | Done |
 | SCRUM-42 | Rename frontend fee files/folders to payments — `fee.model.ts` → `payment.model.ts`, `fee.service.ts` → `payment.service.ts`, `pages/fees/` → `pages/payments/`, `pages/admin/fees/` → `pages/admin/payments/`, all imports updated | Done |
+| SCRUM-43 | Dashboard fee collection charts with tabs — admin dashboard fee charts grouped by payment type tabs (Match Fee, League Fee, Travel), client-side filtering, empty tab state, Chart.js instances properly destroyed on tab switch | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.
@@ -294,3 +295,5 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 - `resetWeeklyFees()` only resets match and travel types (weekly) — league fees are monthly and managed manually by admin (SCRUM-41)
 - API routes renamed from `/api/fees/*` to `/api/payments/*` — nav labels renamed from "Fees"/"My Fees" to "Payments"/"My Payments" (SCRUM-41)
 - Backend types moved from `backend/src/lib/types/fee.ts` to `backend/src/lib/types/payment.ts` — service renamed from `feeService` to `paymentService` (SCRUM-41)
+- Dashboard fee collection charts use client-side tab filtering (`feeActiveTab` + `allFees` array) — no additional API call on tab switch; `setFeeTab()` destroys old Chart.js instances before re-rendering to prevent memory leaks (SCRUM-43)
+- `FeeChartData` interface extended with `type: PaymentType` field to support tab-based filtering — dashboard stores full `allFees` array and derives `feeCharts` via `updateFeeCharts()` (SCRUM-43)

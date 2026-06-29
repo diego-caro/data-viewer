@@ -12,6 +12,7 @@ import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { PlayerService } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
 import { FeeService } from '../../services/payment.service';
+import { CategoryFee, PaymentType } from '../../models/payment.model';
 import { Category } from '../../models/player.model';
 
 Chart.register(DoughnutController, ArcElement, Tooltip);
@@ -28,6 +29,7 @@ export interface FeeChartData {
   paidCount: number;
   unpaidCount: number;
   isEmpty: boolean;
+  type: PaymentType;
 }
 
 @Component({
@@ -49,6 +51,8 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   categoryCharts: CategoryChartData[] = [];
   feeCharts: FeeChartData[] = [];
+  feeActiveTab: PaymentType = 'match';
+  allFees: CategoryFee[] = [];
   playStatus: 'enabled' | 'not-enabled' | 'no-fee' | null = null;
   matchStatus: 'paid' | 'pending' | null = null;
   leagueStatus: 'paid' | 'pending' | null = null;
@@ -97,13 +101,8 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (fees) => {
-            this.feeCharts = fees.map((fee) => ({
-              categoryName: fee.categoryName,
-              paidCount: fee.paidCount,
-              unpaidCount: fee.unpaidCount,
-              isEmpty: fee.paidCount === 0 && fee.unpaidCount === 0,
-            }));
-            this.chartsRendered = false;
+            this.allFees = fees;
+            this.updateFeeCharts();
           },
         });
     }
@@ -147,6 +146,32 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
           },
         });
     }
+  }
+
+  setFeeTab(tab: PaymentType): void {
+    this.feeActiveTab = tab;
+    this.charts = this.charts.filter((chart) => {
+      const canvas = chart.canvas;
+      if (canvas?.dataset['feeChartIndex'] !== undefined) {
+        chart.destroy();
+        return false;
+      }
+      return true;
+    });
+    this.updateFeeCharts();
+  }
+
+  private updateFeeCharts(): void {
+    this.feeCharts = this.allFees
+      .filter((fee) => fee.type === this.feeActiveTab)
+      .map((fee) => ({
+        categoryName: fee.categoryName,
+        paidCount: fee.paidCount,
+        unpaidCount: fee.unpaidCount,
+        isEmpty: fee.paidCount === 0 && fee.unpaidCount === 0,
+        type: fee.type,
+      }));
+    this.chartsRendered = false;
   }
 
   ngAfterViewChecked(): void {

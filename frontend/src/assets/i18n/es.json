@@ -33,8 +33,12 @@
     "NO_PLAYERS": "Sin jugadores",
     "ACTIVE": "Activos",
     "INACTIVE": "Inactivos",
-    "FEE_COLLECTION": "Recaudación de Arbitraje",
+    "FEE_COLLECTION": "Recaudación de Pagos",
+    "TAB_MATCH": "Arbitraje",
+    "TAB_LEAGUE": "Liga",
+    "TAB_TRAVEL": "Viaje",
     "NO_FEES": "Sin pagos",
+    "NO_FEES_TAB": "No hay pagos configurados para este tipo",
     "PAID": "Pagado",
     "UNPAID": "Impago"
   },
