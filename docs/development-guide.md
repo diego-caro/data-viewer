@@ -1,7 +1,7 @@
 # Development Guide
 
 > This document is a living guide. Updated automatically after each completed ticket.
-> Last updated: SCRUM-41 — Rename Fees to Payments, separate DB tables for match/league/travel fees, 3 admin tabs, league fee support, dashboard pills for all 3 types
+> Last updated: SCRUM-42 — Rename frontend fee files/folders to payments for naming consistency
 
 ## Project Overview
 App that reads data from an external REST API and visualizes it in a different way.
@@ -112,8 +112,8 @@ frontend/                       → Angular 18 (UI client)
   src/app/pages/                → Routed page components
   src/app/pages/login/          → Login page (standalone, no auth guard)
   src/app/pages/admin/users/    → Admin users management page
-  src/app/pages/admin/fees/     → Admin fees configuration page
-  src/app/pages/fees/           → Player fees page (pay via MP / view paid status)
+  src/app/pages/admin/payments/  → Admin payments configuration page
+  src/app/pages/payments/        → Player payments page (pay via MP / view paid status)
   src/app/interceptors/         → HTTP interceptors (auth token)
   src/app/guards/               → Route guards (auth, admin)
   src/app/components/           → Reusable UI components
@@ -160,6 +160,7 @@ All external data fetching is isolated in `backend/src/lib/services/`. API route
 | SCRUM-35 | Internationalization (i18n) — auto-detect browser language (ES/EN), all UI text translated via @ngx-translate, Spanish fallback for unsupported languages, database content untranslated | Done |
 | SCRUM-38 | Travel fee for away matches — auto-detect away via fixture data, admin Fee/Travel tabs with Away/Local badge, player fee breakdown with individual Pay + Pay All, dashboard status pills for fee + travel eligibility | Done |
 | SCRUM-41 | Rename Fees to Payments, separate DB tables for match/league/travel fees — 3 admin tabs (Match Fee, League Fee, Travel), league fee with monthly period, dashboard pills for all 3 types, play eligibility checks all fee types, API routes renamed to /api/payments/* | Done |
+| SCRUM-42 | Rename frontend fee files/folders to payments — `fee.model.ts` → `payment.model.ts`, `fee.service.ts` → `payment.service.ts`, `pages/fees/` → `pages/payments/`, `pages/admin/fees/` → `pages/admin/payments/`, all imports updated | Done |
 
 ## API Routes
 > Updated automatically when new routes are added.

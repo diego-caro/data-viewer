@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { AdminFeesComponent } from './fees.component';
-import { FeeService } from '../../../services/fee.service';
+import { AdminFeesComponent } from './payments.component';
+import { FeeService } from '../../../services/payment.service';
 import { PlayerService } from '../../../services/player.service';
 import { FixtureService } from '../../../services/fixture.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../../testing/translate-testing';
 import { of, throwError } from 'rxjs';
-import { CategoryFee, PaymentType } from '../../../models/fee.model';
+import { CategoryFee, PaymentType } from '../../../models/payment.model';
 import { Category } from '../../../models/player.model';
 import { FixtureDivision, FixtureMatch } from '../../../models/fixture.model';
 

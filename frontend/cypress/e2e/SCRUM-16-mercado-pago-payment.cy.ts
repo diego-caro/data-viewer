@@ -50,8 +50,8 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
   describe('Player — Fees page with pending fee', () => {
     beforeEach(() => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithPendingPlayer } }).as('getFees');
-      cy.visit('/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithPendingPlayer } }).as('getFees');
+      cy.visit('/payments');
       cy.wait('@getFees');
     });
 
@@ -71,7 +71,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
     });
 
     it('should call pay API and open Mercado Pago link when Pay is clicked', () => {
-      cy.intercept('POST', '**/api/fees/pay', {
+      cy.intercept('POST', '**/api/payments/pay', {
         statusCode: 200,
         body: mockPaymentPreference,
       }).as('payFee');
@@ -87,7 +87,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
     });
 
     it('should show processing state while paying', () => {
-      cy.intercept('POST', '**/api/fees/pay', {
+      cy.intercept('POST', '**/api/payments/pay', {
         statusCode: 200,
         body: mockPaymentPreference,
         delay: 500,
@@ -104,7 +104,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
     });
 
     it('should show error message when payment fails', () => {
-      cy.intercept('POST', '**/api/fees/pay', {
+      cy.intercept('POST', '**/api/payments/pay', {
         statusCode: 500,
         body: { error: 'Payment configuration not available' },
       }).as('payFeeFail');
@@ -121,8 +121,8 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
   describe('Player — Fees page with paid fee', () => {
     beforeEach(() => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithPaidPlayer } }).as('getFees');
-      cy.visit('/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithPaidPlayer } }).as('getFees');
+      cy.visit('/payments');
       cy.wait('@getFees');
     });
 
@@ -137,8 +137,8 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
   describe('Player — No fees configured', () => {
     it('should show empty state when no fees exist for the category', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [] } }).as('getFees');
-      cy.visit('/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [] } }).as('getFees');
+      cy.visit('/payments');
       cy.wait('@getFees');
 
       cy.get('[data-testid="empty-state"]')
@@ -150,7 +150,7 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
   describe('Player — Navigation', () => {
     it('should navigate to fees page via My Fees nav link', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithPendingPlayer } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithPendingPlayer } }).as('getFees');
       cy.intercept('GET', '**/api/players*', {
         statusCode: 200,
         body: { data: [], category: mockCategories[0] },
@@ -167,8 +167,8 @@ describe('SCRUM-16 Mercado Pago Integration + Player Payment Flow', () => {
   describe('Error state — Fees page', () => {
     it('should show error when fees API fails', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 500, body: { error: 'Server error' } }).as('failFees');
-      cy.visit('/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 500, body: { error: 'Server error' } }).as('failFees');
+      cy.visit('/payments');
       cy.wait('@failFees');
       cy.get('[data-testid="error-state"]')
         .should('be.visible')

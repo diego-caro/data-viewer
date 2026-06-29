@@ -56,8 +56,8 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
     beforeEach(() => {
       cy.loginAsAdmin();
       cy.intercept('GET', '**/api/categories', { statusCode: 200, body: { data: mockCategories } });
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFees } }).as('getFees');
-      cy.visit('/admin/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFees } }).as('getFees');
+      cy.visit('/admin/payments');
       cy.wait('@getFees');
     });
 
@@ -119,12 +119,12 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
         unpaidCount: 0,
       };
 
-      cy.intercept('POST', '**/api/fees', {
+      cy.intercept('POST', '**/api/payments', {
         statusCode: 201,
         body: { fee: newFee },
       }).as('createFee');
 
-      cy.intercept('GET', '**/api/fees', {
+      cy.intercept('GET', '**/api/payments', {
         statusCode: 200,
         body: { data: [...mockFees, newFee] },
       }).as('refreshFees');
@@ -178,12 +178,12 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
       updatedFees[0].paidCount = 2;
       updatedFees[0].unpaidCount = 0;
 
-      cy.intercept('POST', '**/api/fees/mark-paid', {
+      cy.intercept('POST', '**/api/payments/mark-paid', {
         statusCode: 200,
         body: { playerFee: updatedFees[0].playerFees[1] },
       }).as('markPaid');
 
-      cy.intercept('GET', '**/api/fees', {
+      cy.intercept('GET', '**/api/payments', {
         statusCode: 200,
         body: { data: updatedFees },
       }).as('refreshAfterPaid');
@@ -196,7 +196,7 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
     });
 
     it('should show form error on API failure', () => {
-      cy.intercept('POST', '**/api/fees', {
+      cy.intercept('POST', '**/api/payments', {
         statusCode: 500,
         body: { error: 'Server error' },
       }).as('failCreate');
@@ -217,8 +217,8 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
     it('should show Fees link in admin navigation', () => {
       cy.loginAsAdmin();
       cy.intercept('GET', '**/api/categories', { statusCode: 200, body: { data: mockCategories } });
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [] } });
-      cy.visit('/admin/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [] } });
+      cy.visit('/admin/payments');
       cy.viewport(1024, 768);
       cy.get('[data-testid="admin-nav-link"]').should('have.length', 2);
       cy.get('[data-testid="admin-nav-link"]').last().should('contain.text', 'Fees');
@@ -305,7 +305,7 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
     });
 
     it('should redirect captain from /admin/fees to /dashboard', () => {
-      cy.visit('/admin/fees');
+      cy.visit('/admin/payments');
       cy.url().should('include', '/dashboard');
       cy.url().should('not.include', '/admin');
     });
@@ -315,8 +315,8 @@ describe('SCRUM-15 Fee Data Model + Captain Role + Admin Fees Page', () => {
     it('should show error message when fees API fails', () => {
       cy.loginAsAdmin();
       cy.intercept('GET', '**/api/categories', { statusCode: 200, body: { data: mockCategories } });
-      cy.intercept('GET', '**/api/fees', { statusCode: 500, body: { error: 'Server error' } }).as('failFees');
-      cy.visit('/admin/fees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 500, body: { error: 'Server error' } }).as('failFees');
+      cy.visit('/admin/payments');
       cy.wait('@failFees');
       cy.get('[data-testid="error-state"]').should('be.visible');
     });

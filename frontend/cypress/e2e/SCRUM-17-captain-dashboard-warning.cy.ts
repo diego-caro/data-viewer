@@ -59,9 +59,9 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
   describe('Captain — Fees page with player list', () => {
     beforeEach(() => {
       cy.loginAsCaptain('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
       cy.intercept('GET', '**/api/fixture/matches', { statusCode: 200, body: { data: [] } });
-      cy.visit('/fees');
+      cy.visit('/payments');
       cy.wait('@getFees');
     });
 
@@ -90,12 +90,12 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
   describe('Player — Warning banner', () => {
     it('should show warning when fee is pending and match is within 4 days', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
       cy.intercept('GET', '**/api/fixture/matches', {
         statusCode: 200,
         body: { data: [createMatchInDays(2)] },
       }).as('getMatches');
-      cy.visit('/fees');
+      cy.visit('/payments');
       cy.wait('@getFees');
       cy.wait('@getMatches');
 
@@ -107,12 +107,12 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
 
     it('should not show warning when fee is already paid', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeAllPaid } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeAllPaid } }).as('getFees');
       cy.intercept('GET', '**/api/fixture/matches', {
         statusCode: 200,
         body: { data: [createMatchInDays(2)] },
       }).as('getMatches');
-      cy.visit('/fees');
+      cy.visit('/payments');
       cy.wait('@getFees');
 
       cy.get('[data-testid="warning-banner"]').should('not.exist');
@@ -120,12 +120,12 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
 
     it('should not show warning when next match is more than 4 days away', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeWithMixedStatus } }).as('getFees');
       cy.intercept('GET', '**/api/fixture/matches', {
         statusCode: 200,
         body: { data: [createMatchInDays(10)] },
       }).as('getMatches');
-      cy.visit('/fees');
+      cy.visit('/payments');
       cy.wait('@getFees');
       cy.wait('@getMatches');
 
@@ -154,7 +154,7 @@ describe('SCRUM-17 Captain Dashboard + Player Warning Banner + Admin Fee Chart',
 
     beforeEach(() => {
       cy.loginAsAdmin();
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: multiCategoryFees } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: multiCategoryFees } }).as('getFees');
       cy.intercept('GET', '**/api/players*', {
         statusCode: 200,
         body: { data: [], category: mockCategories[0] },

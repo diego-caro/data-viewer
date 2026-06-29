@@ -42,7 +42,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
   describe('Player — fee paid', () => {
     beforeEach(() => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeePaid } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeePaid } }).as('getFees');
       cy.visit('/dashboard');
       cy.wait('@getFees');
     });
@@ -63,7 +63,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
   describe('Player — fee pending', () => {
     beforeEach(() => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeePending } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeePending } }).as('getFees');
       cy.visit('/dashboard');
       cy.wait('@getFees');
     });
@@ -83,7 +83,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
     });
 
     it('should navigate to fees page when link is clicked', () => {
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeePending } });
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeePending } });
       cy.get('[data-testid="play-status-not-enabled"] a').click();
       cy.url().should('include', '/fees');
     });
@@ -92,7 +92,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
   describe('Player — no fee configured', () => {
     it('should show informational no-fee card', () => {
       cy.loginAsPlayer('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [] } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [] } }).as('getFees');
       cy.visit('/dashboard');
       cy.wait('@getFees');
 
@@ -106,7 +106,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
   describe('Captain — same behavior as player', () => {
     it('should show enabled status card when captain fee is paid', () => {
       cy.loginAsCaptain('cat-1');
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: mockFeeCaptainPaid } }).as('getFees');
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: mockFeeCaptainPaid } }).as('getFees');
       cy.visit('/dashboard');
       cy.wait('@getFees');
 
@@ -119,7 +119,7 @@ describe('SCRUM-30 Play Eligibility Status Card', () => {
   describe('Admin — no status card', () => {
     it('should not show play eligibility card for admin', () => {
       cy.loginAsAdmin();
-      cy.intercept('GET', '**/api/fees', { statusCode: 200, body: { data: [] } });
+      cy.intercept('GET', '**/api/payments', { statusCode: 200, body: { data: [] } });
       cy.intercept('GET', '**/api/players*', {
         statusCode: 200,
         body: { data: [], category: mockCategories[0] },

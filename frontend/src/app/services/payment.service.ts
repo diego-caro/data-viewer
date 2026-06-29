@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { CategoryFee, CreateFeeRequest, PaymentPreferenceResult, PaymentType, PlayerFee } from '../models/fee.model';
+import { CategoryFee, CreateFeeRequest, PaymentPreferenceResult, PaymentType, PlayerFee } from '../models/payment.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
