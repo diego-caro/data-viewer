@@ -1,5 +1,5 @@
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import { PaymentPreferenceResult } from '@/lib/types/fee';
+import { PaymentPreferenceResult } from '@/lib/types/payment';
 
 interface PaymentStatusResult {
   paymentId: string;
