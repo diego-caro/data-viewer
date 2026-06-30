@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   categoryCharts: CategoryChartData[] = [];
   feeCharts: FeeChartData[] = [];
-  feeActiveTab: PaymentType = 'match';
+  feeActiveTab: PaymentType = 'league';
   allFees: CategoryFee[] = [];
   playStatus: 'enabled' | 'not-enabled' | 'no-fee' | null = null;
   matchStatus: 'paid' | 'pending' | null = null;

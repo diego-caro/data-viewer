@@ -18,7 +18,7 @@
     "ERROR_GENERIC": "An unexpected error occurred. Please try again."
   },
   "DASHBOARD": {
-    "ERROR": "Unable to load signing data. Please try again later.",
+    "ERROR": "Unable to load dashboard data. Please try again later.",
     "PLAY_ENABLED": "You're enabled to play this weekend",
     "PLAY_NOT_ENABLED": "Fee pending — you're not enabled to play this weekend",
     "PLAY_GO_TO_PAYMENTS": "Go to My Payments to pay and play this weekend",
@@ -29,7 +29,7 @@
     "LEAGUE_PENDING": "League: Pending",
     "TRAVEL_PAID": "Travel: Paid",
     "TRAVEL_PENDING": "Travel: Pending",
-    "TITLE": "Signing",
+    "TITLE": "Dashboard",
     "NO_PLAYERS": "No players",
     "ACTIVE": "Active",
     "INACTIVE": "Inactive",
