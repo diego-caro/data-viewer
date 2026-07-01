@@ -8,6 +8,9 @@ import {
   FixtureDivision,
   StandingsEntry,
   MatchStatus,
+  FixtureInstance,
+  RawInstance,
+  FixtureRound,
 } from '@/lib/types/fixture';
 
 const HOCKEY_CHUBUT_BASE = 'https://sistema.hockeychubut.com.ar/api/public';
@@ -31,7 +34,7 @@ function normalizeMatch(raw: RawMatch): FixtureMatch {
     status: mapStatus(raw.estado),
     date: raw.fecha,
     venue: raw.cancha.nombre,
-    round: raw.instancia.numero,
+    instance: raw.instancia.id,
     homeTeam: {
       clubId: raw.local.club.id,
       clubName: raw.local.club.razonSocial,
@@ -40,9 +43,7 @@ function normalizeMatch(raw: RawMatch): FixtureMatch {
       clubId: raw.visitante.club.id,
       clubName: raw.visitante.club.razonSocial,
     },
-    score: raw.resultado
-      ? { home: raw.resultado.golLocal, away: raw.resultado.golVisitante }
-      : null,
+    score: raw.resultado ? { home: raw.resultado.golLocal, away: raw.resultado.golVisitante } : null,
   };
 }
 
@@ -78,13 +79,20 @@ function normalizeStandingsEntry(raw: RawStandingsEntry): StandingsEntry {
   };
 }
 
+function normalizeInstance(raw: RawInstance): FixtureInstance {
+  return {
+    id: raw.id,
+    date: raw.fecha,
+    description: raw.descripcion,
+    round: raw.numero,
+  };
+}
+
 async function getMatches(fixtureId: number): Promise<FixtureMatch[]> {
   const response = await fetch(buildUrl(`fixture/${fixtureId}/partido`));
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch matches: ${response.status} ${response.statusText}`
-    );
+    throw new Error(`Failed to fetch matches: ${response.status} ${response.statusText}`);
   }
 
   const raw: RawMatch[] = await response.json();
@@ -95,9 +103,7 @@ async function getClubs(fixtureId: number): Promise<FixtureClub[]> {
   const response = await fetch(buildUrl(`fixture/${fixtureId}/club`));
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch clubs: ${response.status} ${response.statusText}`
-    );
+    throw new Error(`Failed to fetch clubs: ${response.status} ${response.statusText}`);
   }
 
   const raw: RawClubWithLogo[] = await response.json();
@@ -108,9 +114,7 @@ async function getDivisions(): Promise<FixtureDivision[]> {
   const response = await fetch(buildUrl('fixture'));
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch divisions: ${response.status} ${response.statusText}`
-    );
+    throw new Error(`Failed to fetch divisions: ${response.status} ${response.statusText}`);
   }
 
   const raw: RawFixtureDivision[] = await response.json();
@@ -121,13 +125,44 @@ async function getStandings(fixtureId: number): Promise<StandingsEntry[]> {
   const response = await fetch(buildUrl(`fixture/${fixtureId}/tabla-posiciones`));
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch standings: ${response.status} ${response.statusText}`
-    );
+    throw new Error(`Failed to fetch standings: ${response.status} ${response.statusText}`);
   }
 
   const raw: RawStandingsEntry[] = await response.json();
   return raw.map(normalizeStandingsEntry);
+}
+
+async function getInstances(fixtureId: number): Promise<FixtureInstance[]> {
+  const response = await fetch(buildUrl(`fixture/${fixtureId}/instancia`));
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch instances: ${response.status} ${response.statusText}`);
+  }
+
+  const raw: RawInstance[] = await response.json();
+  return raw.map(normalizeInstance).sort((a, b) => a.round - b.round);
+}
+
+async function getFixtures(fixtureId: number): Promise<FixtureRound[]> {
+  const [matches, clubs, instances] = await Promise.all([getMatches(fixtureId), getClubs(fixtureId), getInstances(fixtureId)]);
+
+  clubs.forEach((club) => {
+    matches.forEach((match) => {
+      if (match.homeTeam.clubId === club.id) {
+        match.homeTeam.logo = club.logo;
+      }
+      if (match.awayTeam.clubId === club.id) {
+        match.awayTeam.logo = club.logo;
+      }
+    });
+  });
+  
+  return instances.map((instance) => ({
+    date: instance.date,
+    description: instance.description,
+    round: instance.round,
+    matches: matches.filter((match) => match.instance === instance.id),
+  }));
 }
 
 export const fixtureService = {
@@ -135,4 +170,6 @@ export const fixtureService = {
   getClubs,
   getDivisions,
   getStandings,
+  getInstances,
+  getFixtures,
 };
