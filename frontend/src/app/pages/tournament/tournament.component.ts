@@ -6,7 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { FixtureService } from '../../services/fixture.service';
-import { FixtureMatch, FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
+import { FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
 import { environment } from '../../../environments/environment';
 
 type ActiveTab = 'fixture' | 'standings';
@@ -27,7 +27,6 @@ export class TournamentComponent implements OnInit {
   activeTab = signal<ActiveTab>('fixture');
 
   rounds: FixtureRound[] = [];
-  clubLogos = new Map<number, string | null>();
   standings: StandingsEntry[] = [];
 
   loadingDivisions = true;
@@ -67,10 +66,6 @@ export class TournamentComponent implements OnInit {
     this.activeTab.set(tab);
   }
 
-  getClubLogo(clubId: number): string | null {
-    return this.clubLogos.get(clubId) ?? null;
-  }
-
   formatMatchDate(dateStr: string): string {
     const date = new Date(dateStr);
     const lang = this.translate.getCurrentLang() || 'es';
@@ -88,16 +83,12 @@ export class TournamentComponent implements OnInit {
     this.loadingContent = true;
     this.error = null;
 
-    forkJoin({
-      matches: this.fixtureService.getMatches(fixtureId),
-      clubs: this.fixtureService.getClubs(fixtureId),
-    })
+    
+      this.fixtureService.getFixtures(fixtureId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ matches, clubs }) => {
-          this.clubLogos.clear();
-          clubs.forEach((club) => this.clubLogos.set(club.id, club.logo));
-          this.rounds = this.groupByRound(matches);
+        next: (matches) => {
+          this.rounds = matches;
           this.loadingContent = false;
         },
         error: () => {
@@ -126,26 +117,12 @@ export class TournamentComponent implements OnInit {
       });
   }
 
-  private groupByRound(matches: FixtureMatch[]): FixtureRound[] {
-    const roundMap = new Map<number, FixtureMatch[]>();
-
-    matches.forEach((match) => {
-      const existing = roundMap.get(match.round) ?? [];
-      existing.push(match);
-      roundMap.set(match.round, existing);
-    });
-
-    return Array.from(roundMap.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([number, roundMatches]) => ({ number, matches: roundMatches }));
-  }
-
   private loadCategories(divisions: FixtureDivision[]): void {
     const standingsRequests = divisions.map((division) =>
       this.fixtureService.getStandings(division.id).pipe(
         map((standings) => ({ division, standings })),
-        catchError(() => of({ division, standings: [] as StandingsEntry[] }))
-      )
+        catchError(() => of({ division, standings: [] as StandingsEntry[] })),
+      ),
     );
 
     forkJoin(standingsRequests)
@@ -153,9 +130,7 @@ export class TournamentComponent implements OnInit {
       .subscribe({
         next: (results) => {
           this.divisions = results
-            .filter(({ standings }) =>
-              standings.some((entry) => entry.clubName.includes(environment.clubName))
-            )
+            .filter(({ standings }) => standings.some((entry) => entry.clubName.includes(environment.clubName)))
             .map(({ division }) => division);
 
           this.loadingDivisions = false;

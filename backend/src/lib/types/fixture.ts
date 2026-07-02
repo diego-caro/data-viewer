@@ -44,6 +44,13 @@ export interface RawClubWithLogo {
   logo: string | null;
 }
 
+export interface RawInstance {
+  id: number;
+  fecha: string;
+  descripcion: string;
+  numero: number;
+}
+
 // Normalized domain types
 
 export type MatchStatus = 'completed' | 'pending';
@@ -51,6 +58,7 @@ export type MatchStatus = 'completed' | 'pending';
 export interface TeamInfo {
   clubId: number;
   clubName: string;
+  logo?: string | null;
 }
 
 export interface MatchScore {
@@ -63,7 +71,7 @@ export interface FixtureMatch {
   status: MatchStatus;
   date: string;
   venue: string;
-  round: number;
+  instance: number;
   homeTeam: TeamInfo;
   awayTeam: TeamInfo;
   score: MatchScore | null;
@@ -81,6 +89,20 @@ export interface FixtureMatchesResponse {
 
 export interface FixtureClubsResponse {
   data: FixtureClub[];
+}
+
+export interface FixtureInstance {
+  id: number;
+  description: string;
+  date: string;
+  round: number;
+}
+
+export interface FixtureRound {
+  date: string;
+  description: string;
+  round: number;
+  matches: FixtureMatch[];
 }
 
 // Raw types for fixture divisions (from /torneo/{id}/fixture)
@@ -137,4 +159,12 @@ export interface FixtureDivisionsResponse {
 
 export interface FixtureStandingsResponse {
   data: StandingsEntry[];
+}
+
+export interface FixtureInstancesResponse {
+  data: FixtureInstance[];
+}
+
+export interface FixtureResponse {
+  data: FixtureRound[];
 }

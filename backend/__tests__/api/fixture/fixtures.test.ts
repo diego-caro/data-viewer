@@ -1,7 +1,7 @@
-import { GET } from '@/app/api/fixture/matches/route';
+import { GET } from '@/app/api/fixture/fixtures/route';
 import { fixtureService } from '@/lib/services/fixtureService';
 import { userService } from '@/lib/services/userService';
-import { FixtureMatch } from '@/lib/types/fixture';
+import { FixtureRound } from '@/lib/types/fixture';
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/services/fixtureService');
@@ -14,51 +14,65 @@ function createRequest(fixtureId?: string, authHeader?: string): NextRequest {
   const headers: Record<string, string> = {};
   if (authHeader) headers['authorization'] = authHeader;
   const query = fixtureId ? `?fixtureId=${fixtureId}` : '';
-  return new NextRequest(`http://localhost:3000/api/fixture/matches${query}`, { headers });
+  return new NextRequest(`http://localhost:3000/api/fixture/fixtures${query}`, { headers });
 }
 
-const MOCK_MATCHES: FixtureMatch[] = [
+const MOCK_ROUNDS: FixtureRound[] = [
   {
-    id: 207519,
-    status: 'completed',
     date: '2026-06-06T13:30:00Z',
-    venue: 'Bigornia',
-    instance: 207306,
-    homeTeam: { clubId: 3, clubName: 'Bigornia Club' },
-    awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    score: { home: 2, away: 2 },
+    description: 'Fecha 1',
+    round: 1,
+    matches: [
+      {
+        id: 207519,
+        status: 'completed',
+        date: '2026-06-06T13:30:00Z',
+        venue: 'Bigornia',
+        instance: 207306,
+        homeTeam: { clubId: 3, clubName: 'Bigornia Club', logo: 'base64data1' },
+        awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        score: { home: 2, away: 2 },
+      },
+    ],
   },
   {
-    id: 208130,
-    status: 'pending',
     date: '2026-06-20T03:00:00Z',
-    venue: 'C.E.C. Hockey',
-    instance: 207304,
-    homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    awayTeam: { clubId: 12, clubName: 'Trelew R.C.' },
-    score: null,
+    description: 'Fecha 3',
+    round: 3,
+    matches: [
+      {
+        id: 208130,
+        status: 'pending',
+        date: '2026-06-20T03:00:00Z',
+        venue: 'C.E.C. Hockey',
+        instance: 207304,
+        homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        awayTeam: { clubId: 12, clubName: 'Trelew R.C.', logo: 'base64data3' },
+        score: null,
+      },
+    ],
   },
 ];
 
-describe('GET /api/fixture/matches', () => {
+describe('GET /api/fixture/fixtures', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedUserService.verifyToken.mockReturnValue({ userId: 'u1', role: 'admin' });
   });
 
-  it('should return matches for the given fixtureId', async () => {
-    mockedFixtureService.getMatches.mockResolvedValue(MOCK_MATCHES);
+  it('should return grouped fixture rounds for the given fixtureId', async () => {
+    mockedFixtureService.getFixtures.mockResolvedValue(MOCK_ROUNDS);
 
     const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.data).toEqual(MOCK_MATCHES);
-    expect(mockedFixtureService.getMatches).toHaveBeenCalledWith(206752);
+    expect(body.data).toEqual(MOCK_ROUNDS);
+    expect(mockedFixtureService.getFixtures).toHaveBeenCalledWith(206752);
   });
 
-  it('should return empty array when no matches exist', async () => {
-    mockedFixtureService.getMatches.mockResolvedValue([]);
+  it('should return empty array when no rounds exist', async () => {
+    mockedFixtureService.getFixtures.mockResolvedValue([]);
 
     const response = await GET(createRequest('206752', 'Bearer valid-token'));
     const body = await response.json();
@@ -84,7 +98,7 @@ describe('GET /api/fixture/matches', () => {
   });
 
   it('should return 500 when service throws', async () => {
-    mockedFixtureService.getMatches.mockRejectedValue(
+    mockedFixtureService.getFixtures.mockRejectedValue(
       new Error('Failed to fetch matches: 500 Internal Server Error')
     );
 
@@ -92,7 +106,7 @@ describe('GET /api/fixture/matches', () => {
     const body = await response.json();
 
     expect(response.status).toBe(500);
-    expect(body.error).toBe('Failed to fetch fixture matches');
+    expect(body.error).toBe('Failed to fetch fixture results');
   });
 
   it('should return 401 without auth', async () => {

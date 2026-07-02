@@ -249,50 +249,12 @@ describe('DashboardComponent', () => {
       expect(chart!.inactiveCount).toBe(0);
     });
 
-    it('should render one chart card per category', () => {
+    it('should not render category chart cards (hidden by SCRUM-44)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
-      const cards = compiled.querySelectorAll('[data-testid="chart-card"]');
-      expect(cards.length).toBe(6);
-    });
-
-    it('should display category name as chart title', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const titles = compiled.querySelectorAll('[data-testid="chart-title"]');
-      expect(titles.length).toBe(6);
-      expect(titles[0].textContent?.trim()).toBe('Sub 14');
-      expect(titles[1].textContent?.trim()).toBe('Sub 16');
-      expect(titles[2].textContent?.trim()).toBe('Sub 19');
-      expect(titles[3].textContent?.trim()).toBe('Primera');
-      expect(titles[4].textContent?.trim()).toBe('Intermedia');
-      expect(titles[5].textContent?.trim()).toBe('Caballeros');
-    });
-
-    it('should show a canvas for categories with players', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const canvases = compiled.querySelectorAll('canvas[data-chart-index]');
-      expect(canvases.length).toBe(3);
-    });
-
-    it('should show empty state text for category with no players', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const emptyStates = compiled.querySelectorAll('[data-testid="chart-empty"]');
-      expect(emptyStates.length).toBe(3);
-      expect(emptyStates[0].textContent?.trim()).toBe('No players');
-    });
-
-    it('should display active and inactive counts as legend', () => {
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const legends = compiled.querySelectorAll('[data-testid="chart-legend"]');
-      expect(legends.length).toBe(3);
-
-      const firstLegend = legends[0];
-      expect(firstLegend.textContent).toContain('Active: 2');
-      expect(firstLegend.textContent).toContain('Inactive: 1');
+      expect(compiled.querySelectorAll('[data-testid="chart-card"]').length).toBe(0);
+      expect(compiled.querySelectorAll('canvas[data-chart-index]').length).toBe(0);
+      expect(compiled.querySelectorAll('[data-testid="chart-legend"]').length).toBe(0);
     });
   });
 
@@ -337,7 +299,7 @@ describe('DashboardComponent', () => {
 
       const compiled = fixture.nativeElement as HTMLElement;
       const errorEl = compiled.querySelector('[data-testid="error-state"]');
-      expect(errorEl?.textContent).toContain('Unable to load signing data');
+      expect(errorEl?.textContent).toContain('Unable to load dashboard data');
     });
   });
 
@@ -370,42 +332,40 @@ describe('DashboardComponent', () => {
       expect(feeServiceMock.getCurrentFees).toHaveBeenCalled();
     });
 
-    it('should create fee chart data only for active tab (match by default)', () => {
+    it('should create fee chart data only for active tab (league by default)', () => {
       fixture.detectChanges();
-      expect(component.feeCharts.length).toBe(2);
-      expect(component.feeCharts.every((c) => c.type === 'match')).toBe(true);
+      expect(component.feeCharts.length).toBe(1);
+      expect(component.feeCharts.every((c) => c.type === 'league')).toBe(true);
     });
 
     it('should compute correct paid/unpaid counts', () => {
       fixture.detectChanges();
       const chart = component.feeCharts.find((c) => c.categoryName === 'Sub 14');
       expect(chart).toBeTruthy();
-      expect(chart!.paidCount).toBe(7);
-      expect(chart!.unpaidCount).toBe(3);
+      expect(chart!.paidCount).toBe(8);
+      expect(chart!.unpaidCount).toBe(2);
     });
 
     it('should render fee chart cards in template for active tab', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
-      expect(feeCards.length).toBe(2);
+      expect(feeCards.length).toBe(1);
     });
 
     it('should display paid/unpaid legend', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const legends = compiled.querySelectorAll('[data-testid="fee-chart-legend"]');
-      expect(legends.length).toBe(2);
-      expect(legends[0].textContent).toContain('Paid: 7');
-      expect(legends[0].textContent).toContain('Unpaid: 3');
+      expect(legends.length).toBe(1);
+      expect(legends[0].textContent).toContain('Paid: 8');
+      expect(legends[0].textContent).toContain('Unpaid: 2');
     });
 
-    it('should show section title for fee charts', () => {
+    it('should not render the fee charts section title (removed by SCRUM-44)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
-      const title = compiled.querySelector('[data-testid="fee-charts-title"]');
-      expect(title).toBeTruthy();
-      expect(title?.textContent).toContain('Fee Collection');
+      expect(compiled.querySelector('[data-testid="fee-charts-title"]')).toBeNull();
     });
 
     it('should handle empty fees gracefully', () => {
@@ -424,13 +384,17 @@ describe('DashboardComponent', () => {
       expect(compiled.querySelector('[data-testid="fee-tab-travel"]')).toBeTruthy();
     });
 
-    it('should default to match tab', () => {
+    it('should default to league tab', () => {
       fixture.detectChanges();
-      expect(component.feeActiveTab).toBe('match');
+      expect(component.feeActiveTab).toBe('league');
     });
 
-    it('should show only match fees on match tab', () => {
+    it('should show only match fees when match tab is clicked', () => {
       fixture.detectChanges();
+      component.setFeeTab('match');
+      fixture.detectChanges();
+
+      expect(component.feeActiveTab).toBe('match');
       expect(component.feeCharts.length).toBe(2);
       expect(component.feeCharts.every((c) => c.type === 'match')).toBe(true);
     });
@@ -478,27 +442,28 @@ describe('DashboardComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
 
       let feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
-      expect(feeCards.length).toBe(2);
+      expect(feeCards.length).toBe(1);
 
-      component.setFeeTab('league');
+      component.setFeeTab('match');
       fixture.detectChanges();
       feeCards = compiled.querySelectorAll('[data-testid="fee-chart-card"]');
-      expect(feeCards.length).toBe(1);
+      expect(feeCards.length).toBe(2);
     });
 
-    it('should not show tabs when no fees exist at all', () => {
+    it('should still show tabs with empty state when no fees exist at all', () => {
       feeServiceMock.getCurrentFees!.mockReturnValue(of([]));
       fixture = TestBed.createComponent(DashboardComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="fee-tab-match"]')).toBeNull();
+      expect(compiled.querySelector('[data-testid="fee-tab-match"]')).toBeTruthy();
+      expect(compiled.querySelector('[data-testid="fee-tab-empty"]')).toBeTruthy();
     });
 
     it('should re-render charts when switching tabs', () => {
       fixture.detectChanges();
-      expect(component.feeCharts.length).toBe(2);
+      expect(component.feeCharts.length).toBe(1);
 
       component.setFeeTab('travel');
       fixture.detectChanges();
