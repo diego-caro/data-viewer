@@ -55,7 +55,7 @@
     "ERROR_LOAD_DATA": "Failed to load data",
     "ERROR_LOAD_PLAYERS": "Failed to load players"
   },
-  "FIXTURE": {
+  "TOURNAMENT": {
     "TITLE": "Tournament",
     "ERROR": "Unable to load tournament data. Please try again later.",
     "CATEGORY": "Category",
@@ -66,6 +66,7 @@
     "ROUND": "Round",
     "STANDINGS_ERROR": "Unable to load standings. Please try again later.",
     "NO_STANDINGS": "No standings data available.",
+    "NO_CONFIRMED": "No confirmed",
     "COL_POSITION": "#",
     "COL_CLUB": "Club",
     "COL_POINTS": "PTS",
