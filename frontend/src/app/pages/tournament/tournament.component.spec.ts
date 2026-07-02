@@ -4,40 +4,48 @@ import { of, throwError, NEVER } from 'rxjs';
 import { TournamentComponent } from './tournament.component';
 import { FixtureService } from '../../services/fixture.service';
 import { provideTranslateTesting, setupTestTranslations } from '../../testing/translate-testing';
-import { FixtureMatch, FixtureClub, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
+import { FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
 
 const MOCK_DIVISIONS: FixtureDivision[] = [
   { id: 206752, name: 'Mixto Sub 14 A' },
   { id: 206754, name: 'Caballeros Primera' },
 ];
 
-const MOCK_MATCHES: FixtureMatch[] = [
+const MOCK_ROUNDS: FixtureRound[] = [
   {
-    id: 207519,
-    status: 'completed',
     date: '2026-06-06T13:30:00Z',
-    venue: 'Bigornia',
+    description: 'Fecha 1',
     round: 1,
-    homeTeam: { clubId: 3, clubName: 'Bigornia Club' },
-    awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    score: { home: 2, away: 2 },
+    matches: [
+      {
+        id: 207519,
+        status: 'completed',
+        date: '2026-06-06T13:30:00Z',
+        venue: 'Bigornia',
+        instance: 207306,
+        homeTeam: { clubId: 3, clubName: 'Bigornia Club', logo: 'base64logo3' },
+        awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        score: { home: 2, away: 2 },
+      },
+    ],
   },
   {
-    id: 208130,
-    status: 'pending',
     date: '2026-06-20T03:00:00Z',
-    venue: 'C.E.C. Hockey',
+    description: 'Fecha 3',
     round: 3,
-    homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    awayTeam: { clubId: 12, clubName: 'Trelew R.C.' },
-    score: null,
+    matches: [
+      {
+        id: 208130,
+        status: 'pending',
+        date: '2026-06-20T03:00:00Z',
+        venue: 'C.E.C. Hockey',
+        instance: 207304,
+        homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        awayTeam: { clubId: 12, clubName: 'Trelew R.C.', logo: 'base64logo12' },
+        score: null,
+      },
+    ],
   },
-];
-
-const MOCK_CLUBS: FixtureClub[] = [
-  { id: 3, name: 'Bigornia Club', logo: 'base64logo3' },
-  { id: 5, name: 'Club Empleados de Comercio', logo: null },
-  { id: 12, name: 'Trelew R.C.', logo: 'base64logo12' },
 ];
 
 const MOCK_STANDINGS: StandingsEntry[] = [
@@ -76,18 +84,10 @@ describe('TournamentComponent', () => {
   let fixture: ComponentFixture<TournamentComponent>;
   let fixtureServiceMock: jest.Mocked<FixtureService>;
 
-  function setupMocks(overrides: Partial<jest.Mocked<FixtureService>> = {}): void {
-    fixtureServiceMock.getDivisions.mockReturnValue(overrides.getDivisions?.() ?? of(MOCK_DIVISIONS));
-    fixtureServiceMock.getMatches.mockReturnValue(overrides.getMatches?.() ?? of(MOCK_MATCHES));
-    fixtureServiceMock.getClubs.mockReturnValue(overrides.getClubs?.() ?? of(MOCK_CLUBS));
-    fixtureServiceMock.getStandings.mockReturnValue(overrides.getStandings?.() ?? of(MOCK_STANDINGS));
-  }
-
   beforeEach(async () => {
     fixtureServiceMock = {
       getDivisions: jest.fn().mockReturnValue(of(MOCK_DIVISIONS)),
-      getMatches: jest.fn().mockReturnValue(of(MOCK_MATCHES)),
-      getClubs: jest.fn().mockReturnValue(of(MOCK_CLUBS)),
+      getFixtures: jest.fn().mockReturnValue(of(MOCK_ROUNDS)),
       getStandings: jest.fn().mockReturnValue(of(MOCK_STANDINGS)),
     } as unknown as jest.Mocked<FixtureService>;
 
@@ -148,16 +148,14 @@ describe('TournamentComponent', () => {
 
     it('should load fixture and standings for first division on init', () => {
       fixture.detectChanges();
-      expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206752);
-      expect(fixtureServiceMock.getClubs).toHaveBeenCalledWith(206752);
+      expect(fixtureServiceMock.getFixtures).toHaveBeenCalledWith(206752);
       expect(fixtureServiceMock.getStandings).toHaveBeenCalledWith(206752);
     });
 
     it('should reload data when division changes', () => {
       fixture.detectChanges();
       component.onDivisionChange(206754);
-      expect(fixtureServiceMock.getMatches).toHaveBeenCalledWith(206754);
-      expect(fixtureServiceMock.getClubs).toHaveBeenCalledWith(206754);
+      expect(fixtureServiceMock.getFixtures).toHaveBeenCalledWith(206754);
       expect(fixtureServiceMock.getStandings).toHaveBeenCalledWith(206754);
     });
 
@@ -228,11 +226,20 @@ describe('TournamentComponent', () => {
   });
 
   describe('fixture tab', () => {
-    it('should group matches into rounds', () => {
+    it('should render rounds returned by the service', () => {
       fixture.detectChanges();
       expect(component.rounds).toHaveLength(2);
-      expect(component.rounds[0].number).toBe(1);
-      expect(component.rounds[1].number).toBe(3);
+      expect(component.rounds[0].round).toBe(1);
+      expect(component.rounds[1].round).toBe(3);
+    });
+
+    it('should display round descriptions in headers', () => {
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      const headers = el.querySelectorAll('[data-testid="round-header"]');
+      expect(headers.length).toBe(2);
+      expect(headers[0]?.textContent).toContain('Fecha 1');
+      expect(headers[1]?.textContent).toContain('Fecha 3');
     });
 
     it('should display completed match scores', () => {
@@ -258,33 +265,25 @@ describe('TournamentComponent', () => {
       expect(venues[0]?.textContent).toContain('Bigornia');
     });
 
-    it('should show empty state when no matches', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(of([]));
+    it('should show empty state when no rounds', () => {
+      fixtureServiceMock.getFixtures.mockReturnValue(of([]));
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="fixture-empty"]')).toBeTruthy();
     });
 
     it('should show error when fixture fails to load', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(throwError(() => new Error('Network error')));
+      fixtureServiceMock.getFixtures.mockReturnValue(throwError(() => new Error('Network error')));
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="fixture-error"]')).toBeTruthy();
     });
 
     it('should show loading while fixture is loading', () => {
-      fixtureServiceMock.getMatches.mockReturnValue(NEVER);
-      fixtureServiceMock.getClubs.mockReturnValue(NEVER);
+      fixtureServiceMock.getFixtures.mockReturnValue(NEVER);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('[data-testid="fixture-loading"]')).toBeTruthy();
-    });
-
-    it('should build club logo map', () => {
-      fixture.detectChanges();
-      expect(component.getClubLogo(3)).toBe('base64logo3');
-      expect(component.getClubLogo(5)).toBeNull();
-      expect(component.getClubLogo(999)).toBeNull();
     });
 
     it('should render team logos', () => {

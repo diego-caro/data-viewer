@@ -4,10 +4,12 @@ import {
   RawClubWithLogo,
   RawFixtureDivision,
   RawStandingsEntry,
+  RawInstance,
   FixtureMatch,
   FixtureClub,
   FixtureDivision,
   StandingsEntry,
+  FixtureInstance,
 } from '@/lib/types/fixture';
 
 const mockFetch = jest.fn();
@@ -95,6 +97,11 @@ const RAW_STANDINGS: RawStandingsEntry[] = [
   },
 ];
 
+const RAW_INSTANCES: RawInstance[] = [
+  { id: 207304, fecha: '2026-06-20T03:00:00Z', descripcion: 'Fecha 3', numero: 3 },
+  { id: 207306, fecha: '2026-06-06T13:30:00Z', descripcion: 'Fecha 1', numero: 1 },
+];
+
 const TOURNAMENT_ID = '205151';
 const BASE_URL = `https://sistema.hockeychubut.com.ar/api/public/torneo/${TOURNAMENT_ID}`;
 
@@ -170,7 +177,7 @@ describe('FixtureService', () => {
         status: 'completed',
         date: '2026-06-06T13:30:00Z',
         venue: 'Bigornia',
-        round: 1,
+        instance: 207306,
         homeTeam: { clubId: 3, clubName: 'Bigornia Club' },
         awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
         score: { home: 2, away: 2 },
@@ -454,6 +461,180 @@ describe('FixtureService', () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(fixtureService.getStandings(206752)).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('getInstances', () => {
+    it('should fetch instances using fixtureId', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_INSTANCES,
+      });
+
+      await fixtureService.getInstances(206752);
+
+      expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/fixture/206752/instancia`);
+    });
+
+    it('should normalize instance fields correctly', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [RAW_INSTANCES[1]],
+      });
+
+      const instances = await fixtureService.getInstances(206752);
+
+      expect(instances[0]).toEqual<FixtureInstance>({
+        id: 207306,
+        date: '2026-06-06T13:30:00Z',
+        description: 'Fecha 1',
+        round: 1,
+      });
+    });
+
+    it('should sort instances by round number ascending', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => RAW_INSTANCES,
+      });
+
+      const instances = await fixtureService.getInstances(206752);
+
+      expect(instances.map((instance) => instance.round)).toEqual([1, 3]);
+    });
+
+    it('should return empty array when API returns empty list', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      const instances = await fixtureService.getInstances(206752);
+
+      expect(instances).toEqual([]);
+    });
+
+    it('should throw when external API returns non-OK response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      await expect(fixtureService.getInstances(206752)).rejects.toThrow(
+        'Failed to fetch instances: 500 Internal Server Error'
+      );
+    });
+  });
+
+  describe('getFixtures', () => {
+    function mockFixtureEndpoints(
+      overrides: {
+        matches?: RawMatch[];
+        clubs?: RawClubWithLogo[];
+        instances?: RawInstance[];
+        failing?: 'partido' | 'club' | 'instancia';
+      } = {}
+    ): void {
+      const { matches = RAW_MATCHES, clubs = RAW_CLUBS, instances = RAW_INSTANCES, failing } = overrides;
+
+      mockFetch.mockImplementation((url: string) => {
+        if (failing && url.endsWith(`/${failing}`)) {
+          return Promise.resolve({ ok: false, status: 500, statusText: 'Internal Server Error' });
+        }
+        if (url.endsWith('/partido')) return Promise.resolve({ ok: true, json: async () => matches });
+        if (url.endsWith('/club')) return Promise.resolve({ ok: true, json: async () => clubs });
+        if (url.endsWith('/instancia')) return Promise.resolve({ ok: true, json: async () => instances });
+        return Promise.resolve({ ok: false, status: 404, statusText: 'Not Found' });
+      });
+    }
+
+    it('should fetch matches, clubs and instances', async () => {
+      mockFixtureEndpoints();
+
+      await fixtureService.getFixtures(206752);
+
+      expect(fetch).toHaveBeenCalledTimes(3);
+      expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/fixture/206752/partido`);
+      expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/fixture/206752/club`);
+      expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/fixture/206752/instancia`);
+    });
+
+    it('should group matches into rounds sorted by round number', async () => {
+      mockFixtureEndpoints();
+
+      const rounds = await fixtureService.getFixtures(206752);
+
+      expect(rounds).toHaveLength(2);
+      expect(rounds[0].round).toBe(1);
+      expect(rounds[0].description).toBe('Fecha 1');
+      expect(rounds[0].date).toBe('2026-06-06T13:30:00Z');
+      expect(rounds[0].matches.map((match) => match.id)).toEqual([207519]);
+      expect(rounds[1].round).toBe(3);
+      expect(rounds[1].matches.map((match) => match.id)).toEqual([208130]);
+    });
+
+    it('should enrich team logos from clubs', async () => {
+      mockFixtureEndpoints();
+
+      const rounds = await fixtureService.getFixtures(206752);
+      const match = rounds[0].matches[0];
+
+      expect(match.homeTeam.logo).toBe('base64data1');
+      expect(match.awayTeam.logo).toBeNull();
+    });
+
+    it('should return empty matches for instances without matches', async () => {
+      mockFixtureEndpoints({
+        instances: [...RAW_INSTANCES, { id: 999, fecha: '2026-07-04T13:00:00Z', descripcion: 'Fecha 5', numero: 5 }],
+      });
+
+      const rounds = await fixtureService.getFixtures(206752);
+
+      expect(rounds).toHaveLength(3);
+      expect(rounds[2].round).toBe(5);
+      expect(rounds[2].matches).toEqual([]);
+    });
+
+    it('should exclude matches whose instance is not listed', async () => {
+      mockFixtureEndpoints({ instances: [RAW_INSTANCES[1]] });
+
+      const rounds = await fixtureService.getFixtures(206752);
+
+      expect(rounds).toHaveLength(1);
+      expect(rounds[0].matches.map((match) => match.id)).toEqual([207519]);
+    });
+
+    it('should return empty array when there are no instances', async () => {
+      mockFixtureEndpoints({ matches: [], clubs: [], instances: [] });
+
+      const rounds = await fixtureService.getFixtures(206752);
+
+      expect(rounds).toEqual([]);
+    });
+
+    it('should throw when the matches request fails', async () => {
+      mockFixtureEndpoints({ failing: 'partido' });
+
+      await expect(fixtureService.getFixtures(206752)).rejects.toThrow(
+        'Failed to fetch matches: 500 Internal Server Error'
+      );
+    });
+
+    it('should throw when the clubs request fails', async () => {
+      mockFixtureEndpoints({ failing: 'club' });
+
+      await expect(fixtureService.getFixtures(206752)).rejects.toThrow(
+        'Failed to fetch clubs: 500 Internal Server Error'
+      );
+    });
+
+    it('should throw when the instances request fails', async () => {
+      mockFixtureEndpoints({ failing: 'instancia' });
+
+      await expect(fixtureService.getFixtures(206752)).rejects.toThrow(
+        'Failed to fetch instances: 500 Internal Server Error'
+      );
     });
   });
 });

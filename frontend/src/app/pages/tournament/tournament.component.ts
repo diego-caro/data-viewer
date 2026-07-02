@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest, forkJoin, of } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { FixtureService } from '../../services/fixture.service';
-import { FixtureMatch, FixtureRound, FixtureDivision, StandingsEntry, FixtureInstance } from '../../models/fixture.model';
+import { FixtureRound, FixtureDivision, StandingsEntry } from '../../models/fixture.model';
 import { environment } from '../../../environments/environment';
 
 type ActiveTab = 'fixture' | 'standings';
@@ -27,7 +27,6 @@ export class TournamentComponent implements OnInit {
   activeTab = signal<ActiveTab>('fixture');
 
   rounds: FixtureRound[] = [];
-  clubLogos = new Map<number, string | null>();
   standings: StandingsEntry[] = [];
 
   loadingDivisions = true;
@@ -65,10 +64,6 @@ export class TournamentComponent implements OnInit {
 
   setActiveTab(tab: ActiveTab): void {
     this.activeTab.set(tab);
-  }
-
-  getClubLogo(clubId: number): string | null {
-    return this.clubLogos.get(clubId) ?? null;
   }
 
   formatMatchDate(dateStr: string): string {

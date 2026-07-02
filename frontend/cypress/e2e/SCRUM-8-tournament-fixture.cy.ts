@@ -3,33 +3,41 @@ const MOCK_DIVISIONS = [
   { id: 206754, name: 'Caballeros Primera' },
 ];
 
-const MOCK_MATCHES = [
+const MOCK_ROUNDS = [
   {
-    id: 207519,
-    status: 'completed',
     date: '2026-06-06T13:30:00Z',
-    venue: 'Bigornia',
+    description: 'Fecha 1',
     round: 1,
-    homeTeam: { clubId: 3, clubName: 'Bigornia Club' },
-    awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    score: { home: 2, away: 2 },
+    matches: [
+      {
+        id: 207519,
+        status: 'completed',
+        date: '2026-06-06T13:30:00Z',
+        venue: 'Bigornia',
+        instance: 207306,
+        homeTeam: { clubId: 3, clubName: 'Bigornia Club', logo: null },
+        awayTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        score: { home: 2, away: 2 },
+      },
+    ],
   },
   {
-    id: 208130,
-    status: 'pending',
     date: '2026-06-20T03:00:00Z',
-    venue: 'C.E.C. Hockey',
+    description: 'Fecha 3',
     round: 3,
-    homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio' },
-    awayTeam: { clubId: 12, clubName: 'Trelew R.C.' },
-    score: null,
+    matches: [
+      {
+        id: 208130,
+        status: 'pending',
+        date: '2026-06-20T03:00:00Z',
+        venue: 'C.E.C. Hockey',
+        instance: 207304,
+        homeTeam: { clubId: 5, clubName: 'Club Empleados de Comercio', logo: null },
+        awayTeam: { clubId: 12, clubName: 'Trelew R.C.', logo: null },
+        score: null,
+      },
+    ],
   },
-];
-
-const MOCK_CLUBS = [
-  { id: 3, name: 'Bigornia Club', logo: null },
-  { id: 5, name: 'Club Empleados de Comercio', logo: null },
-  { id: 12, name: 'Trelew R.C.', logo: null },
 ];
 
 const MOCK_STANDINGS = [
@@ -57,13 +65,9 @@ describe('SCRUM-8 Tournament Fixture Page', () => {
       statusCode: 200,
       body: { data: MOCK_DIVISIONS },
     });
-    cy.intercept('GET', '**/api/fixture/matches?fixtureId=*', {
+    cy.intercept('GET', '**/api/fixture/fixtures?fixtureId=*', {
       statusCode: 200,
-      body: { data: MOCK_MATCHES },
-    });
-    cy.intercept('GET', '**/api/fixture/clubs?fixtureId=*', {
-      statusCode: 200,
-      body: { data: MOCK_CLUBS },
+      body: { data: MOCK_ROUNDS },
     });
     cy.intercept('GET', '**/api/fixture/standings?fixtureId=*', {
       statusCode: 200,
