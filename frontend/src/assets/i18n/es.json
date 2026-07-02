@@ -55,7 +55,7 @@
     "ERROR_LOAD_DATA": "Error al cargar los datos",
     "ERROR_LOAD_PLAYERS": "Error al cargar jugadores"
   },
-  "FIXTURE": {
+  "TOURNAMENT": {
     "TITLE": "Torneo",
     "ERROR": "No se pudieron cargar los datos del torneo. Intente nuevamente más tarde.",
     "CATEGORY": "Categoría",
@@ -66,6 +66,7 @@
     "ROUND": "Fecha",
     "STANDINGS_ERROR": "No se pudieron cargar las posiciones. Intente nuevamente más tarde.",
     "NO_STANDINGS": "No hay datos de posiciones disponibles.",
+    "NO_CONFIRMED": "A confirmar",
     "COL_POSITION": "#",
     "COL_CLUB": "Club",
     "COL_POINTS": "PTS",
